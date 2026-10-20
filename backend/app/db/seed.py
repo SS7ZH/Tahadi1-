@@ -16,6 +16,7 @@ import sys
 from datetime import date, timedelta
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import ProgrammingError
 
 from app.core.config import settings
 from app.core.security import hash_password
@@ -142,7 +143,12 @@ def main() -> int:
 
     db = get_sessionmaker()()
     try:
-        if (db.scalar(select(func.count()).select_from(User)) or 0) > 0:
+        try:
+            existing_users = db.scalar(select(func.count()).select_from(User)) or 0
+        except ProgrammingError:
+            print("ERROR: tables do not exist yet. Run `alembic upgrade head` first.", file=sys.stderr)
+            return 1
+        if existing_users > 0:
             msg = "Database already contains users; seed refused (it only runs once)."
             if args.if_empty:
                 print(msg + " Skipping.")
