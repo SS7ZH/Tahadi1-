@@ -10,9 +10,17 @@ from app.core.config import settings
 
 def normalize_db_url(url: str) -> str:
     """Supabase hands out postgres:// or postgresql:// URLs; SQLAlchemy needs the psycopg (v3) driver name."""
+    url = url.strip().strip("'\"").strip()
+    url = url.removeprefix("jdbc:")
     for prefix in ("postgres://", "postgresql://"):
         if url.startswith(prefix):
             return "postgresql+psycopg://" + url[len(prefix):]
+    if not url.startswith(("postgresql+", "sqlite")):
+        shown = url.split("://", 1)[0][:30] if "://" in url else url[:12]
+        raise ValueError(
+            "DATABASE_URL must start with postgresql:// (copy the 'URI' / connection string from "
+            f"Supabase > Connect > Session or Transaction pooler). It currently starts with: {shown!r}..."
+        )
     return url
 
 
