@@ -6,8 +6,10 @@ services:
     rootDir: backend
     plan: free
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: alembic upgrade head
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    # The free plan does not run preDeployCommand, so migrations run at start-up instead
+    # (`alembic upgrade head` is a no-op when the schema is current). On a paid plan you can
+    # move it back to: preDeployCommand: alembic upgrade head
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
     healthCheckPath: /api/v1/health
     envVars:
       - key: PYTHON_VERSION
