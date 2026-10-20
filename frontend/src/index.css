@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens (RGB triplets so Tailwind can apply opacity). */
+:root {
+  --c-bg: 247 246 243;
+  --c-surface: 255 255 255;
+  --c-surface-2: 241 239 235;
+  --c-line: 228 225 219;
+  --c-ink: 24 24 27;
+  --c-muted: 104 104 112;
+  --c-primary: 242 85 13; /* energetic orange */
+  --c-primary-strong: 205 66 4;
+  --c-on-primary: 255 255 255;
+  --c-accent: 15 118 110; /* deep teal */
+  --c-good: 22 150 76;
+  --c-bad: 214 40 40;
+  --c-warn: 202 138 4;
+  color-scheme: light;
+}
+
+.dark {
+  --c-bg: 16 17 20;
+  --c-surface: 25 27 31;
+  --c-surface-2: 34 37 42;
+  --c-line: 50 54 61;
+  --c-ink: 236 236 238;
+  --c-muted: 156 160 168;
+  --c-primary: 255 112 51;
+  --c-primary-strong: 255 138 87;
+  --c-on-primary: 22 14 10;
+  --c-accent: 45 212 191;
+  --c-good: 74 222 128;
+  --c-bad: 248 113 113;
+  --c-warn: 250 204 21;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-bg font-sans text-ink antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Numbers always read left-to-right with Western digits. */
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--c-primary));
+  outline-offset: 2px;
+}
+
+.recharts-tooltip-wrapper {
+  direction: rtl;
+}
+
+@layer components {
+  .field-input {
+    @apply w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted/70
+      transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60;
+  }
+}

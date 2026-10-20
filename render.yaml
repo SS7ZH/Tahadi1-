@@ -1,0 +1,36 @@
+# Render blueprint: FastAPI backend. The database is Supabase (not a Render database).
+services:
+  - type: web
+    name: tahadi-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENVIRONMENT
+        value: production
+      # Supabase TRANSACTION pooler URL (port 6543), with ?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+      # Supabase SESSION pooler (or direct) URL (port 5432), with ?sslmode=require, used by alembic
+      - key: MIGRATIONS_DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # e.g. https://tahadi.vercel.app,http://localhost:5173
+      - key: CORS_ORIGINS
+        sync: false
+      - key: CORS_ORIGIN_REGEX
+        value: https://tahadi-.*\.vercel\.app
+      # Only needed for the one-time `python -m app.db.seed` run from the Render shell
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
