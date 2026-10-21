@@ -14,7 +14,7 @@
 
 | Role | Name (placeholder) | Responsibility |
 | --- | --- | --- |
-| Team member 1 | **[Your Name Here]** | e.g. backend + DB + seeding, architecture |
+| Team member 1 | **Saeed Alzahrani** | e.g. backend + DB + seeding, architecture |
 | Team member 2 | **[Your Name Here]** | e.g. frontend + RTL UI + accessibility |
 
 > Replace the bracketed placeholders with the real names of the two team members

@@ -76,7 +76,7 @@ Each team member must sign that they understand the AI use and stand by the
 disclosure. Copy the block per member.
 
 > **Member 1**
-> I, **____________________**, confirm the AI contribution recorded above is
+> I, **Saeed Alzahrani**, confirm the AI contribution recorded above is
 > accurate as it relates to my work. I reviewed and am responsible for the
 > AI-assisted material attributed to this project.
 > Signature: ____________________   Date: __________
