@@ -1,194 +1,286 @@
 # Requirements Specification — Tahadi (تحدي)
 
-> Milestone 1. This file defines personas, scenarios, user stories, use cases
-> (with failure paths), numbered functional requirements (FR-n), and
-> non-functional requirements written as quality-attribute scenarios.
+| Field | Value |
+| --- | --- |
+| Version | 0.3.0 |
+| Status | Draft — Milestone 1 |
+| Date | 2026-10-21 |
+| Source | CHARTER.md (scope: 2 roles, ≤6 screens, ≤10 endpoints) |
 
-## 1. Glossary
+> This document uses one simulated persona, scenarios in Given–When–Then form,
+> user stories for both roles, use cases with failure paths, functional
+> requirements (each linked to a user story), and non-functional requirements as
+> quality-attribute scenarios. It stays within the hard caps and respects the
+> non-goals in `CHARTER.md`.
+>
+> **Account model:** a user signs up and chooses a role — `coach` or `client`.
+> A coach can add clients (which creates/assigns their accounts); a client can
+> sign in and access data once a coach has added them.
 
-* **Coach** — a fitness professional who records measurements for their clients.
-* **Client** — the person whose measurements are recorded; views own progress.
-* **Measurement** — a body metric recorded on a date (weight, waist, skinfold, etc.).
-* **Session/Visit** — one dated set of measurements for a client.
-* **Thread** — a message conversation between one client and their coach.
-* **Synthetic data** — generated fictitious records; never real personal data.
+---
 
-## 2. Personas
+## 1. Persona (one simulated)
 
-### P1 — Coach (primary)
-* **Name:** Aya
-* **Context:** Personal trainer with ~20 clients. Records measurements after each
-  session; occasionally needs to recall last month's waist measurement.
-* **Frustrations:** Spreadsheets get messy; no single view of a client's trend.
-* **Goals:** Record fast, see progress trends, answer client questions in one place.
+### P1 — Aya, the fitness coach
 
-### P2 — Client (primary)
-* **Name:** Omar
-* **Context:** Follows a training program; wants to see whether numbers are moving.
-* **Frustrations:** Does not know what the coach recorded; has to ask in person.
-* **Goals:** See own progress (read-only), ask the coach a question.
+* **Profile:** Personal trainer in Riyadh with about 20 clients, aged 28. She
+  trains clients 1-to-1 and in small groups.
+* **Context:** She signed up to Tahadi, chose the **coach** role, then added her
+  clients so each one could sign in. After each session she records body
+  measurements (weight, waist, skinfolds). Today she keeps them in a spreadsheet
+  and paper notes.
+* **Pain:** Notes get lost or mistyped; there is no single view of a client's
+  trend; clients cannot see their own numbers and keep asking in person.
+* **Goal:** Register quickly, add her clients, record a client's measurements in
+  under a minute, see progress trends, and answer client questions without losing
+  track.
+* **Attitude to tech:** Comfortable with mobile/web apps but not a power user;
+  wants a simple, Arabic, right-to-left interface.
 
-### P3 — Instructor / Assessor (secondary)
-* Wants verifiable scope compliance, traceability, and honest AI disclosure.
+> A client persona is not modelled separately here — clients are represented
+> through the user stories, use cases and scenarios below.
 
-## 3. Scenarios
+---
 
-* **S1 (Coach records):** After a session, Aya opens Client Omar's record, enters
-  today's weight and waist, and saves. The new measurement appears with a date.
-* **S2 (Client views progress):** Omar logs in and sees a table/trend of his own
-  measurements. He cannot see other clients or edit values.
-* **S3 (Client asks a question):** Omar asks "Is my waist progress normal?" The
-  coach replies. Omar sees the reply in the thread.
-* **S4 (Client tries to edit):** Omar attempts to modify a measurement; the UI has
-  no edit control and the API rejects write access (403).
+## 2. Scenarios (Given–When–Then)
 
-## 4. User stories
+### S1 — A user signs up and chooses a role
 
-* **US-1:** As a coach, I can log into the app so that I can manage my own clients.
-* **US-2:** As a coach, I can create/record a client measurement so that I can track progress.
-* **US-3:** As a coach, I can view a client's measurement history/trend so that I can coach them.
-* **US-4:** As a coach, I can reply to a client's question so that the thread is answered.
-* **US-5:** As a client, I can log in so that I can see only my own data.
-* **US-6:** As a client, I can view my measurement history (read-only) so that I can see progress.
-* **US-7:** As a client, I can send a question to my coach so that I can get guidance.
-* **US-8:** As a client, I cannot see or change other users' data (security requirement).
+* **Given** a new user is on the sign-up screen,
+* **When** they choose the **coach** role, enter name, email and a password, and
+  submit,
+* **Then** a coach account is created, they are signed in, and they land on the
+  coach client list.
 
-## 5. Use cases (with failure paths)
+### S2 — Coach records a measurement
 
-### UC-1: Coach records a measurement
-* **Actor:** Coach
-* **Precondition:** Coach is authenticated; client exists and belongs to the coach.
+* **Given** Aya is logged in as a coach and has a client named Omar,
+* **When** she enters today's weight (82.5 kg) and waist (92 cm) for Omar and
+  saves,
+* **Then** the measurement is stored with today's date and appears at the top of
+  Omar's measurement history.
+
+### S3 — Coach adds a client, who then signs in
+
+* **Given** Aya is logged in as a coach,
+* **When** she adds a new client (name and email) on the client list screen,
+* **Then** a client account is created and assigned to Aya, and that client can
+  now sign in with the account and view their progress.
+
+### S4 — Client views his own progress (read-only)
+
+* **Given** Omar is logged in as a client (added by coach Aya),
+* **When** he opens his progress screen,
+* **Then** he sees only his own measurements ordered by date, with no edit
+  controls, and no way to view another client's data.
+
+### S5 — Client asks the coach a question
+
+* **Given** Omar is logged in as a client and is assigned to coach Aya,
+* **When** he sends the question "Is my waist progress normal?",
+* **Then** it is saved to the Omar–Aya thread and Aya can read and reply to it.
+
+---
+
+## 3. User stories
+
+### Coach
+
+* **US-1** — As a user, I can sign up and choose my role (coach or client).
+* **US-2** — As a coach, I can log in so that I can access my own clients.
+* **US-3** — As a coach, I can add a client, which creates their account and
+  assigns them to me.
+* **US-4** — As a coach, I can record a client's body measurement so that I can
+  track their progress.
+* **US-5** — As a coach, I can view a client's measurement history so that I can
+  coach them.
+* **US-6** — As a coach, I can reply to a client's question so that it is answered.
+
+### Client
+
+* **US-7** — As a user, I can sign up choosing the client role.
+* **US-8** — As a client, I can sign in once my coach has added me.
+* **US-9** — As a client, I can view my measurement history (read-only) so that I
+  can see my progress.
+* **US-10** — As a client, I can send a question to my coach so that I can get
+  guidance.
+* **US-11** — As a client, I cannot see or change any other user's data.
+
+---
+
+## 4. Use cases (actor, main flow, failure path)
+
+### UC-1 — Sign up (choose a role)
+* **Actor:** Guest user
+* **Precondition:** No existing account for the given email.
 * **Main flow:**
-  1. Coach selects a client.
-  2. Coach enters measurement values and a date.
-  3. System validates the values.
-  4. System persists the measurement and returns the created record.
-  5. Coach sees the updated history.
-* **Failure paths:**
-  * *F1:* Values invalid (negative weight, date in the future) → system returns a
-    422 validation error and does **not** save.
-  * *F2:* Client not found or not coach's client → 404.
+  1. The user enters name, email, and password.
+  2. The user selects a role: `coach` or `client`.
+  3. The system creates the account and issues a JWT; the UI routes by role.
+* **Failure path:**
+  * *F1:* Email already registered → 409.
+  * *F2:* Missing/invalid name, email, password, or role → 422.
+
+### UC-2 — Sign in
+* **Actor:** Coach or Client
+* **Precondition:** The account exists.
+* **Main flow:**
+  1. The user enters credentials.
+  2. The system validates them and issues a JWT.
+  3. The system returns the user's role and profile; the UI routes by role.
+* **Failure path:**
+  * *F1:* Invalid credentials → 401, generic message (no user enumeration).
+  * *F2:* Client account not yet added/assigned to a coach → 403, "Wait until your
+    coach adds you."
+
+### UC-3 — Coach adds a client
+* **Actor:** Coach
+* **Precondition:** Coach is authenticated.
+* **Main flow:**
+  1. Coach enters the client's name and email.
+  2. System creates (or links) the client account and assigns it to the coach.
+  3. The client can now sign in.
+* **Failure path:**
+  * *F1:* Email already belongs to another coach's client → 409.
+  * *F2:* Invalid email/blank name → 422.
+
+### UC-4 — Coach records a measurement
+* **Actor:** Coach
+* **Precondition:** Coach is authenticated; the client belongs to the coach.
+* **Main flow:**
+  1. Coach selects the client.
+  2. Coach enters metric values and a date.
+  3. System validates and persists the record.
+* **Failure path:**
+  * *F1:* Negative value / future date / missing value → 422, nothing saved.
+  * *F2:* Client not found or not the coach's client → 404.
   * *F3:* Database write fails → 500, no partial write (transaction).
-  * *F4:* Coach not authenticated or token expired → 401, no save.
 
-### UC-2: Client views own progress
+### UC-5 — Client views own progress
 * **Actor:** Client
-* **Precondition:** Client is authenticated.
-* **Main flow:** 1. Client opens their progress screen. 2. System returns only the
-  client's own measurements, oldest first. 3. Client sees the list/trend.
-* **Failure paths:**
-  * *F1:* No measurements yet → system shows an empty state, not an error.
-  * *F2:* Client requests another user's data → system returns 403 (or 404).
-  * *F3:* Auth missing/expired → 401.
+* **Precondition:** Client is authenticated and has been added by a coach.
+* **Main flow:**
+  1. Client opens the progress screen.
+  2. System returns only the client's own measurements, oldest first.
+  3. Client sees the list/trend (read-only).
+* **Failure path:**
+  * *F1:* No measurements yet → empty state, not an error.
+  * *F2:* Client requests another user's data → 403/404.
+  * *F3:* Token missing/expired → 401.
 
-### UC-3: Client asks the coach a question
+### UC-6 — Client sends a question
 * **Actor:** Client
-* **Precondition:** Client is authenticated.
-* **Main flow:** 1. Client writes a question. 2. System creates a message in the
-  client–coach thread. 3. Client sees the confirmed message.
-* **Failure paths:**
-  * *F1:* Empty/blank question → 422, not saved.
-  * *F2:* Message too long (over limit) → 422.
-  * *F3:* No coach assigned → 409 (conflict) and a clear message.
+* **Precondition:** Client is authenticated and assigned to a coach.
+* **Main flow:**
+  1. Client writes a question.
+  2. System appends it to the client's thread with the coach.
+* **Failure path:**
+  * *F1:* Blank/empty question → 422.
+  * *F2:* Message exceeds max length → 422.
+  * *F3:* No coach assigned → 409 with a clear message.
 
-### UC-4: Coach replies to a client question
+### UC-7 — Coach replies to a question
 * **Actor:** Coach
 * **Precondition:** Coach is authenticated and owns the client.
-* **Main flow:** 1. Coach selects a thread. 2. Coach replies. 3. System appends the
-  reply. 4. Coach sees the updated thread.
-* **Failure paths:**
+* **Main flow:**
+  1. Coach opens the thread.
+  2. Coach writes a reply.
+  3. System appends the reply to the thread.
+* **Failure path:**
   * *F1:* Thread belongs to a client not owned by the coach → 403.
   * *F2:* Empty reply → 422.
 
-### UC-5: Coach accounts are seeded
-* **Actor:** Seeding script (team-run, not an end-user feature).
-* **Main flow:** 1. Run `seed` command. 2. It creates the configured coaches
-  idempotently (no duplicates on re-run). 3. It may create synthetic clients and
-  measurements for demo data.
-* **Failure paths:** *F1:* Duplicate seed run does not create duplicate coaches
-  (idempotency). *F2:* Seed fails mid-way → leaves no partial coach (or is clearly
-  documented as non-atomic but idempotent).
+---
 
-## 6. Functional requirements (FR-n)
+## 5. Functional requirements (linked to user stories)
 
-| ID | Requirement |
-| --- | --- |
-| FR-1 | The system shall authenticate users (coach/client) and issue a JWT. |
-| FR-2 | A coach shall be able to create a measurement record for one of their clients. |
-| FR-3 | A measurement record shall include a date and at least one metric value. |
-| FR-4 | A coach shall be able to list a client's measurements (ordered by date). |
-| FR-5 | A client shall be able to list **only their own** measurements in read-only mode. |
-| FR-6 | A client shall be able to send a question to their coach (one thread per client). |
-| FR-7 | A coach shall be able to reply to a client's question. |
-| FR-8 | A client shall not be able to create/update/delete any measurement. |
-| FR-9 | Coaches shall be created by an idempotent seeding script (no admin role). |
-| FR-10 | All data used/committed shall be synthetic (no real personal data). |
-| FR-11 | The system shall expose 10 or fewer API endpoints. |
-| FR-12 | The system shall use a maximum of 8 database tables and 2 roles. |
+| ID | Functional requirement | User story |
+| --- | --- | --- |
+| FR-1 | The system shall let a new user sign up with name, email, password, and a chosen role (`coach` or `client`). | US-1 |
+| FR-2 | The system shall authenticate a user (sign in) and issue a JWT. | US-2, US-8 |
+| FR-3 | A coach shall be able to add a client, creating the client's account and assigning the client to the coach. | US-3 |
+| FR-4 | A coach shall be able to record a body measurement (a date and at least one metric value) for one of their clients. | US-4 |
+| FR-5 | A coach shall be able to view a client's measurement history ordered by date. | US-5 |
+| FR-6 | A coach shall be able to reply to a client's question in the client's thread. | US-6 |
+| FR-7 | A user shall be able to sign up choosing the **client** role. | US-7 |
+| FR-8 | A client shall be able to sign in once assigned to a coach; an unassigned client cannot access data (403). | US-8 |
+| FR-9 | A client shall be able to view **only** their own measurements in **read-only** mode. | US-9 |
+| FR-10 | A client shall be able to send a question to their coach (one thread per client). | US-10 |
+| FR-11 | A client shall not be able to create, update, or delete any measurement. | US-11 |
+| FR-12 | The system shall restrict every data access to the resource owner (client sees own data; coach sees own clients). | US-11 |
+| FR-13 | The system shall persist only synthetic data; no real personal data may be entered or committed. | All (scope) |
+| FR-14 | The system shall expose at most 10 API endpoints. | All (scope) |
+| FR-15 | The system shall use at most 6 screens and exactly 2 roles (coach, client). | All (scope) |
 
-## 7. Non-functional requirements (quality-attribute scenarios)
+---
 
-Each NFR is written as a scenario: **source, stimulus, environment, response,
-measure**.
+## 6. Non-functional requirements (quality-attribute scenarios)
 
 | ID | Source | Stimulus | Environment | Response | Measure |
 | --- | --- | --- | --- | --- | --- |
-| NFR-1 (RTL/UX) | Client | Opens any screen in Arabic | Desktop browser, `dir=rtl` | UI renders right-to-left, text fully visible | No horizontal overflow; all text right-aligned; verified on the RTL baseline |
-| NFR-2 (Performance) | Coach | Loads a client's full measurement history | Production on Render, >= 50 measurements | History returns in a single response | P95 response time < 500 ms under concurrent load of 20 users |
-| NFR-3 (Security — authorization) | Client | Attempts to read another client's data | Authenticated as client | Request is denied | 100% of cross-owner read/write attempts return 403/404; e2e tests cover it |
-| NFR-4 (Data safety) | Team | A real personal identifier is pasted into a field | Any environment | System prevents persistence of real data (validation/redaction) | No unintended rows persisted; tested with forbidden-value fixtures |
-| NFR-5 (Availability) | Client | Requests their progress page | Production | Page loads or a clear error is shown | Availability >= 99% during the demo window (verified via uptime check) |
-| NFR-6 (Maintainability) | Team | A new metric type is added | Dev environment | Adding a metric requires ≤ 1 table change + 1 endpoint change | Measured by the number of files touched to add a metric |
-| NFR-7 (Scope compliance) | Instructor | Confirms the app meets the cap | Code review | Screens/endpoints/tables/roles within caps | Screens ≤ 6, endpoints ≤ 10, tables ≤ 8, roles ≤ 2 |
-| NFR-8 (Accessibility) | Client | Uses keyboard + screen reader | Any screen | All controls focusable and labelled | WCAG 2.2 AA baseline: focus visible, labels on all inputs, adequate contrast |
-| NFR-9 (Config/secret hygiene) | Team | Checks the repository for secrets | CI scan | No secrets/real data committed | Secret scan passes; `.env` ignored, `.env.example` committed with placeholders |
+| NFR-1 (RTL/UX) | Client | Opens any screen in Arabic | Desktop browser, `dir=rtl`, `lang=ar` | UI renders right-to-left and text is fully visible | No horizontal overflow on all 6 screens; all text right-aligned; passes the RTL baseline check |
+| NFR-2 (Performance) | Coach | Loads a client's history with ≥50 measurements | Production on Render, 20 concurrent users | History returned in one response | P95 response time < 500 ms |
+| NFR-3 (Authorization) | Client | Requests another client's data | Authenticated as a client | Request is denied | 100% of cross-owner read/write attempts return 403/404 (covered by e2e tests) |
+| NFR-4 (Data safety) | Team/fixture | A real personal identifier is submitted | Any environment | System rejects it and persists nothing | 0 unintended rows persisted; forbidden-value fixture test passes |
+| NFR-5 (Availability) | Client | Requests the progress page | Production | Page loads or a clear error is shown | Uptime ≥ 99% during the demo window |
+| NFR-6 (Maintainability) | Team | Adds a new measurement metric type | Development | Small, localized change | Adding a metric touches ≤ 2 files (1 schema + 1 config/endpoint) |
+| NFR-7 (Scope compliance) | Instructor/reviewer | Confirms the app meets the caps | Code review + CI | App stays within caps | Screens ≤ 6, endpoints ≤ 10, tables ≤ 8, roles = 2 |
+| NFR-8 (Accessibility) | Client | Uses keyboard and screen reader | Any screen | Every control is focusable and labelled | WCAG 2.2 AA baseline: visible focus, labelled inputs, contrast ≥ 4.5:1 |
+| NFR-9 (Secret/config hygiene) | Team | Scans the repository for secrets | CI secret scan | No secrets or real data are found | Scan passes; `.env` ignored; `.env.example` contains placeholders only |
 
-## 8. Screen inventory (target ≤ 6)
+---
 
-1. **Login** (both roles)
-2. **Coach — client list**
-3. **Coach — client detail + measurement entry/history**
-4. **Coach — threads / question reply**
-5. **Client — my progress** (read-only)
-6. **Client — ask a question / thread**
+## 7. Scope compliance (supporting)
 
-## 9. API endpoint inventory (target ≤ 10)
+### Screen inventory (target ≤ 6)
+
+| # | Screen | Role |
+| --- | --- | --- |
+| 1 | Auth — sign in / sign up (choose role) | both |
+| 2 | Coach — client list (+ add client) | coach |
+| 3 | Coach — client detail (history + add measurement) | coach |
+| 4 | Coach — threads / reply | coach |
+| 5 | Client — my progress (read-only) | client |
+| 6 | Client — ask a question / my thread | client |
+
+### API endpoint inventory (target ≤ 10)
 
 | # | Method | Path | Role | Purpose |
 | --- | --- | --- | --- | --- |
-| 1 | POST | `/api/auth/login` | both | Authenticate, return JWT |
-| 2 | GET | `/api/coach/clients` | coach | List own clients |
-| 3 | POST | `/api/coach/clients` | coach | Create a client |
-| 4 | GET | `/api/clients/{id}` | coach/client | Read a client (owner-scoped) |
+| 1 | POST | `/api/auth/signup` | guest | Create account with chosen role |
+| 2 | POST | `/api/auth/signin` | both | Authenticate, issue JWT |
+| 3 | GET | `/api/coach/clients` | coach | List own clients |
+| 4 | POST | `/api/coach/clients` | coach | Add a client (create/assign account) |
 | 5 | POST | `/api/coach/clients/{id}/measurements` | coach | Record a measurement |
-| 6 | GET | `/api/clients/{id}/measurements` | coach/client | List a client's measurements (owner-scoped) |
+| 6 | GET | `/api/clients/{id}/measurements` | coach/client | List measurements (owner-scoped) |
 | 7 | GET | `/api/me/measurements` | client | Own progress (read-only) |
 | 8 | POST | `/api/me/threads` | client | Send a question |
 | 9 | GET | `/api/threads/{id}` | coach/client | Read a thread |
 | 10 | POST | `/api/threads/{id}/messages` | coach | Reply in a thread |
 
-> Keep to 10. If an endpoint must be added, it must replace/merge another within
-> the cap and be recorded as an ADR.
+### Roles (exactly 2)
 
-## 10. Data model (target ≤ 8 tables)
+`coach`, `client`. No admin role.
 
-1. `users` (id, role, name, email, password_hash, coach_id)
-2. `coaches` (id, user_id, specialty)
-3. `clients` (id, user_id, coach_id)
-4. `measurement_metrics` (id, name, unit, sort_order) — the metric catalogue
-5. `measurements` (id, client_id, metric_id, value, date)
-6. `threads` (id, client_id, coach_id)
-7. `messages` (id, thread_id, author_id, body, created_at)
-8. `sessions` (id, user_id, token, created_at, expires_at) — refresh/token store (or JWT stateless)
+### Non-goals (respected)
 
-> Adjust to fit within 8 tables. Placeholder; refine in the schema ADR.
+Payments, workout/nutrition plans, medical advice, mobile app, real-time chat, and
+photo upload are **out of scope**. They are not represented in any screen,
+endpoint, or user story above.
 
-## 11. Assumptions & open questions
+---
 
-* **Auth:** assumed JWT (stateless) — if a session table is needed, confirm the
-  8-table cap still holds (can drop a table or reuse).
-* **Measurement types:** only the common types (weight, waist, skinfold, etc.) in
-  Milestone 1.
-* **Message one-per-thread vs. reply-only:** client sends a question; coach replies;
-  may allow continued back-and-forth in the same thread (still one thread per client).
-* **Reset/password recovery:** treat as out of scope unless within endpoint cap.
+## 8. Assumptions & open questions
+
+* **Auth** is assumed to be stateless JWT (no separate session table is required
+  to stay within 8 tables). Sign-up and sign-in are two endpoints; role is chosen
+  at sign-up.
+* **Client provisioning:** a client account may be created by the client signing
+  up (client role) *or* by a coach adding them. In both cases the client becomes
+  usable once a coach has added/assigned them (FR-8).
+* **Message model** is one thread per client; clients ask and coaches reply,
+  possibly back-and-forth, within that thread.
+* **Password reset / recovery** is out of scope unless it fits within the
+  endpoint cap (currently not allocated).
+* **Measurement metric set** for Milestone 1 is limited to weight, waist, and
+  skinfolds; extending it is covered by NFR-6.

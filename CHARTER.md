@@ -42,7 +42,7 @@ and can ask their coach a question.
 
 ### In scope (this project)
 
-* Coach authenticates and manages measurements for **their own** clients.
+* Authentication through Supabase Auth; role-based access control (coach / client) enforced by the FastAPI backend.
 * Client authenticates and views **only their own** measurements and progress.
 * Client sends a question to their coach; coach replies (one Q&A thread per client).
 * Coach accounts are seeded by an idempotent script (no admin role).

@@ -18,7 +18,7 @@ for fitness coaches and their clients. Coaches record client body measurements
 | Primary language | Arabic (RTL-first) |
 | Frontend | React (TypeScript) |
 | Backend | FastAPI (Python 3.12) |
-| Database | Supabase — managed PostgreSQL only (no Supabase Auth/Storage/Realtime) |
+| Database | Supabase — managed PostgreSQL (data store) + Supabase Auth (authentication) |
 | Hosting | Render (both frontend and backend) |
 | Roles | `coach`, `client` (only; no admin — coaches are seeded by a script) |
 | Data | Synthetic/generated only. No real personal data, no secrets in the repo |
@@ -84,9 +84,10 @@ script (see RULES/requirements for the expected behavior of the seed script).
 
 * **Frontend:** React + TypeScript, RTL (`dir="rtl"`, `lang="ar"`), Arabic UI copy.
 * **Backend:** FastAPI, Pydantic models, OpenAPI docs.
-* **Database:** Supabase PostgreSQL (external, managed). Used only as a SQL
-  database — no Auth, Storage, Realtime, or Edge Functions from Supabase.
-* **Auth:** Handled by the backend (JWT). Supabase is not used for auth.
+* **Database:** Supabase — managed PostgreSQL as the data store, plus Supabase
+  Auth for authentication.
+* **Auth:** Supabase Auth signs in users and issues JWTs; the FastAPI backend
+  verifies the JWT and enforces role (coach / client) and ownership checks.
 * **Synthetic data:** A data generator produces fictional coach/client/measurement
   records. No real personal data is ever committed.
 
