@@ -12,7 +12,7 @@
 | Model / version | *(e.g. model name + version, if known)* |
 | Interface | *(e.g. IDE plugin, chat, CLI, agent)* |
 | Date range of use | *(from — to; keep updated)* |
-| Who operated it | *(team member name(s))* |
+| Who operated it | Saeed Alzahrani, Muhanad Alhilal |
 
 ## 2. AI contribution per area
 
@@ -59,8 +59,8 @@ Each AI-influenced change is traced by commit.
 
 | Commit hash | Raw/fix | Files | Reviewed by | Notes |
 | --- | --- | --- | --- | --- |
-| *(e.g. abc1234)* | `raw(ai)` | `backend/main.py` | *(name)* | Unmodified AI output |
-| *(e.g. def5678)* | `fix(human)` | `backend/main.py` | *(name)* | Human correction after review |
+| fc3399c | `raw(ai)` | Repository structure (all files) | Saeed Alzahrani, Muhanad Alhilal | Unmodified AI output |
+| 96eec2d | `raw(ai)` | `requirements.md`, `CHARTER.md`, `README.md`, `.env.example` | Saeed Alzahrani, Muhanad Alhilal | Unmodified AI output |
 
 ## 6. Data and licensing
 

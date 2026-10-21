@@ -23,6 +23,13 @@ for fitness coaches and their clients. Coaches record client body measurements
 | Roles | `coach`, `client` (only; no admin — coaches are seeded by a script) |
 | Data | Synthetic/generated only. No real personal data, no secrets in the repo |
 
+## Team
+
+| Member | Role / responsibility |
+| --- | --- |
+| Saeed Alzahrani | Team member 1 — backend, database, seeding, architecture |
+| Muhanad Alhilal | Team member 2 — frontend, RTL UI, accessibility |
+
 ## Problem statement
 
 Fitness coaching requires recurring, comparable body-measurement records. Coaches
