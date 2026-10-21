@@ -82,7 +82,7 @@ disclosure. Copy the block per member.
 > Signature: ____________________   Date: __________
 
 > **Member 2**
-> I, **____________________**, confirm the AI contribution recorded above is
+> I, **Muhanad Alhilal**, confirm the AI contribution recorded above is
 > accurate as it relates to my work. I reviewed and am responsible for the
 > AI-assisted material attributed to this project.
 > Signature: ____________________   Date: __________
