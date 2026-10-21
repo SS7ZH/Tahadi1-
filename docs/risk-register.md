@@ -32,3 +32,24 @@
 * Reviewed after each milestone.
 * Update likelihood/impact when evidence changes.
 * Add a row when a new risk is identified.
+
+## M1 architecture review notes
+
+* **Top three risks for the M1 review:** R-002 (auth/authorization leak),
+  R-003 (secret/real data committed), R-004 (Render free tier sleeps → demo
+  availability). All three have owners and measurable thresholds above.
+* **Coherence break resolved:** `CHARTER.md` line 45 said "Authentication through
+  Supabase Auth," which conflicted with `README.md` and `requirements.md` §8 (both say
+  backend-managed JWT, Supabase is SQL only). Resolved in `ADR-0002` (backend JWT);
+  `README.md`/`requirements.md` were treated as authoritative.
+* **Residual risk the coupling detector cannot reveal:** the component diagram shows
+  topology (which component calls which) but not the runtime data-flow invariant that
+  every measurement and message is scoped to the logged-in owner. That invariant is
+  enforced by owner-scoping logic in FastAPI (`ADR-0003`), not by the topology, so a
+  static coupling check cannot flag it. Only end-to-end tests that attempt cross-owner
+  reads (NFR-3) prove it holds. Tracked under R-002; owned by the backend lead.
+* **Architecture accepted downside:** two services on Render; the backend web service
+  sleeps after ~15 min of inactivity (cold start). See `architecture.md` §5, `R-004`,
+  and `cost-model.md` §5.
+* **Chosen option:** Option A (React → FastAPI → Supabase), per `ADR-0001`.
+  Option B (React → Supabase directly) was rejected; see `trade-off-matrix-architecture.md`.
