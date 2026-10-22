@@ -23,7 +23,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import type { Role } from '@/api/types';
-import { useAuth, useCurrentUser, homePathFor } from '@/hooks/useAuth';
+import { useAuth, useCurrentUser } from '@/hooks/useAuth';
 import { useInbox, useOnboarding } from '@/hooks/queries';
 import { useTheme } from '@/hooks/useTheme';
 import { tr } from '@/i18n';
@@ -164,7 +164,7 @@ export function Layout() {
     <div className="min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-          <Link to={homePathFor(user.role)} className="shrink-0">
+          <Link to="/" className="shrink-0" aria-label={tr.brand}>
             <Logo />
           </Link>
           <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label={tr.nav.menu}>

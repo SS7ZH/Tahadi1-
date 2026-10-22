@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { CalendarDays, ChevronDown, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { CalendarDays, ChevronDown, FileDown, MessageSquare, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
@@ -8,6 +8,7 @@ import { sessionsApi } from '@/api/endpoints';
 import { CATEGORIES, type Session } from '@/api/types';
 import { useInvalidateClient, useSessionDetail, useSessions } from '@/hooks/queries';
 import { loc, tr } from '@/i18n';
+import { downloadPdf } from '@/lib/download';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { ResultCards } from './SummaryView';
 import { Badge, Card, ConfirmDialog, EmptyState, ErrorState, IconButton, Skeleton, Spinner } from './ui';
@@ -97,7 +98,19 @@ function SessionCard({
   onDelete?: (s: Session) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const weight = session.values.find((v) => v.key === 'weight');
+  const exportPdf = async () => {
+    setExporting(true);
+    try {
+      await downloadPdf(`/pdf/session/${session.id}`);
+      toast.success(tr.pdf.exported);
+    } catch (err) {
+      toast.error(errorMessage(err) || tr.pdf.exportFailed);
+    } finally {
+      setExporting(false);
+    }
+  };
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center gap-3 p-3 sm:p-4">
@@ -137,16 +150,21 @@ function SessionCard({
           </span>
           <ChevronDown className={clsx('ms-auto h-5 w-5 shrink-0 text-muted transition', open && 'rotate-180')} />
         </button>
-        {canEdit && (
-          <div className="flex shrink-0 items-center">
+        <div className="flex shrink-0 items-center">
+          <IconButton label={tr.pdf.exportPdf} onClick={exportPdf} disabled={exporting}>
+            {exporting ? <Spinner className="h-4 w-4" /> : <FileDown className="h-4 w-4" />}
+          </IconButton>
+          {canEdit && (
+            <>
             <IconButton label={tr.common.edit} onClick={() => onEdit?.(session)}>
               <Pencil className="h-4 w-4" />
             </IconButton>
             <IconButton label={tr.common.delete} onClick={() => onDelete?.(session)} className="hover:bg-bad/10 hover:text-bad">
               <Trash2 className="h-4 w-4" />
             </IconButton>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
       {open && <SessionBody sessionId={session.id} />}
     </Card>

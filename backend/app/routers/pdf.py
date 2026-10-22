@@ -11,7 +11,7 @@ from app.core.deps import get_accessible_client, get_current_user
 from app.core.errors import not_found, unprocessable
 from app.core.i18n import get_language, pick, tr
 from app.db.session import get_db
-from app.models import ActivityFactor, Comment, HealthDeclaration, MeasurementDefinition, SignedDocument, User
+from app.models import ActivityFactor, Comment, HealthDeclaration, MeasurementDefinition, MeasurementSession, SignedDocument, User
 from app.pdf import charts
 from app.pdf.render import content_disposition, filename, html_to_pdf, render_html
 from app.schemas.nutrition import NutritionCalcIn
@@ -150,6 +150,49 @@ def measurements_pdf(
     audit.record(db, user, "export", "measurements_pdf", client.id, {"client_id": client.id, "client_name": client.full_name})
     db.commit()
     return _pdf(html, "measurements", client.full_name)
+
+
+# ---------------- one measurement session ----------------
+@router.get("/session/{session_id}")
+def session_pdf(session_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    s = db.get(MeasurementSession, session_id)
+    client = db.get(User, s.client_id) if s else None
+    if s is None or client is None or not permissions.can_access_client(user, client):
+        raise not_found(tr("الجلسة غير موجودة", "Session not found"))
+    vm = progress.value_map(s)
+    defs = db.scalars(select(MeasurementDefinition).order_by(MeasurementDefinition.sort_order)).all()
+    groups = []
+    for cat in ("vital", "body", "movement", "physical"):
+        rows = [
+            {"name": pick(d.name_ar, d.name_en), "unit": pick(d.unit, d.unit_en) if d.value_type == "number" else None, "value": value_display(vm[d.key])}
+            for d in defs
+            if d.category == cat and d.key in vm
+        ]
+        if rows:
+            groups.append((cat, rows))
+    stmt = select(Comment).where(Comment.session_id == s.id).order_by(Comment.created_at)
+    comment_rows = [
+        {"body": c.body, "author": c.author.full_name if c.author else "—", "date": c.created_at.date().isoformat()}
+        for c in db.scalars(stmt).unique()
+    ]
+    p = client.profile
+    html = render_html(
+        "session.html",
+        title_key="session",
+        coach_name=_coach_name(client),
+        client_name=client.full_name,
+        profile=p,
+        age=calc.age_on(p.birth_date, s.session_date) if p and p.birth_date else None,
+        session_date=s.session_date.isoformat(),
+        recorded_by=s.trainer.full_name if s.trainer else None,
+        notes=s.notes,
+        results=progress.session_results(db, client, s),
+        groups=groups,
+        comments=comment_rows,
+    )
+    audit.record(db, user, "export", "session_pdf", s.id, {"client_id": client.id, "client_name": client.full_name})
+    db.commit()
+    return _pdf(html, f"session_{s.session_date.isoformat()}", client.full_name)
 
 
 # ---------------- calculator ----------------

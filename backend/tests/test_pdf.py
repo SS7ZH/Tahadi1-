@@ -29,7 +29,9 @@ def captured(monkeypatch):
 
 def _session(client, h, cid, weight, day):
     body = {"session_date": day, "values": [{"key": "weight", "value_number": weight}, {"key": "waist", "value_number": 90}]}
-    assert client.post(f"{API}/clients/{cid}/sessions", json=body, headers=h).status_code == 201
+    r = client.post(f"{API}/clients/{cid}/sessions", json=body, headers=h)
+    assert r.status_code == 201
+    return r.json()["id"]
 
 
 def _filename(resp) -> str:
@@ -69,6 +71,30 @@ def test_measurements_pdf_permissions(client, users, auth, captured):
     assert client.get(f"{API}/pdf/measurements/{cid}", headers=auth("trainer_b")).status_code == 404
     assert client.get(f"{API}/pdf/measurements/{cid}", headers=auth("client_b")).status_code == 404
     assert client.get(f"{API}/pdf/measurements/{cid}").status_code == 401
+
+
+def test_session_pdf(client, users, auth, captured, db_session):
+    cid, coach = users["client_a"].id, auth("trainer_a")
+    _session(client, coach, cid, 92, "2026-08-01")
+    sid = _session(client, coach, cid, 88, "2026-09-01")
+
+    r = client.get(f"{API}/pdf/session/{sid}", headers=auth("client_a"))
+    assert r.status_code == 200 and r.headers["content-type"] == "application/pdf"
+    assert _filename(r) == f"tahadi_session_2026-09-01_عميل-أ_{TODAY}.pdf"
+    html = captured[-1]
+    assert "تقرير جلسة القياس" in html and "2026-09-01" in html and "88" in html
+    assert "2026-08-01" not in html  # only this session
+
+    client.get(f"{API}/pdf/session/{sid}?lang=en", headers=coach)
+    assert "Measurement session report" in captured[-1] and "Recorded by" in captured[-1]
+
+    assert client.get(f"{API}/pdf/session/{sid}", headers=auth("trainer_b")).status_code == 404
+    assert client.get(f"{API}/pdf/session/{sid}", headers=auth("client_b")).status_code == 404
+    assert client.get(f"{API}/pdf/session/{sid}").status_code == 401
+    assert client.get(f"{API}/pdf/session/999999", headers=coach).status_code == 404
+
+    db, Session = db_session
+    assert Session().query(AuditLog).filter(AuditLog.entity == "session_pdf").count() == 2
 
 
 def test_program_pdf(client, users, auth, captured):
@@ -158,7 +184,7 @@ def test_render_sample_pdfs(client, users, auth):
     out = os.environ.get("PDF_SAMPLES_DIR")
     cid, coach, player = users["client_a"].id, auth("trainer_a"), auth("client_a")
     for day, w in (("2026-07-01", 95), ("2026-08-01", 92), ("2026-09-01", 89)):
-        _session(client, coach, cid, w, day)
+        sid = _session(client, coach, cid, w, day)
     client.post(f"{API}/clients/{cid}/comments", json={"body": "تقدم ممتاز، استمر على نفس البرنامج"}, headers=coach)
     client.post(f"{API}/clients/{cid}/nutrition", json={}, headers=coach)
     program = client.post(
@@ -184,6 +210,7 @@ def test_render_sample_pdfs(client, users, auth):
     for lang in ("ar", "en"):
         responses = {
             "measurements": client.get(f"{API}/pdf/measurements/{cid}?lang={lang}&keys=weight,waist,bmi", headers=coach),
+            "session": client.get(f"{API}/pdf/session/{sid}?lang={lang}", headers=coach),
             "program": client.get(f"{API}/pdf/program/{program['id']}?lang={lang}", headers=coach),
             "calculator": client.post(f"{API}/pdf/calculator?lang={lang}", json={**calc, "client_id": cid}, headers=coach),
             **{d["kind"]: client.get(f"{API}/pdf/documents/{d['id']}?lang={lang}", headers=coach) for d in docs},
