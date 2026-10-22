@@ -345,3 +345,32 @@ DOCUMENT_TEMPLATES = [
 ]
 
 CHRONIC_CONDITIONS = ("diabetes", "hypertension", "heart_disease", "asthma", "joint_back", "other")
+
+
+# v6: default public home-page content (admin-editable; applied by migration 0006).
+HOME_FEATURE_KEYS = ("measurements", "programs", "nutrition", "reports", "questions")
+
+DEFAULT_HOME = {
+    "hero_title_ar": "تابع تقدّمك بالأرقام الحقيقية",
+    "hero_title_en": "Track your progress with real numbers",
+    "hero_text_ar": "منصة تجمع المدرب واللاعب في مكان واحد: قياسات دورية، برامج تدريب، سعرات وعناصر غذائية، وتقارير PDF واضحة.",
+    "hero_text_en": "One place for coach and player: regular measurements, training programs, calories and macros, and clear PDF reports.",
+    "features": [
+        {"key": "measurements", "title_ar": "القياسات", "title_en": "Measurements",
+         "text_ar": "قياسات حيوية وجسمية وحركية وبدنية مع رسوم بيانية توضّح التقدم.",
+         "text_en": "Vital, body, movement and fitness measurements with progress charts."},
+        {"key": "programs", "title_ar": "البرامج التدريبية", "title_en": "Training programs",
+         "text_ar": "برنامج أسبوعي من مدربك يوضّح تمرين اليوم بالمجموعات والتكرارات والكارديو.",
+         "text_en": "A weekly plan from your coach showing today's workout with sets, reps and cardio."},
+        {"key": "nutrition", "title_ar": "السعرات والعناصر الغذائية", "title_en": "Calories & macros",
+         "text_ar": "احتياجك اليومي من السعرات والبروتين والكربوهيدرات والدهون حسب هدفك.",
+         "text_en": "Your daily calories, protein, carbs and fat, based on your goal."},
+        {"key": "reports", "title_ar": "تقارير PDF", "title_en": "PDF reports",
+         "text_ar": "صدّر قياساتك وبرنامجك ومستنداتك كملفات PDF بالعربية أو الإنجليزية.",
+         "text_en": "Export your measurements, program and documents as PDF in Arabic or English."},
+        {"key": "questions", "title_ar": "اسأل مدربك", "title_en": "Ask your coach",
+         "text_ar": "أرسل سؤالك عن أي قياس أو يوم تدريب، وتابع رد المدرب في مكان واحد.",
+         "text_en": "Ask about any measurement or training day and follow your coach's reply in one place."},
+    ],
+    "contact": {"phone": "", "whatsapp": "", "email": ""},
+}

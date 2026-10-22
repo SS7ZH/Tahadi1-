@@ -24,6 +24,7 @@ from app.routers import (
     questions,
     reference,
     sessions,
+    site,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -67,7 +68,7 @@ def health(db: Session = Depends(get_db)):
     return {"status": "ok", "database": "ok"}
 
 
-for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents, pdf):
+for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents, pdf, site):
     api.include_router(r.router)
 
 app.include_router(api)

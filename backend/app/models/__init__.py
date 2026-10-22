@@ -12,6 +12,7 @@ from app.models.onboarding import (
     SubscriptionPlan,
 )
 from app.models.program import Exercise, Program, ProgramDay, ProgramItem
+from app.models.site import SiteSetting
 from app.models.reference import ActivityFactor, MeasurementDefinition
 from app.models.user import ClientProfile, User
 
@@ -39,4 +40,5 @@ __all__ = [
     "HealthDeclaration",
     "MedicalFile",
     "SignedDocument",
+    "SiteSetting",
 ]

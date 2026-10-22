@@ -10,6 +10,7 @@ import {
   MessageCircleQuestion,
   CreditCard,
   FileSignature,
+  Globe,
   Home,
   Moon,
   Salad,
@@ -54,6 +55,7 @@ function useNavItems(role: Role): NavItem[] {
       { to: '/admin/exercises', label: tr.nav.exercises, icon: <Dumbbell className={ic} />, menu: true },
       { to: '/admin/plans', label: tr.nav.plans, icon: <CreditCard className={ic} />, menu: true },
       { to: '/admin/templates', label: tr.nav.templates, icon: <FileSignature className={ic} />, menu: true },
+      { to: '/admin/site', label: tr.nav.siteContent, icon: <Globe className={ic} />, menu: true },
       { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} />, menu: true },
     ];
   if (role === 'trainer')
