@@ -15,7 +15,7 @@
   <td><div class="muted">{{ L.bmr }}</div><div class="big num">{{ results.bmr | num(0) if results.bmr else '—' }}</div><div>{{ L.kcal_day }}</div></td>
   <td><div class="muted">{{ L.tdee }}</div><div class="big num">{{ results.tdee | num(0) if results.tdee else '—' }}</div><div>{{ L.kcal_day }}</div></td>
 </tr></table>
-{% if results.blood_pressure %}<p>{{ L.bp }}: <b class="num">{{ results.blood_pressure.systolic }}/{{ results.blood_pressure.diastolic }}</b> mmHg — {{ results.blood_pressure.label }}</p>{% endif %}
+{% if results.blood_pressure %}<p>{{ L.bp }}: <b class="num">{{ (results.blood_pressure.systolic ~ '/' ~ results.blood_pressure.diastolic ~ ' mmHg') | ltr }}</b> — {{ results.blood_pressure.label }}</p>{% endif %}
 
 {% if plan %}
 <h3>{{ L.nutrition }} — {{ L.nutrition_goals[plan.nutrition_goal] }}</h3>

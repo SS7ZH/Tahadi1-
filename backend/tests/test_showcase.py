@@ -60,7 +60,7 @@ def test_showcase_pdfs(client, seeded):
     for lang in ("ar", "en"):
         responses = {
             "1_measurements": client.get(f"{API}/pdf/measurements/{cid}?lang={lang}&keys=weight,waist,body_fat,bmi", headers=coach),
-            "2_session": client.get(f"{API}/pdf/session/{sessions[-1]['id']}?lang={lang}", headers=coach),
+            "2_session": client.get(f"{API}/pdf/session/{sessions[0]['id']}?lang={lang}", headers=coach),
             "3_program": client.get(f"{API}/pdf/program/{program_id}?lang={lang}", headers=coach),
             "4_calculator": client.post(f"{API}/pdf/calculator?lang={lang}", json=calc, headers=coach),
             **{f"5_{d['kind']}": client.get(f"{API}/pdf/documents/{d['id']}?lang={lang}", headers=coach) for d in docs},
