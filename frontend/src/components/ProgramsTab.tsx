@@ -114,6 +114,20 @@ function EditorActions({ program, client, onDone, onDeleted }: { program: Progra
           {tr.common.delete}
         </Button>
       )}
+      <Button
+        variant="ghost"
+        icon={<FileDown className="h-4 w-4" />}
+        onClick={async () => {
+          try {
+            await downloadPdf(`/pdf/program/${program.id}`);
+            toast.success(tr.pdf.exported);
+          } catch (e) {
+            toast.error(errorMessage(e) || tr.pdf.exportFailed);
+          }
+        }}
+      >
+        {tr.pdf.exportPdf}
+      </Button>
       <Button variant="ghost" icon={<Eye className="h-4 w-4" />} onClick={() => onDone(program.id)}>
         {tr.program.view}
       </Button>
@@ -254,6 +268,23 @@ export function ProgramsTab({ client, hasChronic }: { client: User; hasChronic?:
           <Button size="sm" variant="outline" icon={<Pencil className="h-4 w-4" />} onClick={() => setMode({ kind: 'edit', id: mode.id })}>
             {tr.program.edit}
           </Button>
+          {viewed.data && (
+            <Button
+              size="sm"
+              variant="outline"
+              icon={<FileDown className="h-4 w-4" />}
+              onClick={async () => {
+                try {
+                  await downloadPdf(`/pdf/program/${mode.id}`);
+                  toast.success(tr.pdf.exported);
+                } catch (e) {
+                  toast.error(errorMessage(e) || tr.pdf.exportFailed);
+                }
+              }}
+            >
+              {tr.pdf.exportPdf}
+            </Button>
+          )}
         </div>
         {viewed.isLoading ? <Skeleton className="h-96" /> : viewed.data ? <ProgramView program={viewed.data} /> : <ErrorState message={errorMessage(viewed.error)} />}
       </div>
