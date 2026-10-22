@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
 import { serverWake } from '@/api/client';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 
 /** Shown when any request takes longer than 3 seconds (Render free plan cold start). */
 export function ServerWakeBanner() {
@@ -16,8 +16,8 @@ export function ServerWakeBanner() {
       <div className="flex max-w-md items-center gap-3 rounded-2xl border border-primary/30 bg-surface px-4 py-3 shadow-xl">
         <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
         <div>
-          <p className="text-sm font-bold">{ar.server.waking}</p>
-          <p className="text-xs text-muted">{ar.server.wakingHint}</p>
+          <p className="text-sm font-bold">{tr.server.waking}</p>
+          <p className="text-xs text-muted">{tr.server.wakingHint}</p>
         </div>
       </div>
     </div>

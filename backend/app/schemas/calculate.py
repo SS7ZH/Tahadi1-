@@ -16,6 +16,7 @@ class BmrTdeeOut(BaseModel):
     tdee: float
     activity_factor: float
     activity_name_ar: str
+    activity_name_en: str | None = None
     targets: dict
     bmi: dict | None
     note: str

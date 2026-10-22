@@ -18,7 +18,7 @@ import {
   type ValueInput,
 } from '@/api/types';
 import { useDefinitions, useInvalidateClient, useSummary } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { loc, tr } from '@/i18n';
 import { todayISO } from '@/lib/format';
 import { Button, Card, ErrorState, Input, Skeleton, Textarea } from './ui';
 
@@ -50,8 +50,8 @@ function buildSchema(defs: Definition[]) {
     .object({
       session_date: z
         .string()
-        .min(1, ar.form.dateRequired)
-        .refine((v) => v <= todayISO(), ar.form.futureDate),
+        .min(1, tr.form.dateRequired)
+        .refine((v) => v <= todayISO(), tr.form.futureDate),
       notes: z.string().max(5000),
       values: z.record(cell),
     })
@@ -63,21 +63,21 @@ function buildSchema(defs: Definition[]) {
         if (d.value_type === 'number') {
           const v = toNum(c.n);
           if (v === null) continue;
-          if (Number.isNaN(v)) ctx.addIssue({ code: 'custom', path, message: ar.form.invalidNumber });
+          if (Number.isNaN(v)) ctx.addIssue({ code: 'custom', path, message: tr.form.invalidNumber });
           else if ((d.min_value !== null && v < d.min_value) || (d.max_value !== null && v > d.max_value))
-            ctx.addIssue({ code: 'custom', path, message: ar.form.rangeError(d.name_ar, d.min_value ?? 0, d.max_value ?? 0) });
+            ctx.addIssue({ code: 'custom', path, message: tr.form.rangeError(loc(d.name_ar, d.name_en), d.min_value ?? 0, d.max_value ?? 0) });
         }
         if (d.value_type === 'blood_pressure') {
           const s = toNum(c.n);
           const di = toNum(c.d);
           if (s === null && di === null) continue;
           if (s === null || di === null || Number.isNaN(s) || Number.isNaN(di))
-            ctx.addIssue({ code: 'custom', path, message: ar.form.bpBoth });
+            ctx.addIssue({ code: 'custom', path, message: tr.form.bpBoth });
           else if (s < BP.systolic[0] || s > BP.systolic[1])
-            ctx.addIssue({ code: 'custom', path, message: ar.form.rangeError(ar.form.systolic, BP.systolic[0], BP.systolic[1]) });
+            ctx.addIssue({ code: 'custom', path, message: tr.form.rangeError(tr.form.systolic, BP.systolic[0], BP.systolic[1]) });
           else if (di < BP.diastolic[0] || di > BP.diastolic[1])
-            ctx.addIssue({ code: 'custom', path, message: ar.form.rangeError(ar.form.diastolic, BP.diastolic[0], BP.diastolic[1]) });
-          else if (di >= s) ctx.addIssue({ code: 'custom', path, message: ar.form.bpOrder });
+            ctx.addIssue({ code: 'custom', path, message: tr.form.rangeError(tr.form.diastolic, BP.diastolic[0], BP.diastolic[1]) });
+          else if (di >= s) ctx.addIssue({ code: 'custom', path, message: tr.form.bpOrder });
         }
       }
     });
@@ -143,7 +143,7 @@ function FieldInput({
   const prevText = previous ? previous.display : undefined;
   const hint = prevText ? (
     <span>
-      {ar.common.previous}: <span className="num font-semibold text-ink/80">{prevText}</span>
+      {tr.common.previous}: <span className="num font-semibold text-ink/80">{prevText}</span>
     </span>
   ) : undefined;
 
@@ -152,25 +152,25 @@ function FieldInput({
     return (
       <div className="flex flex-col gap-1.5 sm:col-span-2">
         <span className="text-sm font-medium">
-          {def.name_ar} <span className="text-xs text-muted">({def.unit})</span>
+          {loc(def.name_ar, def.name_en)} <span className="text-xs text-muted">({loc(def.unit, def.unit_en)})</span>
         </span>
         <div className="grid grid-cols-2 gap-2">
           <Input
-            aria-label={`${def.name_ar} ${ar.form.systolic}`}
+            aria-label={`${loc(def.name_ar, def.name_en)} ${tr.form.systolic}`}
             type="number"
             inputMode="numeric"
             dir="ltr"
-            placeholder={ps ?? ar.form.systolic}
-            suffix={ar.form.systolic}
+            placeholder={ps ?? tr.form.systolic}
+            suffix={tr.form.systolic}
             {...register(`values.${def.key}.n`)}
           />
           <Input
-            aria-label={`${def.name_ar} ${ar.form.diastolic}`}
+            aria-label={`${loc(def.name_ar, def.name_en)} ${tr.form.diastolic}`}
             type="number"
             inputMode="numeric"
             dir="ltr"
-            placeholder={pd ?? ar.form.diastolic}
-            suffix={ar.form.diastolic}
+            placeholder={pd ?? tr.form.diastolic}
+            suffix={tr.form.diastolic}
             {...register(`values.${def.key}.d`)}
           />
         </div>
@@ -183,17 +183,17 @@ function FieldInput({
     return (
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium" htmlFor={`f-${def.key}`}>
-          {def.name_ar} {def.unit && <span className="text-xs text-muted">({def.unit})</span>}
+          {loc(def.name_ar, def.name_en)} {def.unit && <span className="text-xs text-muted">({loc(def.unit, def.unit_en)})</span>}
         </label>
         <select id={`f-${def.key}`} className="field-input" {...register(`values.${def.key}.n`)}>
-          <option value="">{ar.form.choose}</option>
+          <option value="">{tr.form.choose}</option>
           {def.choices?.map((c) => (
             <option key={c.value} value={c.value}>
-              {c.label}
+              {loc(c.label, c.label_en)}
             </option>
           ))}
         </select>
-        <input className="field-input py-2 text-xs" placeholder={ar.form.choiceNotes} {...register(`values.${def.key}.t`)} />
+        <input className="field-input py-2 text-xs" placeholder={tr.form.choiceNotes} {...register(`values.${def.key}.t`)} />
         {err ? <p className="text-xs font-medium text-bad">{err}</p> : hint && <p className="text-xs text-muted">{hint}</p>}
       </div>
     );
@@ -202,9 +202,9 @@ function FieldInput({
   if (def.value_type === 'text') {
     return (
       <Textarea
-        label={def.name_ar}
+        label={loc(def.name_ar, def.name_en)}
         wrapperClassName="sm:col-span-2"
-        placeholder={previous?.display || ar.form.textPlaceholder}
+        placeholder={previous?.display || tr.form.textPlaceholder}
         rows={3}
         {...register(`values.${def.key}.t`)}
       />
@@ -213,13 +213,13 @@ function FieldInput({
 
   return (
     <Input
-      label={def.name_ar}
+      label={loc(def.name_ar, def.name_en)}
       type="number"
       step="any"
       inputMode="decimal"
       dir="ltr"
       placeholder={prevText ?? ''}
-      suffix={def.unit ?? undefined}
+      suffix={loc(def.unit, def.unit_en) || undefined}
       error={err}
       hint={hint}
       {...register(`values.${def.key}.n`)}
@@ -253,9 +253,9 @@ function Section({
         className="flex w-full items-center gap-3 px-4 py-3.5 text-start transition hover:bg-surface-2/60 sm:px-5"
       >
         <span className="text-primary">{categoryIcon[category]}</span>
-        <span className="flex-1 font-bold">{ar.categories[category]}</span>
+        <span className="flex-1 font-bold">{tr.categories[category]}</span>
         <span className="num text-xs text-muted">
-          {filled}/{defs.length} {ar.form.filled}
+          {filled}/{defs.length} {tr.form.filled}
         </span>
         <ChevronDown className={clsx('h-5 w-5 text-muted transition', open && 'rotate-180')} />
       </button>
@@ -325,7 +325,7 @@ function SessionFormInner({
       return session ? sessionsApi.update(session.id, body) : clientsApi.createSession(clientId, body);
     },
     onSuccess: async (s) => {
-      toast.success(session ? ar.form.updated : ar.form.created);
+      toast.success(session ? tr.form.updated : tr.form.created);
       await invalidate(clientId);
       onDone?.(s);
     },
@@ -349,14 +349,14 @@ function SessionFormInner({
       <Card className="grid gap-4 p-4 sm:grid-cols-[14rem_1fr] sm:p-5">
         <Input
           type="date"
-          label={ar.form.sessionDate}
+          label={tr.form.sessionDate}
           max={todayISO()}
           required
           error={errors.session_date?.message}
           {...register('session_date')}
         />
-        <Textarea label={ar.form.sessionNotes} rows={2} {...register('notes')} />
-        <p className="text-xs text-muted sm:col-span-2">{ar.form.allOptional}</p>
+        <Textarea label={tr.form.sessionNotes} rows={2} {...register('notes')} />
+        <p className="text-xs text-muted sm:col-span-2">{tr.form.allOptional}</p>
       </Card>
 
       <div className="flex justify-end">
@@ -365,7 +365,7 @@ function SessionFormInner({
           size="sm"
           onClick={() => setOpenCats({ vital: !allOpen, body: !allOpen, movement: !allOpen, physical: !allOpen })}
         >
-          {allOpen ? ar.form.collapseAll : ar.form.expandAll}
+          {allOpen ? tr.form.collapseAll : tr.form.expandAll}
         </Button>
       </div>
 
@@ -390,11 +390,11 @@ function SessionFormInner({
 
       <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-10 flex gap-2 rounded-2xl border border-line bg-surface/95 p-3 shadow-lg backdrop-blur md:bottom-4">
         <Button type="submit" size="lg" loading={save.isPending} icon={<Save className="h-5 w-5" />} className="flex-1 sm:flex-none">
-          {session ? ar.form.submitEdit : ar.form.submitNew}
+          {session ? tr.form.submitEdit : tr.form.submitNew}
         </Button>
         {onCancel && (
           <Button variant="secondary" size="lg" onClick={onCancel}>
-            {ar.common.cancel}
+            {tr.common.cancel}
           </Button>
         )}
       </div>

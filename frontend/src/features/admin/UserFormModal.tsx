@@ -8,13 +8,14 @@ import { adminApi, type AdminUserBody } from '@/api/endpoints';
 import type { Role, User } from '@/api/types';
 import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
 import { useActivityFactors, useAdminUsers } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { loc, tr } from '@/i18n';
 import { todayISO } from '@/lib/format';
 
-const schema = z
+const makeSchema = () =>
+  z
   .object({
-    full_name: z.string().trim().min(2, ar.common.required).max(120),
-    email: z.string().trim().email(ar.auth.invalidEmail),
+    full_name: z.string().trim().min(2, tr.common.required).max(120),
+    email: z.string().trim().email(tr.auth.invalidEmail),
     phone: z.string().trim().max(30).optional(),
     password: z.string(),
     role: z.enum(['admin', 'trainer', 'client']),
@@ -28,17 +29,17 @@ const schema = z
     editing: z.boolean(),
   })
   .superRefine((v, ctx) => {
-    if (!v.editing && v.password.length < 8) ctx.addIssue({ code: 'custom', path: ['password'], message: ar.profile.passwordMin });
+    if (!v.editing && v.password.length < 8) ctx.addIssue({ code: 'custom', path: ['password'], message: tr.profile.passwordMin });
     if (v.editing && v.password && v.password.length < 8)
-      ctx.addIssue({ code: 'custom', path: ['password'], message: ar.profile.passwordMin });
+      ctx.addIssue({ code: 'custom', path: ['password'], message: tr.profile.passwordMin });
     if (v.role === 'client') {
-      if (!v.birth_date) ctx.addIssue({ code: 'custom', path: ['birth_date'], message: ar.common.required });
+      if (!v.birth_date) ctx.addIssue({ code: 'custom', path: ['birth_date'], message: tr.common.required });
       const h = Number(v.height_cm);
       if (!v.height_cm || Number.isNaN(h) || h < 100 || h > 250)
-        ctx.addIssue({ code: 'custom', path: ['height_cm'], message: ar.client.heightRange });
+        ctx.addIssue({ code: 'custom', path: ['height_cm'], message: tr.client.heightRange });
     }
   });
-type Values = z.infer<typeof schema>;
+type Values = z.infer<ReturnType<typeof makeSchema>>;
 
 export function UserFormModal({ open, onClose, user, defaultRole }: { open: boolean; onClose: () => void; user?: User | null; defaultRole?: Role }) {
   const qc = useQueryClient();
@@ -53,7 +54,7 @@ export function UserFormModal({ open, onClose, user, defaultRole }: { open: bool
     control,
     formState: { errors },
   } = useForm<Values>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(makeSchema()),
     values: {
       full_name: user?.full_name ?? '',
       email: user?.email ?? '',
@@ -90,7 +91,7 @@ export function UserFormModal({ open, onClose, user, defaultRole }: { open: bool
       return adminApi.createUser({ ...body, role: v.role, trainer_id: v.role === 'client' && v.trainer_id ? Number(v.trainer_id) : null });
     },
     onSuccess: async () => {
-      toast.success(editing ? ar.admin.userUpdated : ar.admin.userCreated);
+      toast.success(editing ? tr.admin.userUpdated : tr.admin.userCreated);
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['admin'] }),
         qc.invalidateQueries({ queryKey: ['clients'] }),
@@ -106,31 +107,31 @@ export function UserFormModal({ open, onClose, user, defaultRole }: { open: bool
       open={open}
       onClose={onClose}
       size="lg"
-      title={editing ? ar.admin.editUser : ar.admin.newUser}
+      title={editing ? tr.admin.editUser : tr.admin.newUser}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            {ar.common.cancel}
+            {tr.common.cancel}
           </Button>
           <Button type="submit" form="user-form" loading={save.isPending}>
-            {editing ? ar.common.save : ar.common.create}
+            {editing ? tr.common.save : tr.common.create}
           </Button>
         </>
       }
     >
       <form id="user-form" className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit((v) => save.mutate(v))} noValidate>
-        <Select label={ar.admin.role} disabled={editing} {...register('role')}>
+        <Select label={tr.admin.role} disabled={editing} {...register('role')}>
           {(['client', 'trainer', 'admin'] as Role[]).map((r) => (
             <option key={r} value={r}>
-              {ar.roles[r]}
+              {tr.roles[r]}
             </option>
           ))}
         </Select>
-        <Input label={ar.client.fullName} error={errors.full_name?.message} {...register('full_name')} />
-        <Input label={ar.client.email} type="email" dir="ltr" autoComplete="off" error={errors.email?.message} {...register('email')} />
-        <Input label={ar.client.phone} type="tel" dir="ltr" {...register('phone')} />
+        <Input label={tr.client.fullName} error={errors.full_name?.message} {...register('full_name')} />
+        <Input label={tr.client.email} type="email" dir="ltr" autoComplete="off" error={errors.email?.message} {...register('email')} />
+        <Input label={tr.client.phone} type="tel" dir="ltr" {...register('phone')} />
         <Input
-          label={editing ? ar.admin.newPasswordOptional : ar.client.password}
+          label={editing ? tr.admin.newPasswordOptional : tr.client.password}
           type="password"
           dir="ltr"
           autoComplete="new-password"
@@ -142,8 +143,8 @@ export function UserFormModal({ open, onClose, user, defaultRole }: { open: bool
         {role === 'client' && (
           <>
             {!editing && (
-              <Select label={ar.client.trainer} {...register('trainer_id')}>
-                <option value="">{ar.admin.noTrainer}</option>
+              <Select label={tr.client.trainer} {...register('trainer_id')}>
+                <option value="">{tr.admin.noTrainer}</option>
                 {trainers.data
                   ?.filter((t) => t.is_active)
                   .map((t) => (
@@ -153,27 +154,27 @@ export function UserFormModal({ open, onClose, user, defaultRole }: { open: bool
                   ))}
               </Select>
             )}
-            <Select label={ar.client.sex} {...register('sex')}>
-              <option value="male">{ar.sex.male}</option>
-              <option value="female">{ar.sex.female}</option>
+            <Select label={tr.client.sex} {...register('sex')}>
+              <option value="male">{tr.sex.male}</option>
+              <option value="female">{tr.sex.female}</option>
             </Select>
-            <Input label={ar.client.birthDate} type="date" max={todayISO()} error={errors.birth_date?.message} {...register('birth_date')} />
-            <Input label={ar.client.height} type="number" step="any" dir="ltr" error={errors.height_cm?.message} {...register('height_cm')} />
-            <Select label={ar.client.goal} {...register('goal')}>
-              {Object.entries(ar.goals).map(([k, v]) => (
+            <Input label={tr.client.birthDate} type="date" max={todayISO()} error={errors.birth_date?.message} {...register('birth_date')} />
+            <Input label={tr.client.height} type="number" step="any" dir="ltr" error={errors.height_cm?.message} {...register('height_cm')} />
+            <Select label={tr.client.goal} {...register('goal')}>
+              {Object.entries(tr.goals).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v}
                 </option>
               ))}
             </Select>
-            <Select label={ar.client.activity} {...register('activity_key')}>
+            <Select label={tr.client.activity} {...register('activity_key')}>
               {factors.data?.map((f) => (
                 <option key={f.key} value={f.key}>
-                  {f.name_ar} (×{f.factor})
+                  {loc(f.name_ar, f.name_en)} (×{f.factor})
                 </option>
               ))}
             </Select>
-            <Textarea label={ar.client.notes} rows={2} wrapperClassName="sm:col-span-2" {...register('notes')} />
+            <Textarea label={tr.client.notes} rows={2} wrapperClassName="sm:col-span-2" {...register('notes')} />
           </>
         )}
       </form>

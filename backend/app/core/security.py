@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.core.errors import AppError
+from app.core.i18n import tr
 
 ALGORITHM = "HS256"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -48,9 +49,9 @@ def decode_token(token: str, kind: str) -> dict:
     try:
         payload = jwt.decode(token, secret, algorithms=[ALGORITHM])
     except jwt.ExpiredSignatureError:
-        raise AppError(401, "TOKEN_EXPIRED", "انتهت صلاحية الجلسة، سجّل الدخول مجدداً")
+        raise AppError(401, "TOKEN_EXPIRED", tr("انتهت صلاحية الجلسة، سجّل الدخول مجدداً", "Your session expired, please log in again"))
     except jwt.PyJWTError:
-        raise AppError(401, "INVALID_TOKEN", "رمز الدخول غير صالح")
+        raise AppError(401, "INVALID_TOKEN", tr("رمز الدخول غير صالح", "Invalid login token"))
     if payload.get("type") != kind or not str(payload.get("sub", "")).isdigit():
-        raise AppError(401, "INVALID_TOKEN", "رمز الدخول غير صالح")
+        raise AppError(401, "INVALID_TOKEN", tr("رمز الدخول غير صالح", "Invalid login token"))
     return payload

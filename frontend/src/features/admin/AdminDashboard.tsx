@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { errorMessage } from '@/api/client';
 import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Skeleton, SkeletonCards, StatCard } from '@/components/ui';
 import { useAdminStats } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 import { fmtDateTime } from '@/lib/format';
 
 export function AdminDashboard() {
@@ -11,7 +11,7 @@ export function AdminDashboard() {
 
   return (
     <div>
-      <PageHeader title={ar.admin.dashboard} />
+      <PageHeader title={tr.admin.dashboard} />
       {isLoading ? (
         <>
           <SkeletonCards count={5} className="lg:grid-cols-5" />
@@ -23,20 +23,20 @@ export function AdminDashboard() {
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
             <Link to="/admin/users?role=trainer">
-              <StatCard label={ar.admin.trainers} value={<span className="num">{data.trainers}</span>} icon={<Dumbbell className="h-4 w-4" />} />
+              <StatCard label={tr.admin.trainers} value={<span className="num">{data.trainers}</span>} icon={<Dumbbell className="h-4 w-4" />} />
             </Link>
             <Link to="/admin/users?role=client">
-              <StatCard label={ar.admin.clients} value={<span className="num">{data.clients}</span>} icon={<Users className="h-4 w-4" />} tone="accent" />
+              <StatCard label={tr.admin.clients} value={<span className="num">{data.clients}</span>} icon={<Users className="h-4 w-4" />} tone="accent" />
             </Link>
             <StatCard
-              label={ar.admin.measurementsMonth}
+              label={tr.admin.measurementsMonth}
               value={<span className="num">{data.measurements_this_month}</span>}
               icon={<CalendarCheck className="h-4 w-4" />}
               tone="good"
             />
             <Link to="/admin/questions">
               <StatCard
-                label={ar.admin.openQuestions}
+                label={tr.admin.openQuestions}
                 value={<span className="num">{data.open_questions}</span>}
                 icon={<MessageCircleQuestion className="h-4 w-4" />}
                 tone={data.open_questions ? 'warn' : 'neutral'}
@@ -44,7 +44,7 @@ export function AdminDashboard() {
             </Link>
             <Link to="/admin/assign">
               <StatCard
-                label={ar.admin.unassigned}
+                label={tr.admin.unassigned}
                 value={<span className="num">{data.unassigned_clients}</span>}
                 icon={<UserX className="h-4 w-4" />}
                 tone={data.unassigned_clients ? 'bad' : 'neutral'}
@@ -53,16 +53,16 @@ export function AdminDashboard() {
           </div>
 
           <Card className="mt-5">
-            <CardHeader title={ar.admin.recentActivity} icon={<Activity className="h-5 w-5" />} />
+            <CardHeader title={tr.admin.recentActivity} icon={<Activity className="h-5 w-5" />} />
             {data.recent_activity.length === 0 ? (
-              <EmptyState title={ar.admin.noActivity} />
+              <EmptyState title={tr.admin.noActivity} />
             ) : (
               <ul className="divide-y divide-line">
                 {data.recent_activity.map((a) => (
                   <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
                     <p className="text-sm">
-                      <b>{a.actor_name ?? '—'}</b> {ar.admin.actions[a.action] ?? a.action}{' '}
-                      {ar.admin.entities[a.entity] ?? a.entity}
+                      <b>{a.actor_name ?? '—'}</b> {tr.admin.actions[a.action] ?? a.action}{' '}
+                      {tr.admin.entities[a.entity] ?? a.entity}
                       {a.client_name && <span className="text-muted"> — {a.client_name}</span>}
                     </p>
                     <span className="shrink-0 text-[11px] text-muted">{fmtDateTime(a.timestamp)}</span>

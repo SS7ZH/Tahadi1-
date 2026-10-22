@@ -20,6 +20,10 @@
           var t = localStorage.getItem('tahadi-theme') || 'system';
           var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
+          if (localStorage.getItem('tahadi-lang') === 'en') {
+            document.documentElement.lang = 'en';
+            document.documentElement.dir = 'ltr';
+          }
         } catch (e) {}
       })();
     </script>

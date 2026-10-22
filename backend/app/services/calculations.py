@@ -1,6 +1,8 @@
 """Pure health/fitness calculations. No database access here, so everything is trivially unit-testable."""
 from datetime import date
 
+from app.core.i18n import tr
+
 FAT_LOSS_DEFICIT = 500
 MUSCLE_GAIN_SURPLUS = 300
 
@@ -42,12 +44,12 @@ def bmi(weight_kg: float, height_cm: float) -> float:
 
 def bmi_category(value: float) -> tuple[str, str]:
     if value < 18.5:
-        return "underweight", "نقص وزن"
+        return "underweight", tr("نقص وزن", "Underweight")
     if value < 25:
-        return "normal", "طبيعي"
+        return "normal", tr("طبيعي", "Normal")
     if value < 30:
-        return "overweight", "زيادة وزن"
-    return "obese", "سمنة"
+        return "overweight", tr("زيادة وزن", "Overweight")
+    return "obese", tr("سمنة", "Obese")
 
 
 def waist_hip_ratio(waist_cm: float, hip_cm: float) -> float:
@@ -57,19 +59,19 @@ def waist_hip_ratio(waist_cm: float, hip_cm: float) -> float:
 def whr_risk(value: float, sex: str) -> tuple[str, str]:
     threshold = 0.90 if sex == "male" else 0.85
     if value > threshold:
-        return "high", "مرتفع"
-    return "normal", "طبيعي"
+        return "high", tr("مرتفع", "High")
+    return "normal", tr("طبيعي", "Normal")
 
 
 def blood_pressure_category(systolic: float, diastolic: float) -> tuple[str, str]:
     """AHA categories (the higher of the two readings decides)."""
     if systolic >= 140 or diastolic >= 90:
-        return "stage2", "ارتفاع درجة ثانية"
+        return "stage2", tr("ارتفاع درجة ثانية", "Hypertension stage 2")
     if systolic >= 130 or diastolic >= 80:
-        return "stage1", "ارتفاع درجة أولى"
+        return "stage1", tr("ارتفاع درجة أولى", "Hypertension stage 1")
     if systolic >= 120:
-        return "elevated", "مرتفع قليلاً"
-    return "normal", "طبيعي"
+        return "elevated", tr("مرتفع قليلاً", "Elevated")
+    return "normal", tr("طبيعي", "Normal")
 
 
 def compute_results(
@@ -86,6 +88,7 @@ def compute_results(
     activity_factor: float | None = None,
     activity_key: str | None = None,
     activity_name_ar: str | None = None,
+    activity_name_en: str | None = None,
 ) -> dict:
     """Everything derivable from one set of values. Missing inputs yield None, never an error."""
     age = age_on(birth_date, on_date) if birth_date else None
@@ -125,6 +128,6 @@ def compute_results(
         "tdee": round(tdee_value, 2) if tdee_value is not None else None,
         "targets": targets,
         "activity": (
-            {"key": activity_key, "name_ar": activity_name_ar, "factor": activity_factor} if activity_factor else None
+            {"key": activity_key, "name_ar": activity_name_ar, "name_en": activity_name_en, "factor": activity_factor} if activity_factor else None
         ),
     }

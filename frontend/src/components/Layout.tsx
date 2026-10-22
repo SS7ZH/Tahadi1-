@@ -19,7 +19,8 @@ import type { Role } from '@/api/types';
 import { useAuth, useCurrentUser, homePathFor } from '@/hooks/useAuth';
 import { useInbox } from '@/hooks/queries';
 import { useTheme } from '@/hooks/useTheme';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
+import { LanguageSwitch } from './LanguageSwitch';
 import { Logo } from './Logo';
 import { CountBadge, IconButton } from './ui';
 
@@ -37,26 +38,26 @@ function useNavItems(role: Role): NavItem[] {
   const ic = 'h-5 w-5';
   if (role === 'admin')
     return [
-      { to: '/admin', label: ar.nav.dashboard, icon: <LayoutDashboard className={ic} />, end: true },
-      { to: '/admin/users', label: ar.nav.users, icon: <Users className={ic} /> },
-      { to: '/admin/assign', label: ar.nav.assign, icon: <Link2 className={ic} /> },
-      { to: '/admin/questions', label: ar.nav.inbox, icon: <MessageCircleQuestion className={ic} />, badge: open },
-      { to: '/admin/settings', label: ar.nav.settings, icon: <SlidersHorizontal className={ic} /> },
-      { to: '/calculator', label: ar.nav.calculator, icon: <Calculator className={ic} /> },
+      { to: '/admin', label: tr.nav.dashboard, icon: <LayoutDashboard className={ic} />, end: true },
+      { to: '/admin/users', label: tr.nav.users, icon: <Users className={ic} /> },
+      { to: '/admin/assign', label: tr.nav.assign, icon: <Link2 className={ic} /> },
+      { to: '/admin/questions', label: tr.nav.inbox, icon: <MessageCircleQuestion className={ic} />, badge: open },
+      { to: '/admin/settings', label: tr.nav.settings, icon: <SlidersHorizontal className={ic} /> },
+      { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} /> },
     ];
   if (role === 'trainer')
     return [
-      { to: '/trainer', label: ar.nav.trainerHome, icon: <Users className={ic} />, end: true },
-      { to: '/trainer/questions', label: ar.nav.inbox, icon: <MessageCircleQuestion className={ic} />, badge: open },
-      { to: '/calculator', label: ar.nav.calculator, icon: <Calculator className={ic} /> },
-      { to: '/profile', label: ar.nav.profile, icon: <UserRound className={ic} /> },
+      { to: '/trainer', label: tr.nav.trainerHome, icon: <Users className={ic} />, end: true },
+      { to: '/trainer/questions', label: tr.nav.inbox, icon: <MessageCircleQuestion className={ic} />, badge: open },
+      { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} /> },
+      { to: '/profile', label: tr.nav.profile, icon: <UserRound className={ic} /> },
     ];
   return [
-    { to: '/me', label: ar.nav.myProgress, icon: <TrendingUp className={ic} />, end: true },
-    { to: '/me/history', label: ar.nav.myHistory, icon: <History className={ic} /> },
-    { to: '/me/ask', label: ar.nav.ask, icon: <MessageCircleQuestion className={ic} /> },
-    { to: '/calculator', label: ar.nav.calculator, icon: <Calculator className={ic} /> },
-    { to: '/profile', label: ar.nav.profile, icon: <UserRound className={ic} /> },
+    { to: '/me', label: tr.nav.myProgress, icon: <TrendingUp className={ic} />, end: true },
+    { to: '/me/history', label: tr.nav.myHistory, icon: <History className={ic} /> },
+    { to: '/me/ask', label: tr.nav.ask, icon: <MessageCircleQuestion className={ic} /> },
+    { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} /> },
+    { to: '/profile', label: tr.nav.profile, icon: <UserRound className={ic} /> },
   ];
 }
 
@@ -88,18 +89,18 @@ function UserMenu() {
         </span>
         <span className="hidden text-start leading-tight sm:block">
           <span className="block max-w-[10rem] truncate text-sm font-semibold">{user.full_name}</span>
-          <span className="block text-[11px] text-muted">{ar.roles[user.role]}</span>
+          <span className="block text-[11px] text-muted">{tr.roles[user.role]}</span>
         </span>
       </button>
       {open && (
         <div role="menu" className="absolute end-0 top-full z-40 mt-2 w-52 overflow-hidden rounded-2xl border border-line bg-surface p-1 shadow-xl">
           <Link role="menuitem" to="/profile" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-surface-2">
             <UserRound className="h-4 w-4 text-muted" />
-            {ar.nav.profile}
+            {tr.nav.profile}
           </Link>
           <Link role="menuitem" to="/calculator" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-surface-2">
             <Calculator className="h-4 w-4 text-muted" />
-            {ar.nav.calculator}
+            {tr.nav.calculator}
           </Link>
           <button
             role="menuitem"
@@ -108,7 +109,7 @@ function UserMenu() {
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-bad hover:bg-bad/10"
           >
             <LogOut className="h-4 w-4" />
-            {ar.nav.logout}
+            {tr.nav.logout}
           </button>
         </div>
       )}
@@ -130,7 +131,7 @@ export function Layout() {
           <Link to={homePathFor(user.role)} className="shrink-0">
             <Logo />
           </Link>
-          <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label={ar.nav.menu}>
+          <nav className="hidden flex-1 items-center gap-1 md:flex" aria-label={tr.nav.menu}>
             {items.map((item) => (
               <NavLink
                 key={item.to}
@@ -149,7 +150,8 @@ export function Layout() {
             ))}
           </nav>
           <div className="ms-auto flex items-center gap-1">
-            <IconButton label={ar.theme.toggle} onClick={toggle}>
+            <LanguageSwitch compact />
+            <IconButton label={tr.theme.toggle} onClick={toggle}>
               {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </IconButton>
             <UserMenu />
@@ -162,7 +164,7 @@ export function Layout() {
       </main>
 
       <nav
-        aria-label={ar.nav.menu}
+        aria-label={tr.nav.menu}
         className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
         <div className="mx-auto flex max-w-lg">

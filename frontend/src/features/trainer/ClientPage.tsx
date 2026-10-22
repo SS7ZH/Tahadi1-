@@ -12,7 +12,7 @@ import { SummaryView } from '@/components/SummaryView';
 import { Badge, Button, Card, ErrorState, Skeleton, Tabs, type TabItem } from '@/components/ui';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { useActivityFactors, useClient, useQuestions } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { loc, tr } from '@/i18n';
 import { fmtDate, fmtNumber } from '@/lib/format';
 import { ClientFormModal } from './ClientFormModal';
 
@@ -51,19 +51,19 @@ export function ClientPage() {
   const activity = factors.data?.find((f) => f.key === p?.activity_key);
 
   const items: TabItem<Tab>[] = [
-    { value: 'summary', label: ar.tabs.summary, icon: <LayoutGrid className="h-4 w-4" /> },
-    { value: 'progress', label: ar.tabs.progress, icon: <LineChart className="h-4 w-4" /> },
-    { value: 'history', label: ar.tabs.history, icon: <History className="h-4 w-4" /> },
-    { value: 'new', label: editing ? ar.tabs.editSession : ar.tabs.newSession, icon: <PlusCircle className="h-4 w-4" /> },
-    { value: 'comments', label: ar.tabs.comments, icon: <MessageSquare className="h-4 w-4" /> },
-    { value: 'questions', label: ar.tabs.questions, icon: <MessageCircleQuestion className="h-4 w-4" />, badge: openQ },
+    { value: 'summary', label: tr.tabs.summary, icon: <LayoutGrid className="h-4 w-4" /> },
+    { value: 'progress', label: tr.tabs.progress, icon: <LineChart className="h-4 w-4" /> },
+    { value: 'history', label: tr.tabs.history, icon: <History className="h-4 w-4" /> },
+    { value: 'new', label: editing ? tr.tabs.editSession : tr.tabs.newSession, icon: <PlusCircle className="h-4 w-4" /> },
+    { value: 'comments', label: tr.tabs.comments, icon: <MessageSquare className="h-4 w-4" /> },
+    { value: 'questions', label: tr.tabs.questions, icon: <MessageCircleQuestion className="h-4 w-4" />, badge: openQ },
   ];
 
   return (
     <div className="flex flex-col gap-4">
       <Link to={back} className="inline-flex items-center gap-1 self-start text-sm text-muted hover:text-ink">
-        <ArrowRight className="h-4 w-4" />
-        {ar.common.back}
+        <ArrowRight className="h-4 w-4 ltr:rotate-180" />
+        {tr.common.back}
       </Link>
 
       <Card className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
@@ -73,29 +73,29 @@ export function ClientPage() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-bold">{c.full_name}</h1>
-            {!c.is_active && <Badge tone="bad">{ar.common.inactive}</Badge>}
-            {p && <Badge tone="primary">{ar.goals[p.goal]}</Badge>}
+            {!c.is_active && <Badge tone="bad">{tr.common.inactive}</Badge>}
+            {p && <Badge tone="primary">{tr.goals[p.goal]}</Badge>}
           </div>
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
-            {p && <span>{ar.sex[p.sex]}</span>}
+            {p && <span>{tr.sex[p.sex]}</span>}
             {c.age != null && (
               <span>
-                <span className="num">{c.age}</span> {ar.common.years}
+                <span className="num">{c.age}</span> {tr.common.years}
               </span>
             )}
             {p?.height_cm && (
               <span>
-                <span className="num">{fmtNumber(p.height_cm)}</span> {ar.common.cm}
+                <span className="num">{fmtNumber(p.height_cm)}</span> {tr.common.cm}
               </span>
             )}
-            {activity && <span>{activity.name_ar}</span>}
-            {user.role === 'admin' && <span>{ar.client.trainer}: {c.trainer_name ?? ar.admin.noTrainer}</span>}
-            {p?.birth_date && <span className="hidden sm:inline">{ar.client.birthDate}: {fmtDate(p.birth_date)}</span>}
+            {activity && <span>{loc(activity.name_ar, activity.name_en)}</span>}
+            {user.role === 'admin' && <span>{tr.client.trainer}: {c.trainer_name ?? tr.admin.noTrainer}</span>}
+            {p?.birth_date && <span className="hidden sm:inline">{tr.client.birthDate}: {fmtDate(p.birth_date)}</span>}
           </p>
           {p?.notes && <p className="mt-2 flex items-start gap-1.5 text-xs text-ink/70"><ClipboardList className="mt-0.5 h-3.5 w-3.5 shrink-0" />{p.notes}</p>}
         </div>
         <Button variant="outline" size="sm" icon={<Pencil className="h-4 w-4" />} onClick={() => setEditProfile(true)}>
-          {ar.common.edit}
+          {tr.common.edit}
         </Button>
       </Card>
 

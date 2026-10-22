@@ -1,5 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { ar } from '@/i18n/ar';
+import { getLang, tr } from '@/i18n';
 import type { ApiErrorBody, TokenPair } from './types';
 
 export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
@@ -94,6 +94,7 @@ api.defaults.adapter = (config) => trackSlow(defaultAdapter(config));
 
 api.interceptors.request.use((config) => {
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  config.headers['Accept-Language'] = getLang();
   return config;
 });
 
@@ -109,7 +110,11 @@ export function refreshTokens(): Promise<TokenPair> {
   const rt = tokens.refresh;
   if (!rt) return Promise.reject(new Error('no refresh token'));
   if (!refreshing) {
-    refreshing = trackSlow(axios.post<TokenPair>(`${API_URL}/auth/refresh`, { refresh_token: rt }, { timeout: 90_000 }))
+    refreshing = trackSlow(axios.post<TokenPair>(
+        `${API_URL}/auth/refresh`,
+        { refresh_token: rt },
+        { timeout: 90_000, headers: { 'Accept-Language': getLang() } },
+      ))
       .then((res) => {
         tokens.set(res.data);
         return res.data;
@@ -144,14 +149,14 @@ api.interceptors.response.use(
   },
 );
 
-/** Arabic, user-facing message for any error thrown by the API layer. */
+/** User-facing message (current language) for any error thrown by the API layer. */
 export function errorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
     const body = err.response?.data as Partial<ApiErrorBody> | undefined;
     if (body && typeof body.detail === 'string') return body.detail;
-    if (!err.response) return ar.common.networkError;
+    if (!err.response) return tr.common.networkError;
   }
-  return ar.common.errorTitle;
+  return tr.common.errorTitle;
 }
 
 export function errorCode(err: unknown): string | undefined {

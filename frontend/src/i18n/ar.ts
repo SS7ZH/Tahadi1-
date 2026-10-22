@@ -1,7 +1,18 @@
-/** Every UI string lives here. */
+/** Arabic UI strings. en.ts must have exactly the same shape (enforced by the Messages type). */
 export const ar = {
   brand: 'تحدي',
   tagline: 'قِس، تابع، تقدّم',
+
+  lang: { label: 'اللغة', switchTo: 'English', switchToShort: 'EN' },
+
+  time: {
+    today: 'اليوم',
+    yesterday: 'أمس',
+    twoDaysAgo: 'قبل يومين',
+    daysAgo: (n: number) => (n <= 10 ? `قبل ${n} أيام` : `قبل ${n} يوماً`),
+  },
+
+  bmiLabels: { underweight: 'نقص وزن', normal: 'طبيعي', overweight: 'زيادة وزن', obese: 'سمنة' } as Record<string, string>,
 
   common: {
     save: 'حفظ',
@@ -330,6 +341,10 @@ export const ar = {
     key: 'المفتاح (إنجليزي)',
     keyHint: 'أحرف إنجليزية صغيرة وأرقام و _ فقط، مثل neck',
     nameAr: 'الاسم بالعربية',
+    nameEn: 'الاسم بالإنجليزية',
+    unitEn: 'الوحدة بالإنجليزية',
+    descriptionEn: 'الوصف بالإنجليزية',
+    choicesEnHint: 'اسم إنجليزي اختياري بعد | مثل 1=ضعيف|Poor',
     category: 'الفئة',
     unit: 'الوحدة',
     valueType: 'نوع القيمة',
@@ -380,4 +395,6 @@ export const ar = {
   },
 };
 
-export type Ar = typeof ar;
+export type Messages = typeof ar;
+/** @deprecated use Messages */
+export type Ar = Messages;

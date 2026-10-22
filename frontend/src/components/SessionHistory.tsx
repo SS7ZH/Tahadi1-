@@ -7,7 +7,7 @@ import { errorMessage } from '@/api/client';
 import { sessionsApi } from '@/api/endpoints';
 import { CATEGORIES, type Session } from '@/api/types';
 import { useInvalidateClient, useSessionDetail, useSessions } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { loc, tr } from '@/i18n';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { ResultCards } from './SummaryView';
 import { Badge, Card, ConfirmDialog, EmptyState, ErrorState, IconButton, Skeleton, Spinner } from './ui';
@@ -30,18 +30,18 @@ function SessionBody({ sessionId }: { sessionId: number }) {
           if (!vals.length) return null;
           return (
             <div key={cat}>
-              <h4 className="mb-2 text-xs font-bold text-muted">{ar.categories[cat]}</h4>
+              <h4 className="mb-2 text-xs font-bold text-muted">{tr.categories[cat]}</h4>
               <dl className="divide-y divide-line rounded-xl border border-line">
                 {vals.map((v) => (
                   <div key={v.key} className="flex items-start justify-between gap-3 px-3 py-2">
-                    <dt className="text-sm">{v.name_ar}</dt>
+                    <dt className="text-sm">{loc(v.name_ar, v.name_en)}</dt>
                     <dd className="text-end text-sm font-semibold">
                       {v.value_type === 'text' ? (
                         <span className="font-normal">{v.display}</span>
                       ) : (
                         <>
                           <span className={v.value_type === 'choice' ? '' : 'num'}>{v.display}</span>
-                          {v.unit && v.value_type !== 'choice' && <span className="ms-1 text-xs font-normal text-muted">{v.unit}</span>}
+                          {v.unit && v.value_type !== 'choice' && <span className="ms-1 text-xs font-normal text-muted">{loc(v.unit, v.unit_en)}</span>}
                           {v.value_type === 'choice' && v.value_text && (
                             <span className="block text-xs font-normal text-muted">{v.value_text}</span>
                           )}
@@ -57,17 +57,17 @@ function SessionBody({ sessionId }: { sessionId: number }) {
       </div>
 
       <div>
-        <h4 className="mb-2 text-xs font-bold text-muted">{ar.sessions.results}</h4>
+        <h4 className="mb-2 text-xs font-bold text-muted">{tr.sessions.results}</h4>
         <ResultCards results={data.results} />
       </div>
 
       <div>
         <h4 className="mb-2 flex items-center gap-1.5 text-xs font-bold text-muted">
           <MessageSquare className="h-3.5 w-3.5" />
-          {ar.sessions.comments}
+          {tr.sessions.comments}
         </h4>
         {data.comments.length === 0 ? (
-          <p className="text-sm text-muted">{ar.sessions.noComments}</p>
+          <p className="text-sm text-muted">{tr.sessions.noComments}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {data.comments.map((c) => (
@@ -114,16 +114,16 @@ function SessionCard({
             <span className="block font-bold">{fmtDate(session.session_date)}</span>
             <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
               <span>
-                <span className="num">{session.values.length}</span> {ar.sessions.values}
+                <span className="num">{session.values.length}</span> {tr.sessions.values}
               </span>
               {weight && (
                 <span>
-                  · <span className="num font-semibold text-ink">{weight.display}</span> {weight.unit}
+                  · <span className="num font-semibold text-ink">{weight.display}</span> {loc(weight.unit, weight.unit_en)}
                 </span>
               )}
               {session.trainer_name && (
                 <span>
-                  · {ar.sessions.recordedBy}: {session.trainer_name}
+                  · {tr.sessions.recordedBy}: {session.trainer_name}
                 </span>
               )}
               {session.comments_count > 0 && (
@@ -139,10 +139,10 @@ function SessionCard({
         </button>
         {canEdit && (
           <div className="flex shrink-0 items-center">
-            <IconButton label={ar.common.edit} onClick={() => onEdit?.(session)}>
+            <IconButton label={tr.common.edit} onClick={() => onEdit?.(session)}>
               <Pencil className="h-4 w-4" />
             </IconButton>
-            <IconButton label={ar.common.delete} onClick={() => onDelete?.(session)} className="hover:bg-bad/10 hover:text-bad">
+            <IconButton label={tr.common.delete} onClick={() => onDelete?.(session)} className="hover:bg-bad/10 hover:text-bad">
               <Trash2 className="h-4 w-4" />
             </IconButton>
           </div>
@@ -169,7 +169,7 @@ export function SessionHistory({
   const del = useMutation({
     mutationFn: (s: Session) => sessionsApi.remove(s.id),
     onSuccess: async () => {
-      toast.success(ar.sessions.deleted);
+      toast.success(tr.sessions.deleted);
       setToDelete(null);
       await invalidate(clientId);
     },
@@ -190,8 +190,8 @@ export function SessionHistory({
       <Card>
         <EmptyState
           icon={<CalendarDays className="h-6 w-6" />}
-          title={ar.sessions.empty}
-          description={canEdit ? ar.sessions.emptyTrainer : ar.sessions.emptyClient}
+          title={tr.sessions.empty}
+          description={canEdit ? tr.sessions.emptyTrainer : tr.sessions.emptyClient}
         />
       </Card>
     );
@@ -204,8 +204,8 @@ export function SessionHistory({
       {canEdit && (
         <ConfirmDialog
           open={!!toDelete}
-          title={ar.sessions.deleteTitle}
-          text={`${toDelete ? fmtDate(toDelete.session_date) + ' — ' : ''}${ar.sessions.deleteText}`}
+          title={tr.sessions.deleteTitle}
+          text={`${toDelete ? fmtDate(toDelete.session_date) + ' — ' : ''}${tr.sessions.deleteText}`}
           onConfirm={() => toDelete && del.mutate(toDelete)}
           onClose={() => setToDelete(null)}
           loading={del.isPending}

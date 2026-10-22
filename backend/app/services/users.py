@@ -4,8 +4,17 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError, not_found, unprocessable
+from app.core.i18n import tr
 from app.core.security import hash_password
-from app.models import ActivityFactor, ClientProfile, MeasurementDefinition, MeasurementSession, MeasurementValue, Question, User
+from app.models import (
+    ActivityFactor,
+    ClientProfile,
+    MeasurementDefinition,
+    MeasurementSession,
+    MeasurementValue,
+    Question,
+    User,
+)
 from app.services.progress import effective_direction, trend
 
 PROFILE_FIELDS = ("sex", "birth_date", "height_cm", "goal", "activity_key", "notes")
@@ -16,20 +25,20 @@ def ensure_email_free(db: Session, email: str, exclude_id: int | None = None) ->
     if exclude_id is not None:
         stmt = stmt.where(User.id != exclude_id)
     if db.scalar(stmt) is not None:
-        raise AppError(409, "EMAIL_TAKEN", "البريد الإلكتروني مستخدم مسبقاً")
+        raise AppError(409, "EMAIL_TAKEN", tr("البريد الإلكتروني مستخدم مسبقاً", "This email is already in use"))
 
 
 def ensure_activity_key(db: Session, key: str | None) -> None:
     if key is not None and db.scalar(select(ActivityFactor.id).where(ActivityFactor.key == key)) is None:
-        raise unprocessable("مستوى النشاط غير معروف", "UNKNOWN_ACTIVITY")
+        raise unprocessable(tr("مستوى النشاط غير معروف", "Unknown activity level"), "UNKNOWN_ACTIVITY")
 
 
 def get_active_trainer(db: Session, trainer_id: int) -> User:
     trainer = db.get(User, trainer_id)
     if trainer is None or trainer.role != "trainer" or trainer.deleted_at is not None:
-        raise not_found("المدرب غير موجود")
+        raise not_found(tr("المدرب غير موجود", "Coach not found"))
     if not trainer.is_active:
-        raise unprocessable("لا يمكن ربط عميل بمدرب موقوف", "TRAINER_INACTIVE")
+        raise unprocessable(tr("لا يمكن ربط عميل بمدرب موقوف", "Cannot assign a client to an inactive coach"), "TRAINER_INACTIVE")
     return trainer
 
 
@@ -55,8 +64,8 @@ def create_user(
         profile = profile or {}
         missing = [f for f in ("sex", "birth_date", "height_cm") if profile.get(f) is None]
         if missing:
-            labels = {"sex": "الجنس", "birth_date": "تاريخ الميلاد", "height_cm": "الطول"}
-            raise unprocessable("بيانات العميل ناقصة: " + "، ".join(labels[m] for m in missing), "PROFILE_REQUIRED")
+            labels = {"sex": tr("الجنس", "sex"), "birth_date": tr("تاريخ الميلاد", "birth date"), "height_cm": tr("الطول", "height")}
+            raise unprocessable(tr("بيانات العميل ناقصة: ", "Missing client details: ") + tr("، ", ", ").join(labels[m] for m in missing), "PROFILE_REQUIRED")
         ensure_activity_key(db, profile.get("activity_key"))
         if profile.get("trainer_id") is not None:
             get_active_trainer(db, profile["trainer_id"])

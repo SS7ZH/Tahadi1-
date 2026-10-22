@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 
 export function LogoMark({ className }: { className?: string }) {
   return (
@@ -22,7 +22,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <span className={clsx('inline-flex items-center gap-2', className)}>
       <LogoMark />
-      <span className="text-xl font-bold tracking-tight">{ar.brand}</span>
+      <span className="text-xl font-bold tracking-tight">{tr.brand}</span>
     </span>
   );
 }

@@ -10,7 +10,7 @@ from app.models import ClientProfile, Comment, MeasurementSession, User
 from app.schemas.measurement import SessionDetailOut, SessionIn, SessionOut
 from app.schemas.user import ClientCreate, ClientListItem, ClientUpdate, UserDetailOut
 from app.services import measurements, permissions, progress, users
-from app.services.serializers import comment_out, session_out, user_detail
+from app.services.serializers import session_out, user_detail
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 

@@ -3,6 +3,8 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field
 
+from app.core.i18n import tr
+
 Role = Literal["admin", "trainer", "client"]
 Sex = Literal["male", "female"]
 Goal = Literal["fat_loss", "muscle_gain", "fitness", "health"]
@@ -12,7 +14,7 @@ PASSWORD_MIN = 8
 
 def _check_height(v: float | None) -> float | None:
     if v is not None and not (100 <= v <= 250):
-        raise ValueError("الطول يجب أن يكون بين 100 و250 سم")
+        raise ValueError(tr("الطول يجب أن يكون بين 100 و250 سم", "Height must be between 100 and 250 cm"))
     return v
 
 
@@ -21,9 +23,9 @@ def _check_birth_date(v: date | None) -> date | None:
         return v
     today = date.today()
     if v >= today:
-        raise ValueError("تاريخ الميلاد يجب أن يكون في الماضي")
+        raise ValueError(tr("تاريخ الميلاد يجب أن يكون في الماضي", "Birth date must be in the past"))
     if today.year - v.year > 100 or today.year - v.year < 5:
-        raise ValueError("تاريخ الميلاد غير منطقي (العمر بين 5 و100 سنة)")
+        raise ValueError(tr("تاريخ الميلاد غير منطقي (العمر بين 5 و100 سنة)", "Unrealistic birth date (age must be 5 to 100)"))
     return v
 
 
@@ -32,7 +34,7 @@ def _clean_name(v: str | None) -> str | None:
         return v
     v = " ".join(v.split())
     if len(v) < 2:
-        raise ValueError("الاسم قصير جداً")
+        raise ValueError(tr("الاسم قصير جداً", "Name is too short"))
     return v
 
 

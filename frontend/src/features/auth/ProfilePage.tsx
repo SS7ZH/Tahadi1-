@@ -9,33 +9,35 @@ import { authApi } from '@/api/endpoints';
 import { Button, Card, CardHeader, Input, PageHeader } from '@/components/ui';
 import { useAuth, useCurrentUser } from '@/hooks/useAuth';
 import { useActivityFactors } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { loc, tr } from '@/i18n';
 import { fmtDate, fmtNumber } from '@/lib/format';
 
-const infoSchema = z.object({
-  full_name: z.string().trim().min(2, ar.common.required).max(120),
+const makeInfoSchema = () =>
+  z.object({
+  full_name: z.string().trim().min(2, tr.common.required).max(120),
   phone: z.string().trim().max(30).optional(),
 });
 
-const passwordSchema = z
+const makePasswordSchema = () =>
+  z
   .object({
-    current_password: z.string().min(1, ar.profile.currentRequired),
-    new_password: z.string().min(8, ar.profile.passwordMin),
+    current_password: z.string().min(1, tr.profile.currentRequired),
+    new_password: z.string().min(8, tr.profile.passwordMin),
     confirm: z.string(),
   })
-  .refine((v) => v.new_password === v.confirm, { path: ['confirm'], message: ar.profile.passwordMismatch });
+  .refine((v) => v.new_password === v.confirm, { path: ['confirm'], message: tr.profile.passwordMismatch });
 
 export function ProfilePage() {
   const user = useCurrentUser();
   const { setUser } = useAuth();
   const factors = useActivityFactors();
 
-  const info = useForm<z.infer<typeof infoSchema>>({
-    resolver: zodResolver(infoSchema),
+  const info = useForm<z.infer<ReturnType<typeof makeInfoSchema>>>({
+    resolver: zodResolver(makeInfoSchema()),
     defaultValues: { full_name: user.full_name, phone: user.phone ?? '' },
   });
-  const pwd = useForm<z.infer<typeof passwordSchema>>({
-    resolver: zodResolver(passwordSchema),
+  const pwd = useForm<z.infer<ReturnType<typeof makePasswordSchema>>>({
+    resolver: zodResolver(makePasswordSchema()),
     defaultValues: { current_password: '', new_password: '', confirm: '' },
   });
 
@@ -43,7 +45,7 @@ export function ProfilePage() {
     mutationFn: authApi.updateMe,
     onSuccess: (u) => {
       setUser(u);
-      toast.success(ar.profile.updated);
+      toast.success(tr.profile.updated);
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -51,7 +53,7 @@ export function ProfilePage() {
     mutationFn: authApi.updateMe,
     onSuccess: () => {
       pwd.reset();
-      toast.success(ar.profile.passwordUpdated);
+      toast.success(tr.profile.passwordUpdated);
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -61,24 +63,24 @@ export function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title={ar.profile.title} subtitle={`${ar.roles[user.role]} · ${user.email}`} />
+      <PageHeader title={tr.profile.title} subtitle={`${tr.roles[user.role]} · ${user.email}`} />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader title={ar.profile.personal} icon={<UserRound className="h-5 w-5" />} />
+          <CardHeader title={tr.profile.personal} icon={<UserRound className="h-5 w-5" />} />
           <form
             className="flex flex-col gap-4 p-4 sm:p-5"
             onSubmit={info.handleSubmit((v) => saveInfo.mutate({ full_name: v.full_name, phone: v.phone ?? '' }))}
           >
-            <Input label={ar.profile.fullName} error={info.formState.errors.full_name?.message} {...info.register('full_name')} />
-            <Input label={ar.profile.phone} type="tel" dir="ltr" inputMode="tel" {...info.register('phone')} />
+            <Input label={tr.profile.fullName} error={info.formState.errors.full_name?.message} {...info.register('full_name')} />
+            <Input label={tr.profile.phone} type="tel" dir="ltr" inputMode="tel" {...info.register('phone')} />
             <Button type="submit" loading={saveInfo.isPending} className="self-start">
-              {ar.common.save}
+              {tr.common.save}
             </Button>
           </form>
         </Card>
 
         <Card>
-          <CardHeader title={ar.profile.changePassword} icon={<KeyRound className="h-5 w-5" />} />
+          <CardHeader title={tr.profile.changePassword} icon={<KeyRound className="h-5 w-5" />} />
           <form
             className="flex flex-col gap-4 p-4 sm:p-5"
             onSubmit={pwd.handleSubmit((v) =>
@@ -86,7 +88,7 @@ export function ProfilePage() {
             )}
           >
             <Input
-              label={ar.profile.currentPassword}
+              label={tr.profile.currentPassword}
               type="password"
               autoComplete="current-password"
               dir="ltr"
@@ -94,7 +96,7 @@ export function ProfilePage() {
               {...pwd.register('current_password')}
             />
             <Input
-              label={ar.profile.newPassword}
+              label={tr.profile.newPassword}
               type="password"
               autoComplete="new-password"
               dir="ltr"
@@ -102,7 +104,7 @@ export function ProfilePage() {
               {...pwd.register('new_password')}
             />
             <Input
-              label={ar.profile.confirmPassword}
+              label={tr.profile.confirmPassword}
               type="password"
               autoComplete="new-password"
               dir="ltr"
@@ -110,7 +112,7 @@ export function ProfilePage() {
               {...pwd.register('confirm')}
             />
             <Button type="submit" loading={savePwd.isPending} className="self-start">
-              {ar.profile.changePassword}
+              {tr.profile.changePassword}
             </Button>
           </form>
         </Card>
@@ -118,18 +120,18 @@ export function ProfilePage() {
         {user.role === 'client' && p && (
           <Card className="lg:col-span-2">
             <CardHeader
-              title={ar.profile.trainerManaged}
-              subtitle={ar.profile.trainerManagedHint}
+              title={tr.profile.trainerManaged}
+              subtitle={tr.profile.trainerManagedHint}
               icon={<Lock className="h-5 w-5" />}
             />
             <dl className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 sm:p-5">
-              <Info label={ar.profile.trainer} value={user.trainer_name ?? ar.profile.noTrainer} />
-              <Info label={ar.client.sex} value={ar.sex[p.sex]} />
-              <Info label={ar.client.birthDate} value={fmtDate(p.birth_date)} />
-              <Info label={ar.client.age} value={user.age != null ? `${user.age} ${ar.common.years}` : '—'} />
-              <Info label={ar.client.height} value={<span className="num">{fmtNumber(p.height_cm)}</span>} />
-              <Info label={ar.client.goal} value={ar.goals[p.goal]} />
-              <Info label={ar.client.activity} value={activity?.name_ar ?? '—'} />
+              <Info label={tr.profile.trainer} value={user.trainer_name ?? tr.profile.noTrainer} />
+              <Info label={tr.client.sex} value={tr.sex[p.sex]} />
+              <Info label={tr.client.birthDate} value={fmtDate(p.birth_date)} />
+              <Info label={tr.client.age} value={user.age != null ? `${user.age} ${tr.common.years}` : '—'} />
+              <Info label={tr.client.height} value={<span className="num">{fmtNumber(p.height_cm)}</span>} />
+              <Info label={tr.client.goal} value={tr.goals[p.goal]} />
+              <Info label={tr.client.activity} value={activity ? loc(activity.name_ar, activity.name_en) : '—'} />
             </dl>
           </Card>
         )}

@@ -1,6 +1,7 @@
 """ORM → response dicts. Centralised so password_hash can never slip into a response."""
 from datetime import date
 
+from app.core.i18n import pick
 from app.models import Comment, MeasurementSession, MeasurementValue, Question, User
 from app.schemas.user import ClientProfileOut, UserDetailOut
 from app.services.calculations import age_on
@@ -31,7 +32,8 @@ def value_display(mv: MeasurementValue) -> str:
     if d.value_type == "blood_pressure" and mv.value_json:
         return f"{_fmt_number(mv.value_json['systolic'])}/{_fmt_number(mv.value_json['diastolic'])}"
     if d.value_type == "choice" and mv.value_number is not None:
-        label = next((c["label"] for c in (d.choices or []) if float(c["value"]) == mv.value_number), None)
+        opt = next((c for c in (d.choices or []) if float(c["value"]) == mv.value_number), None)
+        label = pick(opt.get("label"), opt.get("label_en")) if opt else None
         return label or _fmt_number(mv.value_number)
     if d.value_type == "text":
         return mv.value_text or ""
@@ -45,8 +47,10 @@ def value_out(mv: MeasurementValue) -> dict:
     return {
         "key": d.key,
         "name_ar": d.name_ar,
+        "name_en": d.name_en,
         "category": d.category,
         "unit": d.unit,
+        "unit_en": d.unit_en,
         "value_type": d.value_type,
         "value_number": mv.value_number,
         "value_text": mv.value_text,

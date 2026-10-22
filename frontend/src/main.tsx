@@ -6,6 +6,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { ServerWakeBanner } from '@/components/ServerWakeBanner';
 import { AuthProvider } from '@/hooks/useAuth';
+import { LanguageBoundary, useLang } from '@/i18n';
 import { ThemeProvider, useTheme } from '@/hooks/useTheme';
 import { AppRoutes } from '@/routes/AppRoutes';
 import './index.css';
@@ -27,9 +28,10 @@ const queryClient = new QueryClient({
 
 function ThemedToaster() {
   const { isDark } = useTheme();
+  const { dir } = useLang();
   return (
     <Toaster
-      dir="rtl"
+      dir={dir}
       position="top-center"
       richColors
       closeButton
@@ -45,9 +47,12 @@ createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
-            <AppRoutes />
-            <ServerWakeBanner />
-            <ThemedToaster />
+            {/* Remounts on language change; kept inside AuthProvider so switching language keeps you logged in. */}
+            <LanguageBoundary>
+              <AppRoutes />
+              <ServerWakeBanner />
+              <ThemedToaster />
+            </LanguageBoundary>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>

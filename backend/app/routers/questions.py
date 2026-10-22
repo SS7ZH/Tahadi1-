@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_accessible_client, get_current_user, require_role
 from app.core.errors import AppError
+from app.core.i18n import tr
 from app.db.session import get_db
 from app.models import MeasurementSession, Question, QuestionReply, User
 from app.schemas.interaction import QuestionIn, QuestionOut, QuestionStatus, QuestionStatusIn, ReplyIn
@@ -57,7 +58,7 @@ def reply(question_id: int, data: ReplyIn, user: User = Depends(get_current_user
     # Access = trainer of that client, admin, or the client themselves (follow-up).
     question = permissions.get_accessible_question(db, user, question_id)
     if question.status == "closed" and user.role == "client":
-        raise AppError(409, "QUESTION_CLOSED", "هذا السؤال مغلق، يمكنك طرح سؤال جديد")
+        raise AppError(409, "QUESTION_CLOSED", tr("هذا السؤال مغلق، يمكنك طرح سؤال جديد", "This question is closed, you can ask a new one"))
     question.replies.append(QuestionReply(author_id=user.id, body=data.body))
     # Staff reply → answered; client follow-up → back to open so it shows in the trainer's inbox.
     question.status = "open" if user.role == "client" else "answered"

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import require_role
 from app.core.errors import AppError, bad_request, not_found
+from app.core.i18n import tr
 from app.core.security import hash_password
 from app.db.session import get_db
 from app.models import (
@@ -35,7 +36,7 @@ admin_user = require_role("admin")
 def _get_user(db: Session, user_id: int) -> User:
     user = db.get(User, user_id)
     if user is None or user.deleted_at is not None:
-        raise not_found("المستخدم غير موجود")
+        raise not_found(tr("المستخدم غير موجود", "User not found"))
     return user
 
 
@@ -87,7 +88,7 @@ def update_user(
     user = _get_user(db, user_id)
     changes = data.model_dump(exclude_unset=True)
     if user.id == actor.id and changes.get("is_active") is False:
-        raise bad_request("لا يمكنك إيقاف حسابك", "SELF_DEACTIVATE")
+        raise bad_request(tr("لا يمكنك إيقاف حسابك", "You cannot deactivate your own account"), "SELF_DEACTIVATE")
     if changes.get("email"):
         users.ensure_email_free(db, changes["email"], exclude_id=user.id)
         user.email = changes["email"].lower()
@@ -114,7 +115,7 @@ def delete_user(user_id: int, actor: User = Depends(admin_user), db: Session = D
     """Soft delete: the account is hidden and cannot log in, but health history is preserved."""
     user = _get_user(db, user_id)
     if user.id == actor.id:
-        raise bad_request("لا يمكنك حذف حسابك", "SELF_DELETE")
+        raise bad_request(tr("لا يمكنك حذف حسابك", "You cannot delete your own account"), "SELF_DELETE")
     user.deleted_at = datetime.now(timezone.utc)
     user.is_active = False
     if user.role == "trainer":
@@ -131,7 +132,7 @@ def assign_trainer(
 ):
     client = _get_user(db, client_id)
     if client.role != "client" or client.profile is None:
-        raise not_found("العميل غير موجود")
+        raise not_found(tr("العميل غير موجود", "Client not found"))
     if data.trainer_id is not None:
         users.get_active_trainer(db, data.trainer_id)
     before = client.profile.trainer_id
@@ -191,7 +192,7 @@ def list_definitions(db: Session = Depends(get_db)):
 @router.post("/measurement-definitions", response_model=DefinitionOut, status_code=status.HTTP_201_CREATED)
 def create_definition(data: DefinitionCreate, db: Session = Depends(get_db)):
     if db.scalar(select(MeasurementDefinition.id).where(MeasurementDefinition.key == data.key)):
-        raise AppError(409, "KEY_TAKEN", "مفتاح القياس مستخدم مسبقاً")
+        raise AppError(409, "KEY_TAKEN", tr("مفتاح القياس مستخدم مسبقاً", "This measurement key already exists"))
     d = MeasurementDefinition(**data.model_dump(exclude={"choices"}), is_active=True)
     d.choices = [c.model_dump() for c in data.choices] if data.choices else None
     db.add(d)
@@ -204,14 +205,14 @@ def create_definition(data: DefinitionCreate, db: Session = Depends(get_db)):
 def update_definition(definition_id: int, data: DefinitionUpdate, db: Session = Depends(get_db)):
     d = db.get(MeasurementDefinition, definition_id)
     if d is None:
-        raise not_found("نوع القياس غير موجود")
+        raise not_found(tr("نوع القياس غير موجود", "Measurement type not found"))
     changes = data.model_dump(exclude_unset=True)
     if "choices" in changes:
         changes["choices"] = [c.model_dump() for c in data.choices] if data.choices else None
     for field, value in changes.items():
         setattr(d, field, value)
     if d.min_value is not None and d.max_value is not None and d.min_value > d.max_value:
-        raise bad_request("الحد الأدنى يجب أن يكون أقل من الحد الأعلى", "INVALID_RANGE")
+        raise bad_request(tr("الحد الأدنى يجب أن يكون أقل من الحد الأعلى", "Minimum must be less than maximum"), "INVALID_RANGE")
     db.commit()
     db.refresh(d)
     return d
@@ -227,7 +228,7 @@ def list_factors(db: Session = Depends(get_db)):
 def update_factor(factor_id: int, data: ActivityFactorUpdate, db: Session = Depends(get_db)):
     f = db.get(ActivityFactor, factor_id)
     if f is None:
-        raise not_found("معامل النشاط غير موجود")
+        raise not_found(tr("معامل النشاط غير موجود", "Activity factor not found"))
     for field, value in data.model_dump(exclude_unset=True).items():
         if value is not None:
             setattr(f, field, value)

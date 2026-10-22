@@ -6,6 +6,7 @@ from collections import defaultdict, deque
 from fastapi import Request
 
 from app.core.errors import AppError
+from app.core.i18n import tr
 
 
 class RateLimiter:
@@ -26,7 +27,7 @@ class RateLimiter:
                 raise AppError(
                     429,
                     "RATE_LIMITED",
-                    f"محاولات دخول كثيرة، حاول مرة أخرى بعد {retry} ثانية",
+                    tr(f"محاولات دخول كثيرة، حاول مرة أخرى بعد {retry} ثانية", f"Too many login attempts, try again in {retry} seconds"),
                     headers={"Retry-After": str(retry)},
                 )
             q.append(now)

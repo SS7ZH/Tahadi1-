@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import type { Trend } from '@/api/types';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 import { fmtSigned } from '@/lib/format';
 
 const trendClass: Record<Trend, string> = {
@@ -32,7 +32,7 @@ export function TrendChip({
   const Icon = Math.abs(change) < 1e-9 ? Minus : change > 0 ? ArrowUpRight : ArrowDownRight;
   return (
     <span
-      title={ar.trend[trend]}
+      title={tr.trend[trend]}
       className={clsx(
         'inline-flex items-center gap-0.5 rounded-full font-semibold',
         size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
@@ -42,7 +42,7 @@ export function TrendChip({
       <Icon className={size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden />
       <span className="num">{fmtSigned(change)}</span>
       {unit && <span className="opacity-80">{unit}</span>}
-      <span className="sr-only">{ar.trend[trend]}</span>
+      <span className="sr-only">{tr.trend[trend]}</span>
     </span>
   );
 }

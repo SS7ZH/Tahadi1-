@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.errors import register_exception_handlers
+from app.core.i18n import LanguageMiddleware, tr
 from app.db.session import get_db
 from app.routers import admin, auth, calculate, clients, comments, questions, reference, sessions
 
@@ -23,13 +24,16 @@ app = FastAPI(
 
 register_exception_handlers(app)
 
+# Added first so CORS (added next) wraps it; sets the per-request language for tr().
+app.add_middleware(LanguageMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
     allow_origin_regex=settings.CORS_ORIGIN_REGEX or None,
     allow_credentials=False,  # tokens travel in the Authorization header, not cookies
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "Accept-Language"],
+    expose_headers=["Content-Disposition"],
     max_age=600,
 )
 
@@ -44,7 +48,7 @@ def health(db: Session = Depends(get_db)):
         logging.getLogger("tahadi").exception("Health check failed")
         return JSONResponse(
             status_code=503,
-            content={"status": "error", "database": "unreachable", "detail": "تعذر الاتصال بقاعدة البيانات", "code": "DB_DOWN"},
+            content={"status": "error", "database": "unreachable", "detail": tr("تعذر الاتصال بقاعدة البيانات", "Cannot reach the database"), "code": "DB_DOWN"},
         )
     return {"status": "ok", "database": "ok"}
 

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_accessible_client, get_current_user, require_role
 from app.core.errors import forbidden
+from app.core.i18n import tr
 from app.db.session import get_db
 from app.models import Comment, User
 from app.schemas.interaction import CommentIn
@@ -46,7 +47,7 @@ def create_comment(
 def delete_comment(comment_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     comment = permissions.get_accessible_comment(db, user, comment_id)
     if not (user.role == "admin" or comment.author_id == user.id):
-        raise forbidden("يمكن حذف التعليق من كاتبه أو من المدير فقط")
+        raise forbidden(tr("يمكن حذف التعليق من كاتبه أو من المدير فقط", "Only the author or an admin can delete this comment"))
     db.delete(comment)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

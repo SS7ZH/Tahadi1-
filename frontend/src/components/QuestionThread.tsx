@@ -9,7 +9,7 @@ import { clientsApi, questionsApi } from '@/api/endpoints';
 import type { Question, QuestionStatus } from '@/api/types';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { qk, useQuestions, useSessions } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { Badge, Button, Card, EmptyState, ErrorState, Select, Skeleton, Textarea } from './ui';
 
@@ -36,7 +36,7 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
     mutationFn: () => questionsApi.reply(question.id, reply.trim()),
     onSuccess: async () => {
       setReply('');
-      toast.success(ar.questions.replied);
+      toast.success(tr.questions.replied);
       await invalidate(question.client_id);
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -45,7 +45,7 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
   const setStatus = useMutation({
     mutationFn: (s: QuestionStatus) => questionsApi.setStatus(question.id, s),
     onSuccess: async () => {
-      toast.success(ar.questions.statusUpdated);
+      toast.success(tr.questions.statusUpdated);
       await invalidate(question.client_id);
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -59,7 +59,7 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
       <div className="flex flex-col gap-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={statusTone[question.status]}>{ar.questionStatus[question.status]}</Badge>
+            <Badge tone={statusTone[question.status]}>{tr.questionStatus[question.status]}</Badge>
             {question.session_date && (
               <Badge tone="accent">
                 <CalendarDays className="h-3 w-3" />
@@ -96,7 +96,7 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
                 >
                   <p className="whitespace-pre-line text-sm leading-relaxed">{r.body}</p>
                   <p className="mt-1 text-[11px] text-muted">
-                    {mine ? ar.questions.you : r.author_name} · {fmtDateTime(r.created_at)}
+                    {mine ? tr.questions.you : r.author_name} · {fmtDateTime(r.created_at)}
                   </p>
                 </li>
               );
@@ -109,7 +109,7 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
         {closed && !isStaff ? (
           <p className="flex items-center gap-1.5 text-xs text-muted">
             <Lock className="h-3.5 w-3.5" />
-            {ar.questions.closedNotice}
+            {tr.questions.closedNotice}
           </p>
         ) : (
           <form
@@ -120,21 +120,21 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
             }}
           >
             <Textarea
-              aria-label={ar.questions.reply}
+              aria-label={tr.questions.reply}
               rows={2}
               value={reply}
               onChange={(e) => setReply(e.target.value)}
-              placeholder={isStaff ? ar.questions.replyPlaceholder : ar.questions.followUpPlaceholder}
+              placeholder={isStaff ? tr.questions.replyPlaceholder : tr.questions.followUpPlaceholder}
               wrapperClassName="flex-1"
               maxLength={5000}
             />
             <div className="flex gap-2">
-              <Button type="submit" loading={send.isPending} disabled={!reply.trim()} icon={<Send className="h-4 w-4 -scale-x-100" />}>
-                {ar.questions.reply}
+              <Button type="submit" loading={send.isPending} disabled={!reply.trim()} icon={<Send className="h-4 w-4 rtl:-scale-x-100" />}>
+                {tr.questions.reply}
               </Button>
               {isStaff && (
                 <Select
-                  aria-label={ar.questions.status}
+                  aria-label={tr.questions.status}
                   value={question.status}
                   onChange={(e) => setStatus.mutate(e.target.value as QuestionStatus)}
                   disabled={setStatus.isPending}
@@ -142,7 +142,7 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
                 >
                   {(['open', 'answered', 'closed'] as QuestionStatus[]).map((s) => (
                     <option key={s} value={s}>
-                      {ar.questionStatus[s]}
+                      {tr.questionStatus[s]}
                     </option>
                   ))}
                 </Select>
@@ -166,7 +166,7 @@ function AskForm({ clientId }: { clientId: number }) {
     onSuccess: async () => {
       setBody('');
       setSessionId('');
-      toast.success(ar.questions.asked);
+      toast.success(tr.questions.asked);
       await invalidate(clientId);
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -176,7 +176,7 @@ function AskForm({ clientId }: { clientId: number }) {
     <Card className="p-4 sm:p-5">
       <h2 className="mb-3 flex items-center gap-2 font-bold">
         <HelpCircle className="h-5 w-5 text-primary" />
-        {ar.questions.askTitle}
+        {tr.questions.askTitle}
       </h2>
       <form
         className="flex flex-col gap-3"
@@ -186,8 +186,8 @@ function AskForm({ clientId }: { clientId: number }) {
         }}
       >
         <Textarea
-          aria-label={ar.questions.askPlaceholder}
-          placeholder={ar.questions.askPlaceholder}
+          aria-label={tr.questions.askPlaceholder}
+          placeholder={tr.questions.askPlaceholder}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={3}
@@ -195,20 +195,20 @@ function AskForm({ clientId }: { clientId: number }) {
         />
         <div className="flex flex-wrap items-end gap-3">
           <Select
-            label={ar.questions.aboutSession}
+            label={tr.questions.aboutSession}
             value={sessionId}
             onChange={(e) => setSessionId(e.target.value)}
             wrapperClassName="min-w-[12rem] flex-1"
           >
-            <option value="">{ar.questions.noSession}</option>
+            <option value="">{tr.questions.noSession}</option>
             {sessions.data?.map((s) => (
               <option key={s.id} value={s.id}>
                 {fmtDate(s.session_date)}
               </option>
             ))}
           </Select>
-          <Button type="submit" loading={ask.isPending} disabled={!body.trim()} icon={<Send className="h-4 w-4 -scale-x-100" />}>
-            {ar.questions.ask}
+          <Button type="submit" loading={ask.isPending} disabled={!body.trim()} icon={<Send className="h-4 w-4 rtl:-scale-x-100" />}>
+            {tr.questions.ask}
           </Button>
         </div>
       </form>
@@ -229,8 +229,8 @@ export function QuestionThread({ clientId, mode }: { clientId: number; mode: 'st
         <Card>
           <EmptyState
             icon={<HelpCircle className="h-6 w-6" />}
-            title={ar.questions.empty}
-            description={mode === 'client' ? ar.questions.emptyClient : ar.questions.emptyTrainer}
+            title={tr.questions.empty}
+            description={mode === 'client' ? tr.questions.emptyClient : tr.questions.emptyTrainer}
           />
         </Card>
       ) : (

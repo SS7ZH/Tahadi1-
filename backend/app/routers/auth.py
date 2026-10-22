@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.deps import get_current_user
 from app.core.errors import AppError
+from app.core.i18n import tr
 from app.core.rate_limit import RateLimiter, client_ip
 from app.core.security import (
     create_access_token,
@@ -40,9 +41,9 @@ def login(data: LoginIn, request: Request, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(func.lower(User.email) == data.email.lower(), User.deleted_at.is_(None)))
     valid = verify_password(data.password, user.password_hash if user else _DUMMY_HASH)
     if user is None or not valid:
-        raise AppError(401, "INVALID_CREDENTIALS", "البريد الإلكتروني أو كلمة المرور غير صحيحة")
+        raise AppError(401, "INVALID_CREDENTIALS", tr("البريد الإلكتروني أو كلمة المرور غير صحيحة", "Incorrect email or password"))
     if not user.is_active:
-        raise AppError(403, "ACCOUNT_DISABLED", "الحساب موقوف، تواصل مع الإدارة")
+        raise AppError(403, "ACCOUNT_DISABLED", tr("الحساب موقوف، تواصل مع الإدارة", "This account is disabled, contact the administrator"))
     return token_pair(user)
 
 
@@ -51,7 +52,7 @@ def refresh(data: RefreshIn, db: Session = Depends(get_db)):
     payload = decode_token(data.refresh_token, "refresh")
     user = db.get(User, int(payload["sub"]))
     if user is None or user.deleted_at is not None or not user.is_active:
-        raise AppError(401, "INVALID_TOKEN", "انتهت الجلسة، سجّل الدخول مجدداً")
+        raise AppError(401, "INVALID_TOKEN", tr("انتهت الجلسة، سجّل الدخول مجدداً", "Your session ended, please log in again"))
     return token_pair(user)
 
 
@@ -68,7 +69,7 @@ def update_me(data: MeUpdate, user: User = Depends(get_current_user), db: Sessio
         user.phone = data.phone.strip() or None
     if data.new_password:
         if not data.current_password or not verify_password(data.current_password, user.password_hash):
-            raise AppError(400, "WRONG_PASSWORD", "كلمة المرور الحالية غير صحيحة")
+            raise AppError(400, "WRONG_PASSWORD", tr("كلمة المرور الحالية غير صحيحة", "Current password is incorrect"))
         user.password_hash = hash_password(data.new_password)
     db.commit()
     db.refresh(user)

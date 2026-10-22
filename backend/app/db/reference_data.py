@@ -89,3 +89,78 @@ ACTIVITY_FACTORS = [
 
 # Blood pressure has two components; validated separately.
 BP_LIMITS = {"systolic": (60, 260), "diastolic": (30, 160)}
+
+
+# ---------------------------------------------------------------------------
+# v2: English translations. Kept separate so migration 0001 (which inserts the
+# lists above into the v1 schema) stays unchanged; migration 0002 applies these.
+# ---------------------------------------------------------------------------
+
+DEFINITION_TRANSLATIONS = {
+    "pulse": ("Pulse", "bpm"),
+    "blood_pressure": ("Blood pressure", "mmHg"),
+    "blood_sugar": ("Blood sugar", "mg/dL"),
+    "hemoglobin": ("Hemoglobin", "g/dL"),
+    "urine_color": ("Urine color", "scale 1–8"),
+    "height": ("Height", "cm"),
+    "weight": ("Weight", "kg"),
+    "waist": ("Waist circumference", "cm"),
+    "hip": ("Hip circumference", "cm"),
+    "body_fat": ("Body fat", "%"),
+    "chest": ("Chest circumference", "cm"),
+    "arm": ("Arm circumference", "cm"),
+    "thigh": ("Thigh circumference", "cm"),
+    "skinfold_triceps": ("Skinfold – triceps", "mm"),
+    "skinfold_subscapular": ("Skinfold – subscapular", "mm"),
+    "skinfold_suprailiac": ("Skinfold – suprailiac", "mm"),
+    "body_shape": ("Body shape", None),
+    "squat_assessment": ("Squat assessment", "score 1–5"),
+    "posture_analysis": ("Posture analysis", None),
+    "grip_strength": ("Grip strength", "kg"),
+    "cardio_endurance": ("Cardiorespiratory endurance", "ml/kg/min"),
+    "push_ups": ("Push-ups", "reps"),
+    "sit_ups": ("Sit-ups", "reps/min"),
+    "agility": ("Agility", "s"),
+    "flexibility": ("Flexibility (sit and reach)", "cm"),
+}
+
+CHOICE_TRANSLATIONS = {
+    "urine_color": {
+        1: "1 – Clear", 2: "2 – Very pale yellow", 3: "3 – Pale yellow", 4: "4 – Yellow",
+        5: "5 – Dark yellow", 6: "6 – Amber", 7: "7 – Light brown", 8: "8 – Very dark",
+    },
+    "squat_assessment": {1: "1 – Very poor", 2: "2 – Poor", 3: "3 – Fair", 4: "4 – Good", 5: "5 – Excellent"},
+    "body_shape": {1: "Slim", 2: "Athletic", 3: "Average", 4: "Full", 5: "Heavy"},
+}
+
+ACTIVITY_TRANSLATIONS = {
+    "sedentary": ("Sedentary", "No exercise"),
+    "light": ("Lightly active", "Exercise 1–3 days a week"),
+    "moderate": ("Moderately active", "Exercise 3–5 days a week"),
+    "high": ("Very active", "Exercise 6–7 days a week"),
+    "very_high": ("Extremely active", "Intense exercise + physical work"),
+}
+
+
+def translated_choices(key: str, choices: list | None) -> list | None:
+    if not choices:
+        return choices
+    en = CHOICE_TRANSLATIONS.get(key, {})
+    return [{**c, "label_en": en.get(int(c["value"]), c.get("label_en"))} for c in choices]
+
+
+def definitions_v2() -> list[dict]:
+    """Reference rows for the current schema (used by tests)."""
+    out = []
+    for d in MEASUREMENT_DEFINITIONS:
+        name_en, unit_en = DEFINITION_TRANSLATIONS.get(d["key"], (None, None))
+        out.append({**d, "name_en": name_en, "unit_en": unit_en, "choices": translated_choices(d["key"], d["choices"])})
+    return out
+
+
+def activity_factors_v2() -> list[dict]:
+    out = []
+    for f in ACTIVITY_FACTORS:
+        name_en, desc_en = ACTIVITY_TRANSLATIONS.get(f["key"], (None, None))
+        out.append({**f, "name_en": name_en, "description_en": desc_en})
+    return out

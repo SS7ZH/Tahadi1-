@@ -42,14 +42,17 @@ export interface TokenPair {
 export interface ChoiceOption {
   value: number;
   label: string;
+  label_en?: string | null;
 }
 
 export interface Definition {
   id: number;
   key: string;
   name_ar: string;
+  name_en: string | null;
   category: Category;
   unit: string | null;
+  unit_en: string | null;
   value_type: ValueType;
   choices: ChoiceOption[] | null;
   better_direction: Direction;
@@ -63,7 +66,9 @@ export interface ActivityFactor {
   id: number;
   key: string;
   name_ar: string;
+  name_en: string | null;
   description_ar: string | null;
+  description_en: string | null;
   factor: number;
   sort_order: number;
 }
@@ -76,8 +81,10 @@ export interface BloodPressure {
 export interface MeasurementValue {
   key: string;
   name_ar: string;
+  name_en: string | null;
   category: Category;
   unit: string | null;
+  unit_en: string | null;
   value_type: ValueType;
   value_number: number | null;
   value_text: string | null;
@@ -120,7 +127,7 @@ export interface Results {
   bmr: number | null;
   tdee: number | null;
   targets: { maintenance: number; fat_loss: number; muscle_gain: number } | null;
-  activity: { key: string; name_ar: string; factor: number } | null;
+  activity: { key: string; name_ar: string; name_en: string | null; factor: number } | null;
 }
 
 export interface SessionDetail extends Session {
@@ -159,7 +166,9 @@ export interface SeriesPoint {
 export interface Series {
   key: string;
   name_ar: string;
+  name_en: string | null;
   unit: string | null;
+  unit_en: string | null;
   category: Category;
   better_direction: Direction;
   points: SeriesPoint[];
@@ -172,7 +181,7 @@ export interface Series {
 
 export interface Progress {
   client_id: number;
-  available: { key: string; name_ar: string; unit: string | null; category: Category; derived: boolean }[];
+  available: { key: string; name_ar: string; name_en: string | null; unit: string | null; unit_en: string | null; category: Category; derived: boolean }[];
   series: Record<string, Series>;
 }
 

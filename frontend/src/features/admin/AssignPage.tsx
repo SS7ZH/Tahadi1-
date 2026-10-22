@@ -7,7 +7,7 @@ import { errorMessage } from '@/api/client';
 import { adminApi } from '@/api/endpoints';
 import { Badge, Card, EmptyState, ErrorState, Input, PageHeader, Select, Skeleton } from '@/components/ui';
 import { useAdminUsers, useClients } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 
 export function AssignPage() {
   const qc = useQueryClient();
@@ -19,7 +19,7 @@ export function AssignPage() {
   const assign = useMutation({
     mutationFn: ({ clientId, trainerId }: { clientId: number; trainerId: number | null }) => adminApi.assignTrainer(clientId, trainerId),
     onSuccess: async () => {
-      toast.success(ar.admin.assigned);
+      toast.success(tr.admin.assigned);
       await Promise.all([qc.invalidateQueries({ queryKey: ['clients'] }), qc.invalidateQueries({ queryKey: ['admin'] })]);
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -39,12 +39,12 @@ export function AssignPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title={ar.admin.assignTitle} subtitle={ar.admin.assignSubtitle} />
+      <PageHeader title={tr.admin.assignTitle} subtitle={tr.admin.assignSubtitle} />
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <Input aria-label={ar.common.search} placeholder={ar.common.search} value={q} onChange={(e) => setQ(e.target.value)} suffix={<Search className="h-4 w-4" />} />
-        <Select aria-label={ar.client.trainer} value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)}>
-          <option value="">{ar.admin.allClients}</option>
-          <option value="none">{ar.admin.noTrainer}</option>
+        <Input aria-label={tr.common.search} placeholder={tr.common.search} value={q} onChange={(e) => setQ(e.target.value)} suffix={<Search className="h-4 w-4" />} />
+        <Select aria-label={tr.client.trainer} value={trainerFilter} onChange={(e) => setTrainerFilter(e.target.value)}>
+          <option value="">{tr.admin.allClients}</option>
+          <option value="none">{tr.admin.noTrainer}</option>
           {trainers.data?.map((t) => (
             <option key={t.id} value={t.id}>
               {t.full_name}
@@ -59,7 +59,7 @@ export function AssignPage() {
         <ErrorState message={errorMessage(clients.error)} onRetry={() => clients.refetch()} />
       ) : !list.length ? (
         <Card>
-          <EmptyState icon={<Link2 className="h-6 w-6" />} title={ar.trainer.noResults} />
+          <EmptyState icon={<Link2 className="h-6 w-6" />} title={tr.trainer.noResults} />
         </Card>
       ) : (
         <Card className="overflow-hidden">
@@ -71,20 +71,20 @@ export function AssignPage() {
                     <Link to={`/admin/clients/${c.id}`} className="truncate font-semibold hover:text-primary">
                       {c.full_name}
                     </Link>
-                    {c.trainer_id === null && <Badge tone="bad">{ar.admin.noTrainer}</Badge>}
+                    {c.trainer_id === null && <Badge tone="bad">{tr.admin.noTrainer}</Badge>}
                   </div>
                   <p className="truncate text-xs text-muted" dir="ltr">
                     {c.email}
                   </p>
                 </div>
                 <Select
-                  aria-label={`${ar.client.trainer} — ${c.full_name}`}
+                  aria-label={`${tr.client.trainer} — ${c.full_name}`}
                   value={c.trainer_id ?? ''}
                   disabled={assign.isPending}
                   wrapperClassName="sm:w-60"
                   onChange={(e) => assign.mutate({ clientId: c.id, trainerId: e.target.value ? Number(e.target.value) : null })}
                 >
-                  <option value="">{ar.admin.noTrainer}</option>
+                  <option value="">{tr.admin.noTrainer}</option>
                   {activeTrainers.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.full_name}

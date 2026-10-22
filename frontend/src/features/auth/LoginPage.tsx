@@ -5,22 +5,24 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { errorMessage } from '@/api/client';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
 import { Logo } from '@/components/Logo';
 import { Button, Card, Input } from '@/components/ui';
 import { homePathFor, useAuth } from '@/hooks/useAuth';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 import { FullScreenLoader } from '@/routes/RequireRole';
 
-const schema = z.object({
-  email: z.string().trim().email(ar.auth.invalidEmail),
-  password: z.string().min(1, ar.auth.passwordRequired),
+const makeSchema = () =>
+  z.object({
+  email: z.string().trim().email(tr.auth.invalidEmail),
+  password: z.string().min(1, tr.auth.passwordRequired),
 });
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 
 const DEMO = [
-  { label: 'مدير', email: 'admin@tahadi.app', password: 'Admin@12345' },
-  { label: 'مدرب', email: 'trainer1@tahadi.app', password: 'Demo@12345' },
-  { label: 'لاعب', email: 'client1@tahadi.app', password: 'Demo@12345' },
+  { role: 'admin', email: 'admin@tahadi.app', password: 'Admin@12345' },
+  { role: 'trainer', email: 'trainer1@tahadi.app', password: 'Demo@12345' },
+  { role: 'client', email: 'client1@tahadi.app', password: 'Demo@12345' },
 ];
 
 export function LoginPage() {
@@ -34,7 +36,7 @@ export function LoginPage() {
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } });
+  } = useForm<FormValues>({ resolver: zodResolver(makeSchema()), defaultValues: { email: '', password: '' } });
 
   if (status === 'loading') return <FullScreenLoader />;
   if (user) return <Navigate to={homePathFor(user.role)} replace />;
@@ -60,8 +62,8 @@ export function LoginPage() {
         <div aria-hidden className="absolute -bottom-32 end-0 h-80 w-80 rounded-full bg-accent/30 blur-3xl" />
         <Logo className="relative [&_span]:text-white" />
         <div className="relative max-w-md">
-          <h1 className="text-4xl font-bold leading-tight">{ar.auth.heroTitle}</h1>
-          <p className="mt-4 text-lg leading-relaxed text-white/70">{ar.auth.heroText}</p>
+          <h1 className="text-4xl font-bold leading-tight">{tr.auth.heroTitle}</h1>
+          <p className="mt-4 text-lg leading-relaxed text-white/70">{tr.auth.heroText}</p>
           <div className="mt-8 flex gap-3">
             {[HeartPulse, Activity, LineChart].map((Icon, i) => (
               <span key={i} className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
@@ -70,22 +72,23 @@ export function LoginPage() {
             ))}
           </div>
         </div>
-        <p className="relative text-sm text-white/50">{ar.tagline}</p>
+        <p className="relative text-sm text-white/50">{tr.tagline}</p>
       </div>
 
       {/* form */}
-      <div className="flex items-center justify-center px-4 py-10">
+      <div className="relative flex items-center justify-center px-4 py-10">
+        <LanguageSwitch className="absolute end-4 top-4" />
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
             <Logo />
-            <p className="mt-2 text-sm text-muted">{ar.tagline}</p>
+            <p className="mt-2 text-sm text-muted">{tr.tagline}</p>
           </div>
-          <h2 className="text-2xl font-bold">{ar.auth.title}</h2>
-          <p className="mt-1 text-sm text-muted">{ar.auth.subtitle}</p>
+          <h2 className="text-2xl font-bold">{tr.auth.title}</h2>
+          <p className="mt-1 text-sm text-muted">{tr.auth.subtitle}</p>
 
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
             <Input
-              label={ar.auth.email}
+              label={tr.auth.email}
               type="email"
               autoComplete="email"
               inputMode="email"
@@ -95,7 +98,7 @@ export function LoginPage() {
               {...register('email')}
             />
             <Input
-              label={ar.auth.password}
+              label={tr.auth.password}
               type="password"
               autoComplete="current-password"
               dir="ltr"
@@ -103,13 +106,13 @@ export function LoginPage() {
               {...register('password')}
             />
             <Button type="submit" size="lg" loading={isSubmitting} className="mt-2 w-full">
-              {isSubmitting ? ar.auth.submitting : ar.auth.submit}
+              {isSubmitting ? tr.auth.submitting : tr.auth.submit}
             </Button>
           </form>
 
           {import.meta.env.DEV && (
             <Card className="mt-8 p-4">
-              <p className="mb-3 text-xs font-semibold text-muted">{ar.auth.demo}</p>
+              <p className="mb-3 text-xs font-semibold text-muted">{tr.auth.demo}</p>
               <div className="flex flex-wrap gap-2">
                 {DEMO.map((d) => (
                   <Button
@@ -121,7 +124,7 @@ export function LoginPage() {
                       setValue('password', d.password);
                     }}
                   >
-                    {d.label}
+                    {tr.roles[d.role]}
                   </Button>
                 ))}
               </div>

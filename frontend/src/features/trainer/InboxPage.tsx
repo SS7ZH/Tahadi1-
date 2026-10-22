@@ -5,7 +5,7 @@ import type { QuestionStatus } from '@/api/types';
 import { QuestionCard } from '@/components/QuestionThread';
 import { Card, EmptyState, ErrorState, PageHeader, Skeleton, Tabs } from '@/components/ui';
 import { useInbox } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 
 type Filter = QuestionStatus | 'all';
 
@@ -16,16 +16,16 @@ export function InboxPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title={ar.questions.inboxTitle} />
+      <PageHeader title={tr.questions.inboxTitle} />
       <div className="mb-4">
         <Tabs<Filter>
           value={filter}
           onChange={setFilter}
           items={[
-            { value: 'open', label: ar.questionStatus.open, badge: openCount },
-            { value: 'answered', label: ar.questionStatus.answered },
-            { value: 'closed', label: ar.questionStatus.closed },
-            { value: 'all', label: ar.common.all },
+            { value: 'open', label: tr.questionStatus.open, badge: openCount },
+            { value: 'answered', label: tr.questionStatus.answered },
+            { value: 'closed', label: tr.questionStatus.closed },
+            { value: 'all', label: tr.common.all },
           ]}
         />
       </div>
@@ -38,7 +38,7 @@ export function InboxPage() {
         <ErrorState message={errorMessage(error)} onRetry={() => refetch()} />
       ) : !data?.length ? (
         <Card>
-          <EmptyState icon={<Inbox className="h-6 w-6" />} title={ar.questions.inboxEmpty} description={ar.questions.inboxEmptyHint} />
+          <EmptyState icon={<Inbox className="h-6 w-6" />} title={tr.questions.inboxEmpty} description={tr.questions.inboxEmptyHint} />
         </Card>
       ) : (
         <div className="flex flex-col gap-3">

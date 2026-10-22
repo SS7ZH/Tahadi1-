@@ -5,6 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError, forbidden
+from app.core.i18n import tr
 from app.core.security import decode_token
 from app.db.session import get_db
 from app.models import MeasurementSession, User
@@ -18,13 +19,13 @@ def get_current_user(
     db: Session = Depends(get_db),
 ) -> User:
     if creds is None or creds.scheme.lower() != "bearer":
-        raise AppError(401, "NOT_AUTHENTICATED", "يجب تسجيل الدخول")
+        raise AppError(401, "NOT_AUTHENTICATED", tr("يجب تسجيل الدخول", "You need to log in"))
     payload = decode_token(creds.credentials, "access")
     user = db.get(User, int(payload["sub"]))
     if user is None or user.deleted_at is not None:
-        raise AppError(401, "INVALID_TOKEN", "الحساب غير موجود")
+        raise AppError(401, "INVALID_TOKEN", tr("الحساب غير موجود", "Account not found"))
     if not user.is_active:
-        raise AppError(401, "ACCOUNT_DISABLED", "الحساب موقوف، تواصل مع الإدارة")
+        raise AppError(401, "ACCOUNT_DISABLED", tr("الحساب موقوف، تواصل مع الإدارة", "This account is disabled, contact the administrator"))
     return user
 
 

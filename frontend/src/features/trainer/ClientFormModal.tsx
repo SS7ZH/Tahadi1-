@@ -8,26 +8,27 @@ import { clientsApi } from '@/api/endpoints';
 import type { User } from '@/api/types';
 import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
 import { useActivityFactors } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { loc, tr } from '@/i18n';
 import { todayISO } from '@/lib/format';
 
-const base = {
-  full_name: z.string().trim().min(2, ar.common.required).max(120),
+const makeBase = () => ({
+  full_name: z.string().trim().min(2, tr.common.required).max(120),
   phone: z.string().trim().max(30).optional(),
   sex: z.enum(['male', 'female']),
-  birth_date: z.string().min(1, ar.common.required).refine((v) => v < todayISO(), ar.common.required),
-  height_cm: z.coerce.number({ invalid_type_error: ar.client.heightRange }).min(100, ar.client.heightRange).max(250, ar.client.heightRange),
+  birth_date: z.string().min(1, tr.common.required).refine((v) => v < todayISO(), tr.common.required),
+  height_cm: z.coerce.number({ invalid_type_error: tr.client.heightRange }).min(100, tr.client.heightRange).max(250, tr.client.heightRange),
   goal: z.enum(['fat_loss', 'muscle_gain', 'fitness', 'health']),
   activity_key: z.string().min(1),
   notes: z.string().max(5000).optional(),
-};
-const createSchema = z.object({
-  ...base,
-  email: z.string().trim().email(ar.auth.invalidEmail),
-  password: z.string().min(8, ar.profile.passwordMin),
 });
-const editSchema = z.object(base);
-type CreateValues = z.infer<typeof createSchema>;
+const makeCreateSchema = () =>
+  z.object({
+    ...makeBase(),
+    email: z.string().trim().email(tr.auth.invalidEmail),
+    password: z.string().min(8, tr.profile.passwordMin),
+  });
+const makeEditSchema = () => z.object(makeBase());
+type CreateValues = z.infer<ReturnType<typeof makeCreateSchema>>;
 
 export function ClientFormModal({ open, onClose, client }: { open: boolean; onClose: () => void; client?: User | null }) {
   const qc = useQueryClient();
@@ -41,7 +42,7 @@ export function ClientFormModal({ open, onClose, client }: { open: boolean; onCl
     reset,
     formState: { errors },
   } = useForm<CreateValues>({
-    resolver: zodResolver(editing ? (editSchema as unknown as typeof createSchema) : createSchema),
+    resolver: zodResolver(editing ? (makeEditSchema() as unknown as ReturnType<typeof makeCreateSchema>) : makeCreateSchema()),
     values: {
       full_name: client?.full_name ?? '',
       phone: client?.phone ?? '',
@@ -71,7 +72,7 @@ export function ClientFormModal({ open, onClose, client }: { open: boolean; onCl
       return editing ? clientsApi.update(client!.id, body) : clientsApi.create({ ...body, email: v.email, password: v.password });
     },
     onSuccess: async () => {
-      toast.success(editing ? ar.common.saved : ar.client.created);
+      toast.success(editing ? tr.common.saved : tr.client.created);
       await Promise.all([qc.invalidateQueries({ queryKey: ['clients'] }), qc.invalidateQueries({ queryKey: ['client'] })]);
       reset();
       onClose();
@@ -83,27 +84,27 @@ export function ClientFormModal({ open, onClose, client }: { open: boolean; onCl
     <Modal
       open={open}
       onClose={onClose}
-      title={editing ? ar.client.editClient : ar.client.newClient}
+      title={editing ? tr.client.editClient : tr.client.newClient}
       size="lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            {ar.common.cancel}
+            {tr.common.cancel}
           </Button>
           <Button type="submit" form="client-form" loading={save.isPending}>
-            {editing ? ar.common.save : ar.common.create}
+            {editing ? tr.common.save : tr.common.create}
           </Button>
         </>
       }
     >
       <form id="client-form" onSubmit={handleSubmit((v) => save.mutate(v))} className="grid gap-4 sm:grid-cols-2" noValidate>
-        <Input label={ar.client.fullName} error={errors.full_name?.message} {...register('full_name')} />
-        <Input label={ar.client.phone} type="tel" dir="ltr" {...register('phone')} />
+        <Input label={tr.client.fullName} error={errors.full_name?.message} {...register('full_name')} />
+        <Input label={tr.client.phone} type="tel" dir="ltr" {...register('phone')} />
         {!editing && (
           <>
-            <Input label={ar.client.email} type="email" dir="ltr" autoComplete="off" error={errors.email?.message} {...register('email')} />
+            <Input label={tr.client.email} type="email" dir="ltr" autoComplete="off" error={errors.email?.message} {...register('email')} />
             <Input
-              label={ar.client.password}
+              label={tr.client.password}
               type="password"
               dir="ltr"
               autoComplete="new-password"
@@ -112,13 +113,13 @@ export function ClientFormModal({ open, onClose, client }: { open: boolean; onCl
             />
           </>
         )}
-        <Select label={ar.client.sex} {...register('sex')}>
-          <option value="male">{ar.sex.male}</option>
-          <option value="female">{ar.sex.female}</option>
+        <Select label={tr.client.sex} {...register('sex')}>
+          <option value="male">{tr.sex.male}</option>
+          <option value="female">{tr.sex.female}</option>
         </Select>
-        <Input label={ar.client.birthDate} type="date" max={todayISO()} error={errors.birth_date?.message} {...register('birth_date')} />
+        <Input label={tr.client.birthDate} type="date" max={todayISO()} error={errors.birth_date?.message} {...register('birth_date')} />
         <Input
-          label={ar.client.height}
+          label={tr.client.height}
           type="number"
           step="any"
           inputMode="decimal"
@@ -126,21 +127,21 @@ export function ClientFormModal({ open, onClose, client }: { open: boolean; onCl
           error={errors.height_cm?.message}
           {...register('height_cm')}
         />
-        <Select label={ar.client.goal} {...register('goal')}>
-          {Object.entries(ar.goals).map(([k, v]) => (
+        <Select label={tr.client.goal} {...register('goal')}>
+          {Object.entries(tr.goals).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
             </option>
           ))}
         </Select>
-        <Select label={ar.client.activity} wrapperClassName="sm:col-span-2" {...register('activity_key')}>
+        <Select label={tr.client.activity} wrapperClassName="sm:col-span-2" {...register('activity_key')}>
           {factors.data?.map((f) => (
             <option key={f.key} value={f.key}>
-              {f.name_ar} — {f.description_ar} (×{f.factor})
+              {loc(f.name_ar, f.name_en)} — {loc(f.description_ar, f.description_en)} (×{f.factor})
             </option>
           ))}
         </Select>
-        <Textarea label={ar.client.notes} wrapperClassName="sm:col-span-2" rows={2} {...register('notes')} />
+        <Textarea label={tr.client.notes} wrapperClassName="sm:col-span-2" rows={2} {...register('notes')} />
       </form>
     </Modal>
   );

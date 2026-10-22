@@ -7,7 +7,7 @@ import { clientsApi, commentsApi } from '@/api/endpoints';
 import type { Comment } from '@/api/types';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { qk, useComments, useSessions } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, IconButton, Select, Skeleton, Textarea } from './ui';
 
@@ -31,7 +31,7 @@ export function CommentThread({ clientId, canWrite }: { clientId: number; canWri
     mutationFn: () => clientsApi.addComment(clientId, { body: body.trim(), session_id: sessionId ? Number(sessionId) : null }),
     onSuccess: async () => {
       setBody('');
-      toast.success(ar.comments.added);
+      toast.success(tr.comments.added);
       await refresh();
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -41,7 +41,7 @@ export function CommentThread({ clientId, canWrite }: { clientId: number; canWri
     mutationFn: (c: Comment) => commentsApi.remove(c.id),
     onSuccess: async () => {
       setToDelete(null);
-      toast.success(ar.common.deleted);
+      toast.success(tr.common.deleted);
       await refresh();
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -61,28 +61,28 @@ export function CommentThread({ clientId, canWrite }: { clientId: number; canWri
             }}
           >
             <Textarea
-              aria-label={ar.comments.placeholder}
-              placeholder={ar.comments.placeholder}
+              aria-label={tr.comments.placeholder}
+              placeholder={tr.comments.placeholder}
               value={body}
               onChange={(e) => setBody(e.target.value)}
               maxLength={5000}
             />
             <div className="flex flex-wrap items-end gap-3">
               <Select
-                aria-label={ar.comments.onSession}
+                aria-label={tr.comments.onSession}
                 value={sessionId}
                 onChange={(e) => setSessionId(e.target.value)}
                 wrapperClassName="min-w-[12rem] flex-1 sm:flex-none"
               >
-                <option value="">{ar.comments.general}</option>
+                <option value="">{tr.comments.general}</option>
                 {sessions.data?.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {ar.comments.session}: {fmtDate(s.session_date)}
+                    {tr.comments.session}: {fmtDate(s.session_date)}
                   </option>
                 ))}
               </Select>
-              <Button type="submit" loading={add.isPending} disabled={!body.trim()} icon={<Send className="h-4 w-4 -scale-x-100" />}>
-                {ar.common.send}
+              <Button type="submit" loading={add.isPending} disabled={!body.trim()} icon={<Send className="h-4 w-4 rtl:-scale-x-100" />}>
+                {tr.common.send}
               </Button>
             </div>
           </form>
@@ -97,8 +97,8 @@ export function CommentThread({ clientId, canWrite }: { clientId: number; canWri
         <Card>
           <EmptyState
             icon={<MessageSquare className="h-6 w-6" />}
-            title={ar.comments.empty}
-            description={canWrite ? ar.comments.emptyHint : ar.comments.emptyClient}
+            title={tr.comments.empty}
+            description={canWrite ? tr.comments.emptyHint : tr.comments.emptyClient}
           />
         </Card>
       ) : (
@@ -109,7 +109,7 @@ export function CommentThread({ clientId, canWrite }: { clientId: number; canWri
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                      {c.author_name?.charAt(0) ?? '؟'}
+                      {c.author_name?.charAt(0) ?? '?'}
                     </span>
                     <div>
                       <p className="text-sm font-semibold">{c.author_name ?? '—'}</p>
@@ -123,10 +123,10 @@ export function CommentThread({ clientId, canWrite }: { clientId: number; canWri
                         {fmtDate(dateOf(c.session_id))}
                       </Badge>
                     ) : (
-                      <Badge>{ar.comments.general}</Badge>
+                      <Badge>{tr.comments.general}</Badge>
                     )}
                     {canWrite && (user.role === 'admin' || c.author_id === user.id) && (
-                      <IconButton label={ar.common.delete} onClick={() => setToDelete(c)} className="h-8 w-8 hover:text-bad">
+                      <IconButton label={tr.common.delete} onClick={() => setToDelete(c)} className="h-8 w-8 hover:text-bad">
                         <Trash2 className="h-4 w-4" />
                       </IconButton>
                     )}
@@ -141,8 +141,8 @@ export function CommentThread({ clientId, canWrite }: { clientId: number; canWri
 
       <ConfirmDialog
         open={!!toDelete}
-        title={ar.comments.deleteTitle}
-        text={ar.comments.deleteText}
+        title={tr.comments.deleteTitle}
+        text={tr.comments.deleteText}
         onConfirm={() => toDelete && del.mutate(toDelete)}
         onClose={() => setToDelete(null)}
         loading={del.isPending}

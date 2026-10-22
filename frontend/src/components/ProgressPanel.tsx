@@ -14,7 +14,7 @@ import { errorMessage } from '@/api/client';
 import { CATEGORIES, type Progress, type Session } from '@/api/types';
 import { useProgress, useSessions } from '@/hooks/queries';
 import { useChartColors } from '@/hooks/useTheme';
-import { ar } from '@/i18n/ar';
+import { loc, tr, useLang } from '@/i18n';
 import { fmtDate, fmtNumber, fmtShortDate } from '@/lib/format';
 import { trendOf } from '@/lib/trend';
 import { TrendChip } from './TrendChip';
@@ -22,18 +22,18 @@ import { Card, CardHeader, EmptyState, ErrorState, Select, Skeleton } from './ui
 
 function MetricSelect({ progress, value, onChange }: { progress: Progress; value: string; onChange: (k: string) => void }) {
   return (
-    <Select label={ar.progress.metric} value={value} onChange={(e) => onChange(e.target.value)} wrapperClassName="w-full sm:w-72">
+    <Select label={tr.progress.metric} value={value} onChange={(e) => onChange(e.target.value)} wrapperClassName="w-full sm:w-72">
       {CATEGORIES.map((cat) => {
         const opts = progress.available.filter((a) => a.category === cat);
         if (!opts.length) return null;
         return (
-          <optgroup key={cat} label={ar.categories[cat]}>
+          <optgroup key={cat} label={tr.categories[cat]}>
             {opts.map((o) => {
               const n = progress.series[o.key]?.points.length ?? 0;
               return (
                 <option key={o.key} value={o.key} disabled={n === 0}>
-                  {o.name_ar}
-                  {o.derived ? ` (${ar.progress.derived})` : ''}
+                  {loc(o.name_ar, o.name_en)}
+                  {o.derived ? ` (${tr.progress.derived})` : ''}
                   {n === 0 ? ' —' : ''}
                 </option>
               );
@@ -47,6 +47,7 @@ function MetricSelect({ progress, value, onChange }: { progress: Progress; value
 
 function ProgressChart({ progress, metric }: { progress: Progress; metric: string }) {
   const colors = useChartColors();
+  const { isRtl } = useLang();
   const series = progress.series[metric];
   const isBp = metric === 'blood_pressure';
   const data = useMemo(
@@ -61,15 +62,15 @@ function ProgressChart({ progress, metric }: { progress: Progress; metric: strin
   );
 
   if (!series || series.points.length === 0)
-    return <EmptyState icon={<LineChartIcon className="h-6 w-6" />} title={ar.progress.notEnough} description={ar.progress.notEnoughHint} />;
+    return <EmptyState icon={<LineChartIcon className="h-6 w-6" />} title={tr.progress.notEnough} description={tr.progress.notEnoughHint} />;
 
-  const unit = series.unit ?? '';
+  const unit = loc(series.unit, series.unit_en);
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: ar.progress.first, value: series.first },
-          { label: ar.progress.latest, value: series.latest },
+          { label: tr.progress.first, value: series.first },
+          { label: tr.progress.latest, value: series.latest },
         ].map((s) => (
           <div key={s.label} className="rounded-xl bg-surface-2 px-3 py-2.5">
             <p className="text-[11px] text-muted">{s.label}</p>
@@ -80,28 +81,28 @@ function ProgressChart({ progress, metric }: { progress: Progress; metric: strin
           </div>
         ))}
         <div className="rounded-xl bg-surface-2 px-3 py-2.5">
-          <p className="text-[11px] text-muted">{ar.progress.change}</p>
+          <p className="text-[11px] text-muted">{tr.progress.change}</p>
           <div className="mt-1">
             <TrendChip change={series.change} trend={series.trend} />
           </div>
         </div>
       </div>
 
-      {/* RTL: earliest date on the right, time flows right→left; Y axis on the right. */}
-      <div className="h-64 w-full sm:h-80" role="img" aria-label={`${ar.progress.chartTitle}: ${series.name_ar}`}>
+      {/* Time flows with the reading direction: in Arabic the earliest date is on the right and the Y axis on the right. */}
+      <div className="h-64 w-full sm:h-80" role="img" aria-label={`${tr.progress.chartTitle}: ${loc(series.name_ar, series.name_en)}`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
             <CartesianGrid stroke={colors.line} strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="label"
-              reversed
+              reversed={isRtl}
               tick={{ fill: colors.muted, fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: colors.line }}
               minTickGap={16}
             />
             <YAxis
-              orientation="right"
+              orientation={isRtl ? 'right' : 'left'}
               domain={['auto', 'auto']}
               tick={{ fill: colors.muted, fontSize: 11 }}
               tickLine={false}
@@ -124,7 +125,7 @@ function ProgressChart({ progress, metric }: { progress: Progress; metric: strin
             <Line
               type="monotone"
               dataKey="value"
-              name={isBp ? ar.progress.systolic : series.name_ar}
+              name={isBp ? tr.progress.systolic : loc(series.name_ar, series.name_en)}
               stroke={colors.primary}
               strokeWidth={2.5}
               dot={{ r: 3.5, fill: colors.primary, strokeWidth: 0 }}
@@ -135,7 +136,7 @@ function ProgressChart({ progress, metric }: { progress: Progress; metric: strin
               <Line
                 type="monotone"
                 dataKey="diastolic"
-                name={ar.progress.diastolic}
+                name={tr.progress.diastolic}
                 stroke={colors.accent}
                 strokeWidth={2.5}
                 dot={{ r: 3.5, fill: colors.accent, strokeWidth: 0 }}
@@ -165,7 +166,7 @@ function ComparePanel({ progress, sessions }: { progress: Progress; sessions: Se
     }
   }, [ordered]);
 
-  if (ordered.length < 2) return <p className="p-5 text-sm text-muted">{ar.progress.needTwo}</p>;
+  if (ordered.length < 2) return <p className="p-5 text-sm text-muted">{tr.progress.needTwo}</p>;
 
   const rows = Object.values(progress.series)
     .map((s) => {
@@ -175,21 +176,21 @@ function ComparePanel({ progress, sessions }: { progress: Progress; sessions: Se
       const diff = a && b ? a.value - b.value : null;
       const fmtVal = (p?: { value: number; diastolic?: number }) =>
         p ? (p.diastolic !== undefined ? `${p.value}/${p.diastolic}` : fmtNumber(p.value)) : '—';
-      return { key: s.key, name: s.name_ar, unit: s.unit, before: fmtVal(b), after: fmtVal(a), diff, trend: trendOf(s.better_direction, diff) };
+      return { key: s.key, name: loc(s.name_ar, s.name_en), unit: loc(s.unit, s.unit_en), before: fmtVal(b), after: fmtVal(a), diff, trend: trendOf(s.better_direction, diff) };
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-5">
       <div className="grid grid-cols-2 gap-3">
-        <Select label={ar.progress.before} value={beforeId ?? ''} onChange={(e) => setBeforeId(Number(e.target.value))}>
+        <Select label={tr.progress.before} value={beforeId ?? ''} onChange={(e) => setBeforeId(Number(e.target.value))}>
           {ordered.map((s) => (
             <option key={s.id} value={s.id}>
               {sessionLabel(s)}
             </option>
           ))}
         </Select>
-        <Select label={ar.progress.after} value={afterId ?? ''} onChange={(e) => setAfterId(Number(e.target.value))}>
+        <Select label={tr.progress.after} value={afterId ?? ''} onChange={(e) => setAfterId(Number(e.target.value))}>
           {ordered.map((s) => (
             <option key={s.id} value={s.id}>
               {sessionLabel(s)}
@@ -201,10 +202,10 @@ function ComparePanel({ progress, sessions }: { progress: Progress; sessions: Se
         <table className="w-full min-w-[22rem] text-sm">
           <thead>
             <tr className="border-b border-line text-xs text-muted">
-              <th className="px-4 py-2 text-start font-medium sm:px-2">{ar.progress.metric}</th>
-              <th className="px-2 py-2 text-start font-medium">{ar.progress.before}</th>
-              <th className="px-2 py-2 text-start font-medium">{ar.progress.after}</th>
-              <th className="px-4 py-2 text-start font-medium sm:px-2">{ar.progress.difference}</th>
+              <th className="px-4 py-2 text-start font-medium sm:px-2">{tr.progress.metric}</th>
+              <th className="px-2 py-2 text-start font-medium">{tr.progress.before}</th>
+              <th className="px-2 py-2 text-start font-medium">{tr.progress.after}</th>
+              <th className="px-4 py-2 text-start font-medium sm:px-2">{tr.progress.difference}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -249,14 +250,14 @@ export function ProgressPanel({ clientId }: { clientId: number }) {
   return (
     <div className="flex flex-col gap-4">
       <Card>
-        <CardHeader title={ar.progress.chartTitle} icon={<LineChartIcon className="h-5 w-5" />} />
+        <CardHeader title={tr.progress.chartTitle} icon={<LineChartIcon className="h-5 w-5" />} />
         <div className="flex flex-col gap-4 p-4 sm:p-5">
           <MetricSelect progress={progress.data} value={metric} onChange={setMetric} />
           <ProgressChart progress={progress.data} metric={metric} />
         </div>
       </Card>
       <Card>
-        <CardHeader title={ar.progress.compare} subtitle={ar.progress.compareHint} icon={<ArrowLeftRight className="h-5 w-5" />} />
+        <CardHeader title={tr.progress.compare} subtitle={tr.progress.compareHint} icon={<ArrowLeftRight className="h-5 w-5" />} />
         {sessions.data ? <ComparePanel progress={progress.data} sessions={sessions.data} /> : <Skeleton className="m-5 h-40" />}
       </Card>
     </div>

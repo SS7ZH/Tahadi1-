@@ -12,7 +12,7 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 
 /* ---------------- Button ---------------- */
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
@@ -246,7 +246,7 @@ export function CountBadge({ count }: { count: number }) {
 
 /* ---------------- Feedback ---------------- */
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={clsx('h-5 w-5 animate-spin text-primary', className)} aria-label={ar.common.loading} />;
+  return <Loader2 className={clsx('h-5 w-5 animate-spin text-primary', className)} aria-label={tr.common.loading} />;
 }
 
 export function Skeleton({ className }: { className?: string }) {
@@ -301,12 +301,12 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
   return (
     <EmptyState
       icon={<AlertTriangle className="h-6 w-6" />}
-      title={ar.common.errorTitle}
+      title={tr.common.errorTitle}
       description={message}
       action={
         onRetry && (
           <Button variant="outline" size="sm" onClick={onRetry}>
-            {ar.common.retry}
+            {tr.common.retry}
           </Button>
         )
       }
@@ -414,7 +414,7 @@ export function Modal({
       >
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
           <h2 className="text-base font-bold">{title}</h2>
-          <IconButton label={ar.common.close} onClick={onClose}>
+          <IconButton label={tr.common.close} onClick={onClose}>
             <X className="h-5 w-5" />
           </IconButton>
         </div>
@@ -430,7 +430,7 @@ export function ConfirmDialog({
   open,
   title,
   text,
-  confirmLabel = ar.common.delete,
+  confirmLabel = tr.common.delete,
   onConfirm,
   onClose,
   loading,
@@ -454,7 +454,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} data-autofocus>
-            {ar.common.cancel}
+            {tr.common.cancel}
           </Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>
             {confirmLabel}

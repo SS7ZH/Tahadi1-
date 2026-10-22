@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from app.models import ActivityFactor, MeasurementDefinition, MeasurementSession, MeasurementValue, User
 from app.services.calculations import (
     bmi as calc_bmi,
+)
+from app.services.calculations import (
     compute_results,
     waist_hip_ratio,
 )
@@ -15,8 +17,8 @@ NEUTRAL_EPS = 1e-9
 
 # Derived (calculated) series that can be charted alongside raw measurements.
 DERIVED = {
-    "bmi": {"name_ar": "مؤشر كتلة الجسم", "unit": "كجم/م²", "category": "body", "better_direction": "goal"},
-    "whr": {"name_ar": "نسبة الوسط إلى الأرداف", "unit": None, "category": "body", "better_direction": "down"},
+    "bmi": {"name_ar": "مؤشر كتلة الجسم", "name_en": "Body mass index", "unit": "كجم/م²", "unit_en": "kg/m²", "category": "body", "better_direction": "goal"},
+    "whr": {"name_ar": "نسبة الوسط إلى الأرداف", "name_en": "Waist-to-hip ratio", "unit": None, "unit_en": None, "category": "body", "better_direction": "down"},
 }
 
 GOAL_DIRECTION = {"fat_loss": "down", "muscle_gain": "up"}
@@ -93,6 +95,7 @@ def session_results(db: Session, client: User, session: MeasurementSession) -> d
         activity_factor=act.factor if act else None,
         activity_key=act.key if act else None,
         activity_name_ar=act.name_ar if act else None,
+        activity_name_en=act.name_en if act else None,
     )
 
 
@@ -129,10 +132,10 @@ def build_progress(
     maps = [(s, value_map(s)) for s in sessions]
 
     available = [
-        {"key": d.key, "name_ar": d.name_ar, "unit": d.unit, "category": d.category, "derived": False}
+        {"key": d.key, "name_ar": d.name_ar, "name_en": d.name_en, "unit": d.unit, "unit_en": d.unit_en, "category": d.category, "derived": False}
         for d in defs.values()
     ] + [
-        {"key": k, "name_ar": meta["name_ar"], "unit": meta["unit"], "category": meta["category"], "derived": True}
+        {"key": k, "name_ar": meta["name_ar"], "name_en": meta["name_en"], "unit": meta["unit"], "unit_en": meta["unit_en"], "category": meta["category"], "derived": True}
         for k, meta in DERIVED.items()
     ]
     keys = keys or [k["key"] for k in available]
@@ -150,7 +153,7 @@ def build_progress(
             base_direction = meta["better_direction"]  # "goal" for bmi, resolved below
         elif key in defs:
             d = defs[key]
-            meta = {"key": key, "name_ar": d.name_ar, "unit": d.unit, "category": d.category}
+            meta = {"key": key, "name_ar": d.name_ar, "name_en": d.name_en, "unit": d.unit, "unit_en": d.unit_en, "category": d.category}
             base_direction = d.better_direction
         else:
             continue
@@ -172,7 +175,7 @@ def build_progress(
         latest = points[-1]["value"] if points else None
         change = round(latest - first, 3) if points else None
         series[key] = {
-            **{k: meta[k] for k in ("key", "name_ar", "unit", "category")},
+            **{k: meta[k] for k in ("key", "name_ar", "name_en", "unit", "unit_en", "category")},
             "better_direction": direction,
             "points": points,
             "first": first,
@@ -216,6 +219,7 @@ def build_summary(db: Session, client: User) -> dict:
         activity_factor=act.factor if act else None,
         activity_key=act.key if act else None,
         activity_name_ar=act.name_ar if act else None,
+        activity_name_en=act.name_en if act else None,
     )
     latest_bmi = results["bmi"]["value"] if results["bmi"] else None
 

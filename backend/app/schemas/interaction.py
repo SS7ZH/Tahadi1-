@@ -3,13 +3,15 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, Field
 
+from app.core.i18n import tr
+
 QuestionStatus = Literal["open", "answered", "closed"]
 
 
 def _strip_body(v: str) -> str:
     v = v.strip()
     if not v:
-        raise ValueError("النص لا يمكن أن يكون فارغاً")
+        raise ValueError(tr("النص لا يمكن أن يكون فارغاً", "Text cannot be empty"))
     return v
 
 

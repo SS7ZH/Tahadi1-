@@ -69,7 +69,7 @@ input[type='number'] {
   outline-offset: 2px;
 }
 
-.recharts-tooltip-wrapper {
+[dir='rtl'] .recharts-tooltip-wrapper {
   direction: rtl;
 }
 

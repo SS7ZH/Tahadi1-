@@ -10,9 +10,8 @@ from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import not_found
+from app.core.i18n import tr
 from app.models import ClientProfile, Comment, MeasurementSession, Question, User
-
-CLIENT_NOT_FOUND = "العميل غير موجود"
 
 
 def can_access_client(user: User, client: User) -> bool:
@@ -30,7 +29,7 @@ def can_access_client(user: User, client: User) -> bool:
 def get_accessible_client(db: Session, user: User, client_id: int) -> User:
     client = db.get(User, client_id)
     if client is None or not can_access_client(user, client):
-        raise not_found(CLIENT_NOT_FOUND)
+        raise not_found(tr("العميل غير موجود", "Client not found"))
     return client
 
 
@@ -47,27 +46,27 @@ def accessible_client_ids(user: User) -> Select:
 def get_accessible_session(db: Session, user: User, session_id: int) -> MeasurementSession:
     session = db.get(MeasurementSession, session_id)
     if session is None:
-        raise not_found("جلسة القياس غير موجودة")
+        raise not_found(tr("جلسة القياس غير موجودة", "Measurement session not found"))
     client = db.get(User, session.client_id)
     if client is None or not can_access_client(user, client):
-        raise not_found("جلسة القياس غير موجودة")
+        raise not_found(tr("جلسة القياس غير موجودة", "Measurement session not found"))
     return session
 
 
 def get_accessible_question(db: Session, user: User, question_id: int) -> Question:
     question = db.get(Question, question_id)
     if question is None or not can_access_client(user, question.client):
-        raise not_found("السؤال غير موجود")
+        raise not_found(tr("السؤال غير موجود", "Question not found"))
     return question
 
 
 def get_accessible_comment(db: Session, user: User, comment_id: int) -> Comment:
     comment = db.get(Comment, comment_id)
     if comment is None:
-        raise not_found("التعليق غير موجود")
+        raise not_found(tr("التعليق غير موجود", "Comment not found"))
     client = db.get(User, comment.client_id)
     if client is None or not can_access_client(user, client):
-        raise not_found("التعليق غير موجود")
+        raise not_found(tr("التعليق غير موجود", "Comment not found"))
     return comment
 
 
@@ -77,5 +76,5 @@ def ensure_session_belongs(db: Session, session_id: int | None, client_id: int) 
         return None
     session = db.get(MeasurementSession, session_id)
     if session is None or session.client_id != client_id:
-        raise not_found("جلسة القياس غير موجودة")
+        raise not_found(tr("جلسة القياس غير موجودة", "Measurement session not found"))
     return session

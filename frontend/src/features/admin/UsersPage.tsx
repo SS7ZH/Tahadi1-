@@ -9,7 +9,7 @@ import type { Role, User } from '@/api/types';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, IconButton, Input, PageHeader, Skeleton, Tabs } from '@/components/ui';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { useAdminUsers } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { tr } from '@/i18n';
 import { fmtDate } from '@/lib/format';
 import { UserFormModal } from './UserFormModal';
 
@@ -32,7 +32,7 @@ export function UsersPage() {
   const toggle = useMutation({
     mutationFn: (u: User) => adminApi.updateUser(u.id, { is_active: !u.is_active }),
     onSuccess: async () => {
-      toast.success(ar.admin.userUpdated);
+      toast.success(tr.admin.userUpdated);
       await invalidate();
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -40,7 +40,7 @@ export function UsersPage() {
   const del = useMutation({
     mutationFn: (u: User) => adminApi.deleteUser(u.id),
     onSuccess: async () => {
-      toast.success(ar.admin.userDeleted);
+      toast.success(tr.admin.userDeleted);
       setToDelete(null);
       await invalidate();
     },
@@ -50,10 +50,10 @@ export function UsersPage() {
   return (
     <div>
       <PageHeader
-        title={ar.admin.users}
+        title={tr.admin.users}
         actions={
           <Button icon={<Plus className="h-4 w-4" />} onClick={() => setModal({ open: true, user: null })}>
-            {ar.admin.newUser}
+            {tr.admin.newUser}
           </Button>
         }
       />
@@ -62,15 +62,15 @@ export function UsersPage() {
           value={role}
           onChange={(r) => setParams(r === 'all' ? {} : { role: r }, { replace: true })}
           items={[
-            { value: 'all', label: ar.common.all },
-            { value: 'trainer', label: ar.admin.trainers },
-            { value: 'client', label: ar.admin.clients },
-            { value: 'admin', label: ar.roles.admin },
+            { value: 'all', label: tr.common.all },
+            { value: 'trainer', label: tr.admin.trainers },
+            { value: 'client', label: tr.admin.clients },
+            { value: 'admin', label: tr.roles.admin },
           ]}
         />
         <Input
-          aria-label={ar.common.search}
-          placeholder={ar.common.search}
+          aria-label={tr.common.search}
+          placeholder={tr.common.search}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           wrapperClassName="sm:w-72"
@@ -84,7 +84,7 @@ export function UsersPage() {
         <ErrorState message={errorMessage(error)} onRetry={() => refetch()} />
       ) : !data?.length ? (
         <Card>
-          <EmptyState icon={<Users className="h-6 w-6" />} title={ar.admin.noUsers} />
+          <EmptyState icon={<Users className="h-6 w-6" />} title={tr.admin.noUsers} />
         </Card>
       ) : (
         <Card className="overflow-hidden">
@@ -97,12 +97,12 @@ export function UsersPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-semibold">{u.full_name}</p>
-                    <Badge tone={roleTone[u.role]}>{ar.roles[u.role]}</Badge>
-                    {!u.is_active && <Badge tone="bad">{ar.common.inactive}</Badge>}
+                    <Badge tone={roleTone[u.role]}>{tr.roles[u.role]}</Badge>
+                    {!u.is_active && <Badge tone="bad">{tr.common.inactive}</Badge>}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-muted">
                     <span dir="ltr">{u.email}</span>
-                    {u.role === 'client' && <> · {ar.client.trainer}: {u.trainer_name ?? ar.admin.noTrainer}</>}
+                    {u.role === 'client' && <> · {tr.client.trainer}: {u.trainer_name ?? tr.admin.noTrainer}</>}
                     <span className="hidden sm:inline"> · {fmtDate(u.created_at.slice(0, 10))}</span>
                   </p>
                 </div>
@@ -110,26 +110,26 @@ export function UsersPage() {
                   {u.role === 'client' && (
                     <Link
                       to={`/admin/clients/${u.id}`}
-                      aria-label={ar.tabs.summary}
-                      title={ar.tabs.summary}
+                      aria-label={tr.tabs.summary}
+                      title={tr.tabs.summary}
                       className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted transition hover:bg-surface-2 hover:text-ink"
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
                   )}
-                  <IconButton label={ar.common.edit} onClick={() => setModal({ open: true, user: u })}>
+                  <IconButton label={tr.common.edit} onClick={() => setModal({ open: true, user: u })}>
                     <Pencil className="h-4 w-4" />
                   </IconButton>
                   {u.id !== me.id && (
                     <>
                       <IconButton
-                        label={u.is_active ? ar.admin.deactivate : ar.admin.activate}
+                        label={u.is_active ? tr.admin.deactivate : tr.admin.activate}
                         onClick={() => toggle.mutate(u)}
                         className={u.is_active ? 'hover:text-warn' : 'text-good'}
                       >
                         <Power className="h-4 w-4" />
                       </IconButton>
-                      <IconButton label={ar.common.delete} onClick={() => setToDelete(u)} className="hover:bg-bad/10 hover:text-bad">
+                      <IconButton label={tr.common.delete} onClick={() => setToDelete(u)} className="hover:bg-bad/10 hover:text-bad">
                         <Trash2 className="h-4 w-4" />
                       </IconButton>
                     </>
@@ -149,8 +149,8 @@ export function UsersPage() {
       />
       <ConfirmDialog
         open={!!toDelete}
-        title={ar.admin.deleteUserTitle}
-        text={`${toDelete?.full_name ?? ''}: ${ar.admin.deleteUserText}`}
+        title={tr.admin.deleteUserTitle}
+        text={`${toDelete?.full_name ?? ''}: ${tr.admin.deleteUserText}`}
         onConfirm={() => toDelete && del.mutate(toDelete)}
         onClose={() => setToDelete(null)}
         loading={del.isPending}

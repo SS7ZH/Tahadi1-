@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { errorMessage } from '@/api/client';
 import { CATEGORIES, type Results, type SummaryValue } from '@/api/types';
 import { useSummary } from '@/hooks/queries';
-import { ar } from '@/i18n/ar';
+import { loc, tr } from '@/i18n';
 import { fmtDate, fmtInt, fmtNumber } from '@/lib/format';
 import { TrendChip } from './TrendChip';
 import { Badge, Card, CardHeader, EmptyState, ErrorState, Skeleton, SkeletonCards } from './ui';
@@ -26,10 +26,10 @@ function riskTone(key: string | undefined): 'good' | 'warn' | 'bad' | 'neutral' 
 export function ResultCards({ results, bmiChange, bmiTrend }: { results: Results; bmiChange?: number | null; bmiTrend?: SummaryValue['trend'] }) {
   const cards: { label: string; icon: ReactNode; value: ReactNode; sub: ReactNode; badge?: ReactNode }[] = [
     {
-      label: ar.summary.bmi,
+      label: tr.summary.bmi,
       icon: <Scale className="h-4 w-4" />,
       value: results.bmi ? <span className="num">{fmtNumber(results.bmi.value, 1)}</span> : '—',
-      sub: results.bmi ? null : ar.summary.missingForCalc,
+      sub: results.bmi ? null : tr.summary.missingForCalc,
       badge: results.bmi && (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge tone={riskTone(results.bmi.category)}>{results.bmi.label}</Badge>
@@ -38,32 +38,32 @@ export function ResultCards({ results, bmiChange, bmiTrend }: { results: Results
       ),
     },
     {
-      label: ar.summary.whr,
+      label: tr.summary.whr,
       icon: <Ruler className="h-4 w-4" />,
       value: results.whr ? <span className="num">{fmtNumber(results.whr.value)}</span> : '—',
-      sub: results.whr ? `${ar.summary.risk}:` : null,
+      sub: results.whr ? `${tr.summary.risk}:` : null,
       badge: results.whr && <Badge tone={riskTone(results.whr.risk)}>{results.whr.label}</Badge>,
     },
     {
-      label: ar.summary.bmr,
+      label: tr.summary.bmr,
       icon: <Flame className="h-4 w-4" />,
       value: results.bmr ? <span className="num">{fmtInt(results.bmr)}</span> : '—',
-      sub: results.bmr ? ar.common.kcalPerDay : ar.summary.missingForCalc,
+      sub: results.bmr ? tr.common.kcalPerDay : tr.summary.missingForCalc,
     },
     {
-      label: ar.summary.tdee,
+      label: tr.summary.tdee,
       icon: <Activity className="h-4 w-4" />,
       value: results.tdee ? <span className="num">{fmtInt(results.tdee)}</span> : '—',
       sub: results.activity ? (
         <span>
-          {ar.common.kcalPerDay} · {results.activity.name_ar} (<span className="num">×{results.activity.factor}</span>)
+          {tr.common.kcalPerDay} · {loc(results.activity.name_ar, results.activity.name_en)} (<span className="num">×{results.activity.factor}</span>)
         </span>
       ) : (
-        ar.summary.missingForCalc
+        tr.summary.missingForCalc
       ),
     },
     {
-      label: ar.summary.bp,
+      label: tr.summary.bp,
       icon: <HeartPulse className="h-4 w-4" />,
       value: results.blood_pressure ? (
         <span className="num">
@@ -100,7 +100,7 @@ function ValueRow({ v }: { v: SummaryValue }) {
   return (
     <li className="flex items-start justify-between gap-3 py-2.5">
       <div className="min-w-0">
-        <p className="text-sm font-medium">{v.name_ar}</p>
+        <p className="text-sm font-medium">{loc(v.name_ar, v.name_en)}</p>
         <p className="text-[11px] text-muted">{fmtDate(v.session_date)}</p>
         {isText && <p className="mt-1 text-sm leading-relaxed text-ink/80">{v.display}</p>}
         {v.value_type === 'choice' && v.value_text && <p className="mt-1 text-xs text-muted">{v.value_text}</p>}
@@ -109,7 +109,7 @@ function ValueRow({ v }: { v: SummaryValue }) {
         <div className="flex shrink-0 flex-col items-end gap-1">
           <span className="font-bold">
             <span className={v.value_type === 'choice' ? '' : 'num'}>{v.display}</span>
-            {v.unit && v.value_type !== 'choice' && <span className="ms-1 text-xs font-normal text-muted">{v.unit}</span>}
+            {v.unit && v.value_type !== 'choice' && <span className="ms-1 text-xs font-normal text-muted">{loc(v.unit, v.unit_en)}</span>}
           </span>
           <TrendChip change={v.change} trend={v.trend} />
         </div>
@@ -139,8 +139,8 @@ export function SummaryView({ clientId, audience }: { clientId: number; audience
       <Card>
         <EmptyState
           icon={<CalendarDays className="h-6 w-6" />}
-          title={ar.summary.noData}
-          description={audience === 'staff' ? ar.summary.noDataTrainer : ar.summary.noDataClient}
+          title={tr.summary.noData}
+          description={audience === 'staff' ? tr.summary.noDataTrainer : tr.summary.noDataClient}
         />
       </Card>
     );
@@ -149,22 +149,22 @@ export function SummaryView({ clientId, audience }: { clientId: number; audience
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted">
         <span>
-          {ar.summary.sessions}: <b className="num text-ink">{data.sessions_count}</b>
+          {tr.summary.sessions}: <b className="num text-ink">{data.sessions_count}</b>
         </span>
         <span>
-          {ar.summary.firstSession}: <b className="text-ink">{fmtDate(data.first_session_date)}</b>
+          {tr.summary.firstSession}: <b className="text-ink">{fmtDate(data.first_session_date)}</b>
         </span>
         <span>
-          {ar.summary.lastSession}: <b className="text-ink">{fmtDate(data.last_session_date)}</b>
+          {tr.summary.lastSession}: <b className="text-ink">{fmtDate(data.last_session_date)}</b>
         </span>
       </div>
 
       <ResultCards results={data.results} bmiChange={data.bmi_change} bmiTrend={data.bmi_trend} />
       {data.results.targets && (
         <p className="text-xs text-muted">
-          {ar.calculator.targets}: {ar.calculator.maintenance} <b className="num">{data.results.targets.maintenance}</b> ·{' '}
-          {ar.calculator.fatLoss} <b className="num">{data.results.targets.fat_loss}</b> · {ar.calculator.muscleGain}{' '}
-          <b className="num">{data.results.targets.muscle_gain}</b> {ar.common.kcal} — {ar.calculator.targetsNote}
+          {tr.calculator.targets}: {tr.calculator.maintenance} <b className="num">{data.results.targets.maintenance}</b> ·{' '}
+          {tr.calculator.fatLoss} <b className="num">{data.results.targets.fat_loss}</b> · {tr.calculator.muscleGain}{' '}
+          <b className="num">{data.results.targets.muscle_gain}</b> {tr.common.kcal} — {tr.calculator.targetsNote}
         </p>
       )}
 
@@ -174,7 +174,7 @@ export function SummaryView({ clientId, audience }: { clientId: number; audience
           if (!items.length) return null;
           return (
             <Card key={cat}>
-              <CardHeader title={ar.categories[cat]} icon={categoryIcon[cat]} subtitle={ar.common.changeSinceStart} />
+              <CardHeader title={tr.categories[cat]} icon={categoryIcon[cat]} subtitle={tr.common.changeSinceStart} />
               <ul className="divide-y divide-line px-4 sm:px-5">
                 {items.map((v) => (
                   <ValueRow key={v.key} v={v} />
