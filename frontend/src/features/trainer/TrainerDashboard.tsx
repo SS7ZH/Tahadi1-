@@ -1,13 +1,14 @@
-import { CalendarCheck, ChevronLeft, MessageCircleQuestion, Plus, Search, Users } from 'lucide-react';
+import { CalendarCheck, CalendarClock, ChevronLeft, MessageCircleQuestion, Plus, Search, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { errorMessage } from '@/api/client';
 import type { ClientListItem } from '@/api/types';
 import { TrendChip } from '@/components/TrendChip';
-import { Badge, Button, Card, CountBadge, EmptyState, ErrorState, Input, PageHeader, Skeleton, StatCard } from '@/components/ui';
+import { Badge, Button, Card, CardHeader, CountBadge, EmptyState, ErrorState, Input, PageHeader, Skeleton, StatCard } from '@/components/ui';
 import { useClients } from '@/hooks/queries';
 import { tr } from '@/i18n';
 import { daysAgo, fmtNumber, relativeDays } from '@/lib/format';
+import { ChronicBadge } from '@/components/documents';
 import { ClientFormModal } from './ClientFormModal';
 
 export function ClientRow({ c, href }: { c: ClientListItem; href: string }) {
@@ -23,6 +24,9 @@ export function ClientRow({ c, href }: { c: ClientListItem; href: string }) {
             <p className="truncate font-bold">{c.full_name}</p>
             {!c.is_active && <Badge tone="bad">{tr.common.inactive}</Badge>}
             {c.goal && <Badge>{tr.goals[c.goal]}</Badge>}
+            {c.has_chronic && <ChronicBadge />}
+            {c.health_update_pending && <Badge tone="warn">{tr.documents.updatedBadge}</Badge>}
+            {c.subscription_status === 'expired' && <Badge tone="bad">{tr.subscriptionStatus.expired}</Badge>}
           </div>
           <p className={`mt-0.5 text-xs ${stale ? 'text-warn' : 'text-muted'}`}>
             {tr.client.lastSession}: {c.last_session_date ? relativeDays(c.last_session_date) : tr.client.noSessions}
@@ -57,6 +61,14 @@ export function TrainerDashboard() {
     const s = q.trim().toLowerCase();
     return (data ?? []).filter((c) => !s || c.full_name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s));
   }, [data, q]);
+
+  const expiring = useMemo(
+    () =>
+      (data ?? [])
+        .filter((c) => c.subscription_status === 'active' && c.subscription_days_left != null && c.subscription_days_left <= 7)
+        .sort((x, y) => (x.subscription_days_left ?? 0) - (y.subscription_days_left ?? 0)),
+    [data],
+  );
 
   const stats = useMemo(() => {
     const list = data ?? [];
@@ -96,6 +108,22 @@ export function TrainerDashboard() {
           tone="good"
         />
       </div>
+
+      {expiring.length > 0 && (
+        <Card className="mb-5 border-warn/40">
+          <CardHeader title={tr.documents.expiringSoon} icon={<CalendarClock className="h-5 w-5" />} />
+          <ul className="divide-y divide-line">
+            {expiring.map((c) => (
+              <li key={c.id}>
+                <Link to={`/trainer/clients/${c.id}?tab=documents`} className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm hover:bg-surface-2 sm:px-5">
+                  <span className="font-semibold">{c.full_name}</span>
+                  <Badge tone="warn">{tr.documents.daysLeft(c.subscription_days_left ?? 0)}</Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <div className="mb-4 max-w-md">
         <Input

@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173"
     CORS_ORIGIN_REGEX: str | None = None
 
+    # Private file storage (Supabase Storage). When unset, files go to UPLOAD_DIR (development/tests only).
+    SUPABASE_URL: str | None = None
+    SUPABASE_SECRET_KEY: str | None = None
+    SUPABASE_STORAGE_BUCKET: str = "medical-files"
+    UPLOAD_DIR: str = "var/uploads"
+    SIGNED_URL_SECONDS: int = 300
+
     SEED_ADMIN_EMAIL: str = "admin@tahadi.app"
     SEED_ADMIN_PASSWORD: str | None = None
     SEED_DEMO_PASSWORD: str | None = None
@@ -37,6 +44,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip().rstrip("/") for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+    @property
+    def remote_storage(self) -> bool:
+        return bool(self.SUPABASE_URL and self.SUPABASE_SECRET_KEY)
 
     @property
     def migrations_url(self) -> str:

@@ -1,5 +1,15 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminApi, clientsApi, nutritionApi, programsApi, questionsApi, referenceApi, sessionsApi } from '@/api/endpoints';
+import {
+  adminApi,
+  clientsApi,
+  documentsApi,
+  nutritionApi,
+  onboardingApi,
+  programsApi,
+  questionsApi,
+  referenceApi,
+  sessionsApi,
+} from '@/api/endpoints';
 import type { QuestionStatus, Role } from '@/api/types';
 
 export const qk = {
@@ -26,6 +36,10 @@ export const qk = {
   program: (id: number) => ['program', id] as const,
   templates: ['program-templates'] as const,
   exercises: (all = false) => ['exercises', all] as const,
+  onboarding: ['onboarding'] as const,
+  subscriptions: (id: number) => ['client', id, 'subscriptions'] as const,
+  health: (id: number) => ['client', id, 'health'] as const,
+  documents: (id: number) => ['client', id, 'documents'] as const,
 };
 
 export const useDefinitions = () =>
@@ -87,6 +101,21 @@ export const useExercises = (includeInactive = false) =>
     queryFn: () => programsApi.exercises({ include_inactive: includeInactive }),
     staleTime: 10 * 60_000,
   });
+
+export const useOnboarding = (enabled = true) =>
+  useQuery({ queryKey: qk.onboarding, queryFn: onboardingApi.status, enabled, staleTime: 60_000 });
+
+export const useSubscriptions = (clientId: number) =>
+  useQuery({ queryKey: qk.subscriptions(clientId), queryFn: () => documentsApi.subscriptions(clientId) });
+
+export const useHealth = (clientId: number) =>
+  useQuery({ queryKey: qk.health(clientId), queryFn: () => documentsApi.health(clientId) });
+
+export const useDocuments = (clientId: number) =>
+  useQuery({ queryKey: qk.documents(clientId), queryFn: () => documentsApi.documents(clientId) });
+
+export const useStaffPlans = (enabled = true) =>
+  useQuery({ queryKey: ['plans'], queryFn: documentsApi.plans, enabled, staleTime: 5 * 60_000 });
 
 export const useAdminStats = () => useQuery({ queryKey: qk.adminStats, queryFn: adminApi.stats });
 

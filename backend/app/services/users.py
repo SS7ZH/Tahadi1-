@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -125,6 +126,21 @@ def client_list_items(db: Session, clients: list[User]) -> list[dict]:
         if value is not None:
             weights[cid].append(value)
 
+    from app.models import HealthDeclaration, Subscription  # local import keeps module load order simple
+    from app.services.onboarding import subscription_status
+
+    latest_decl: dict[int, HealthDeclaration] = {}
+    decl_count: dict[int, int] = defaultdict(int)
+    for d in db.scalars(
+        select(HealthDeclaration).where(HealthDeclaration.client_id.in_(ids)).order_by(HealthDeclaration.created_at, HealthDeclaration.id)
+    ):
+        latest_decl[d.client_id] = d
+        decl_count[d.client_id] += 1
+    latest_sub: dict[int, Subscription] = {}
+    for s in db.scalars(select(Subscription).where(Subscription.client_id.in_(ids)).order_by(Subscription.created_at, Subscription.id)):
+        latest_sub[s.client_id] = s
+    today = date.today()
+
     items = []
     for c in clients:
         p = c.profile
@@ -154,6 +170,14 @@ def client_list_items(db: Session, clients: list[User]) -> list[dict]:
                 "weight_change": change,
                 "weight_trend": trend(direction, change),
                 "open_questions": open_q.get(c.id, 0),
+                "has_chronic": bool(latest_decl.get(c.id) and latest_decl[c.id].has_chronic),
+                # an update after the first declaration that the coach has not opened yet
+                "health_update_pending": bool(
+                    latest_decl.get(c.id) and decl_count[c.id] > 1 and latest_decl[c.id].reviewed_at is None
+                ),
+                "subscription_end_date": latest_sub[c.id].end_date if c.id in latest_sub else None,
+                "subscription_days_left": (latest_sub[c.id].end_date - today).days if c.id in latest_sub else None,
+                "subscription_status": subscription_status(latest_sub.get(c.id)),
             }
         )
     return items

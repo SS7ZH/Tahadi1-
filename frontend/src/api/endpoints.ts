@@ -5,6 +5,16 @@ import type {
   ClientListItem,
   Comment,
   Definition,
+  HealthDeclarationInfo,
+  HealthInput,
+  MedicalFileInfo,
+  OnboardingStatus,
+  Plan,
+  RenderedTemplate,
+  SignedDocumentInfo,
+  SubscriptionInfo,
+  TemplateKind,
+  TemplateVersion,
   Exercise,
   Program,
   ProgramInput,
@@ -148,4 +158,51 @@ export const programsApi = {
   archive: (id: number) => data(api.post<Program>(`/programs/${id}/archive`)),
   duplicate: (id: number, body: { client_id?: number; as_template?: boolean; title?: string }) =>
     data(api.post<Program>(`/programs/${id}/duplicate`, body)),
+};
+
+export const onboardingApi = {
+  status: () => data(api.get<OnboardingStatus>('/onboarding')),
+  chooseSubscription: (plan_id: number, start_date: string) =>
+    data(api.post<SubscriptionInfo>('/onboarding/subscription', { plan_id, start_date })),
+  uploadFile: (file: File, later = false) => {
+    const form = new FormData();
+    form.append('file', file);
+    return data(api.post<MedicalFileInfo>(later ? '/me/files' : '/onboarding/files', form, { timeout: 120_000 }));
+  },
+  removeFile: (id: number) => api.delete(`/onboarding/files/${id}`),
+  disclaimer: () => data(api.get<RenderedTemplate>('/onboarding/disclaimer')),
+  contract: () => data(api.get<RenderedTemplate>('/onboarding/contract')),
+  submitHealth: (body: HealthInput & { template_id: number; typed_name: string; agreed: boolean }) =>
+    data(api.post<OnboardingStatus>('/onboarding/health', body)),
+  signContract: (body: { template_id: number; typed_name: string; agreed: boolean }) =>
+    data(api.post<OnboardingStatus>('/onboarding/contract', body)),
+  updateHealth: (body: HealthInput) => data(api.post<HealthDeclarationInfo>('/me/health-declaration', body)),
+};
+
+export const documentsApi = {
+  subscriptions: (clientId: number) =>
+    data(api.get<{ current: SubscriptionInfo | null; history: SubscriptionInfo[] }>(`/clients/${clientId}/subscriptions`)),
+  renew: (clientId: number, body: { plan_id: number; start_date: string; kind: 'renewal' | 'change' }) =>
+    data(api.post<SubscriptionInfo>(`/clients/${clientId}/subscriptions`, body)),
+  updateSubscription: (id: number, body: { start_date?: string; end_date?: string }) =>
+    data(api.patch<SubscriptionInfo>(`/subscriptions/${id}`, body)),
+  health: (clientId: number) =>
+    data(
+      api.get<{ current: HealthDeclarationInfo | null; history: HealthDeclarationInfo[]; needs_review: boolean }>(
+        `/clients/${clientId}/health`,
+      ),
+    ),
+  review: (clientId: number) => api.post(`/clients/${clientId}/health/review`),
+  documents: (clientId: number) => data(api.get<SignedDocumentInfo[]>(`/clients/${clientId}/documents`)),
+  fileUrl: (fileId: number) => data(api.get<{ url: string; expires_in: number; name: string }>(`/files/${fileId}/url`)),
+  plans: () => data(api.get<Plan[]>('/plans')),
+  publicPlans: () => data(api.get<Plan[]>('/public/plans')),
+  adminPlans: () => data(api.get<Plan[]>('/admin/plans')),
+  createPlan: (body: Partial<Plan>) => data(api.post<Plan>('/admin/plans', body)),
+  updatePlan: (id: number, body: Partial<Plan> & { clear_price?: boolean }) =>
+    data(api.patch<Plan>(`/admin/plans/${id}`, body)),
+  templates: (kind: TemplateKind) =>
+    data(api.get<{ placeholders: string[]; versions: TemplateVersion[] }>('/admin/templates', { params: { kind } })),
+  newTemplateVersion: (body: { kind: TemplateKind; body_ar: string; body_en: string }) =>
+    data(api.post<TemplateVersion>('/admin/templates', body)),
 };

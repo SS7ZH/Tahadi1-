@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -14,7 +14,12 @@ from app.services import permissions
 bearer = HTTPBearer(auto_error=False)
 
 
+# Until onboarding is complete, players may only use these API paths (login, profile, onboarding).
+ONBOARDING_EXEMPT = ("/api/v1/auth/", "/api/v1/onboarding", "/api/v1/public/", "/api/v1/files/local", "/api/v1/health")
+
+
 def get_current_user(
+    request: Request,
     creds: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: Session = Depends(get_db),
 ) -> User:
@@ -26,6 +31,15 @@ def get_current_user(
         raise AppError(401, "INVALID_TOKEN", tr("الحساب غير موجود", "Account not found"))
     if not user.is_active:
         raise AppError(401, "ACCOUNT_DISABLED", tr("الحساب موقوف، تواصل مع الإدارة", "This account is disabled, contact the administrator"))
+    if user.role == "client" and not request.url.path.startswith(ONBOARDING_EXEMPT):
+        from app.services.onboarding import is_onboarded  # local import avoids a cycle
+
+        if not is_onboarded(db, user):
+            raise AppError(
+                403,
+                "ONBOARDING_REQUIRED",
+                tr("أكمل خطوات التسجيل أولاً", "Please complete the onboarding steps first"),
+            )
     return user
 
 

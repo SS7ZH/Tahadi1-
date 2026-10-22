@@ -1,9 +1,11 @@
-import { ArrowRight, ClipboardList, History, LayoutGrid, LineChart, MessageCircleQuestion, MessageSquare, Pencil, PlusCircle, Salad } from 'lucide-react';
+import { ArrowRight, ClipboardList, History, LayoutGrid, LineChart, MessageCircleQuestion, MessageSquare, Pencil, PlusCircle, Salad, FileSignature } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { errorMessage } from '@/api/client';
 import type { Session } from '@/api/types';
 import { CommentThread } from '@/components/CommentThread';
+import { ChronicBadge } from '@/components/documents';
+import { DocumentsTab } from '@/components/DocumentsTab';
 import { NutritionPanel } from '@/components/NutritionPanel';
 import { ProgramsTab } from '@/components/ProgramsTab';
 import { ProgressPanel } from '@/components/ProgressPanel';
@@ -13,13 +15,13 @@ import { SessionHistory } from '@/components/SessionHistory';
 import { SummaryView } from '@/components/SummaryView';
 import { Badge, Button, Card, ErrorState, Skeleton, Tabs, type TabItem } from '@/components/ui';
 import { useCurrentUser } from '@/hooks/useAuth';
-import { useActivityFactors, useClient, useNutrition, useQuestions } from '@/hooks/queries';
+import { useActivityFactors, useClient, useHealth, useNutrition, useQuestions } from '@/hooks/queries';
 import { loc, tr } from '@/i18n';
 import { fmtDate, fmtNumber } from '@/lib/format';
 import { ClientFormModal } from './ClientFormModal';
 
-type Tab = 'summary' | 'progress' | 'history' | 'new' | 'nutrition' | 'program' | 'comments' | 'questions';
-const TABS: Tab[] = ['summary', 'progress', 'history', 'new', 'nutrition', 'program', 'comments', 'questions'];
+type Tab = 'summary' | 'progress' | 'history' | 'new' | 'nutrition' | 'program' | 'documents' | 'comments' | 'questions';
+const TABS: Tab[] = ['summary', 'progress', 'history', 'new', 'nutrition', 'program', 'documents', 'comments', 'questions'];
 
 export function ClientPage() {
   const user = useCurrentUser();
@@ -32,6 +34,7 @@ export function ClientPage() {
   const client = useClient(clientId);
   const questions = useQuestions(clientId);
   const nutrition = useNutrition(clientId);
+  const health = useHealth(clientId);
   const factors = useActivityFactors();
   const [editing, setEditing] = useState<Session | null>(null);
   const [editProfile, setEditProfile] = useState(false);
@@ -60,6 +63,7 @@ export function ClientPage() {
     { value: 'new', label: editing ? tr.tabs.editSession : tr.tabs.newSession, icon: <PlusCircle className="h-4 w-4" /> },
     { value: 'nutrition', label: tr.tabs.nutrition, icon: <Salad className="h-4 w-4" />, badge: nutrition.data?.suggestion_changed ? 1 : 0 },
     { value: 'program', label: tr.tabs.program, icon: <ClipboardList className="h-4 w-4" /> },
+    { value: 'documents', label: tr.tabs.documents, icon: <FileSignature className="h-4 w-4" />, badge: health.data?.needs_review ? 1 : 0 },
     { value: 'comments', label: tr.tabs.comments, icon: <MessageSquare className="h-4 w-4" /> },
     { value: 'questions', label: tr.tabs.questions, icon: <MessageCircleQuestion className="h-4 w-4" />, badge: openQ },
   ];
@@ -80,6 +84,7 @@ export function ClientPage() {
             <h1 className="text-xl font-bold">{c.full_name}</h1>
             {!c.is_active && <Badge tone="bad">{tr.common.inactive}</Badge>}
             {p && <Badge tone="primary">{tr.goals[p.goal]}</Badge>}
+            {health.data?.current?.has_chronic && <ChronicBadge />}
           </div>
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted">
             {p && <span>{tr.sex[p.sex]}</span>}
@@ -145,7 +150,8 @@ export function ClientPage() {
           />
         )}
         {tab === 'nutrition' && <NutritionPanel clientId={clientId} />}
-        {tab === 'program' && <ProgramsTab client={c} />}
+        {tab === 'program' && <ProgramsTab client={c} hasChronic={!!health.data?.current?.has_chronic} />}
+        {tab === 'documents' && <DocumentsTab clientId={clientId} />}
         {tab === 'comments' && <CommentThread clientId={clientId} canWrite />}
         {tab === 'questions' && <QuestionThread clientId={clientId} mode="staff" />}
       </div>

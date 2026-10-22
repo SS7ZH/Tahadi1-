@@ -8,6 +8,7 @@ import type { Program, ProgramInput, ProgramSummary, User } from '@/api/types';
 import { useClients, useProgram, usePrograms, useProgramTemplates } from '@/hooks/queries';
 import { tr } from '@/i18n';
 import { fmtDate, fmtDateTime } from '@/lib/format';
+import { ChronicBadge } from './documents';
 import { ProgramBuilder } from './ProgramBuilder';
 import { ProgramView } from './ProgramView';
 import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, Input, Modal, Select, Skeleton } from './ui';
@@ -170,7 +171,7 @@ function ProgramEditor({ id, client, maxHr, setMode }: { id: number; client: Use
   );
 }
 
-export function ProgramsTab({ client }: { client: User }) {
+export function ProgramsTab({ client, hasChronic }: { client: User; hasChronic?: boolean }) {
   const [mode, setMode] = useState<Mode>({ kind: 'list' });
   const programs = usePrograms(client.id);
   const templates = useProgramTemplates(mode.kind === 'list');
@@ -199,6 +200,13 @@ export function ProgramsTab({ client }: { client: User }) {
     onError: (e) => toast.error(errorMessage(e)),
   });
 
+  const chronic = hasChronic ? (
+    <div className="flex items-center gap-2 rounded-xl border border-bad/30 bg-bad/5 px-3 py-2 text-sm">
+      <ChronicBadge />
+      <span className="text-muted">{tr.documents.chronicProgramHint}</span>
+    </div>
+  ) : null;
+
   const back = (
     <Button variant="ghost" size="sm" icon={<ArrowRight className="h-4 w-4 ltr:rotate-180" />} onClick={() => setMode({ kind: 'list' })} className="self-start">
       {tr.program.back}
@@ -209,6 +217,7 @@ export function ProgramsTab({ client }: { client: User }) {
     return (
       <div className="flex flex-col gap-3">
         {back}
+        {chronic}
         <ProgramBuilder maxHr={maxHr} saving={create.isPending} onSave={(input) => create.mutate(input)} />
       </div>
     );
@@ -216,6 +225,7 @@ export function ProgramsTab({ client }: { client: User }) {
     return (
       <div className="flex flex-col gap-3">
         {back}
+        {chronic}
         <ProgramEditor id={mode.id} client={client} maxHr={maxHr} setMode={setMode} />
       </div>
     );
@@ -237,6 +247,7 @@ export function ProgramsTab({ client }: { client: User }) {
   const sorted = [...list].sort((a, b) => order[a.status] - order[b.status]);
   return (
     <div className="flex flex-col gap-4">
+      {chronic}
       <Card className="flex flex-wrap items-end gap-3 p-4">
         <Button icon={<Plus className="h-4 w-4" />} onClick={() => setMode({ kind: 'new' })}>
           {tr.program.newProgram}

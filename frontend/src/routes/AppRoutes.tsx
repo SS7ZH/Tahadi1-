@@ -3,6 +3,8 @@ import { Layout } from '@/components/Layout';
 import { AdminDashboard } from '@/features/admin/AdminDashboard';
 import { AssignPage } from '@/features/admin/AssignPage';
 import { ExercisesPage } from '@/features/admin/ExercisesPage';
+import { PlansPage } from '@/features/admin/PlansPage';
+import { TemplatesPage } from '@/features/admin/TemplatesPage';
 import { SettingsPage } from '@/features/admin/SettingsPage';
 import { UsersPage } from '@/features/admin/UsersPage';
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -10,7 +12,10 @@ import { NotFoundPage } from '@/features/auth/NotFoundPage';
 import { ProfilePage } from '@/features/auth/ProfilePage';
 import { CalculatorPage } from '@/features/calculator/CalculatorPage';
 import { AskTrainerPage } from '@/features/client/AskTrainerPage';
+import { HomePage } from '@/features/client/HomePage';
+import { MyDocumentsPage } from '@/features/client/MyDocumentsPage';
 import { MyHistoryPage } from '@/features/client/MyHistoryPage';
+import { OnboardingPage } from '@/features/onboarding/OnboardingPage';
 import { MyNutritionPage } from '@/features/client/MyNutritionPage';
 import { MyProgramPage } from '@/features/client/MyProgramPage';
 import { MyProgressPage } from '@/features/client/MyProgressPage';
@@ -18,7 +23,7 @@ import { ClientPage } from '@/features/trainer/ClientPage';
 import { InboxPage } from '@/features/trainer/InboxPage';
 import { TrainerDashboard } from '@/features/trainer/TrainerDashboard';
 import { homePathFor, useAuth } from '@/hooks/useAuth';
-import { FullScreenLoader, RequireRole } from './RequireRole';
+import { FullScreenLoader, OnboardingGate, RequireRole } from './RequireRole';
 
 function HomeRedirect() {
   const { user, status } = useAuth();
@@ -32,10 +37,14 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<HomeRedirect />} />
 
+      <Route path="/onboarding" element={<RequireRole roles={['client']}><OnboardingPage /></RequireRole>} />
+
       <Route
         element={
           <RequireRole>
-            <Layout />
+            <OnboardingGate>
+              <Layout />
+            </OnboardingGate>
           </RequireRole>
         }
       >
@@ -48,6 +57,8 @@ export function AppRoutes() {
         <Route path="/admin/users" element={<RequireRole roles={['admin']}><UsersPage /></RequireRole>} />
         <Route path="/admin/assign" element={<RequireRole roles={['admin']}><AssignPage /></RequireRole>} />
         <Route path="/admin/settings" element={<RequireRole roles={['admin']}><SettingsPage /></RequireRole>} />
+        <Route path="/admin/plans" element={<RequireRole roles={['admin']}><PlansPage /></RequireRole>} />
+        <Route path="/admin/templates" element={<RequireRole roles={['admin']}><TemplatesPage /></RequireRole>} />
         <Route path="/admin/exercises" element={<RequireRole roles={['admin']}><ExercisesPage /></RequireRole>} />
         <Route path="/admin/questions" element={<RequireRole roles={['admin']}><InboxPage /></RequireRole>} />
         <Route path="/admin/clients/:clientId" element={<RequireRole roles={['admin']}><ClientPage /></RequireRole>} />
@@ -58,7 +69,9 @@ export function AppRoutes() {
         <Route path="/trainer/clients/:clientId" element={<RequireRole roles={['trainer']}><ClientPage /></RequireRole>} />
 
         {/* client / player */}
-        <Route path="/me" element={<RequireRole roles={['client']}><MyProgressPage /></RequireRole>} />
+        <Route path="/me" element={<RequireRole roles={['client']}><HomePage /></RequireRole>} />
+        <Route path="/me/progress" element={<RequireRole roles={['client']}><MyProgressPage /></RequireRole>} />
+        <Route path="/me/documents" element={<RequireRole roles={['client']}><MyDocumentsPage /></RequireRole>} />
         <Route path="/me/history" element={<RequireRole roles={['client']}><MyHistoryPage /></RequireRole>} />
         <Route path="/me/program" element={<RequireRole roles={['client']}><MyProgramPage /></RequireRole>} />
         <Route path="/me/nutrition" element={<RequireRole roles={['client']}><MyNutritionPage /></RequireRole>} />

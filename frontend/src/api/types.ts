@@ -202,6 +202,11 @@ export interface ClientListItem {
   weight_change: number | null;
   weight_trend: Trend;
   open_questions: number;
+  has_chronic: boolean;
+  health_update_pending: boolean;
+  subscription_end_date: string | null;
+  subscription_days_left: number | null;
+  subscription_status: 'active' | 'expired' | 'upcoming' | null;
 }
 
 export interface Reply {
@@ -452,4 +457,111 @@ export interface Program extends Omit<ProgramSummary, 'days_count'> {
     starts_in_days?: number;
   } | null;
   days: ProgramDay[];
+}
+
+/* ---------------- Onboarding, subscriptions & documents ---------------- */
+export const CHRONIC_CONDITIONS = ['diabetes', 'hypertension', 'heart_disease', 'asthma', 'joint_back', 'other'] as const;
+export type TemplateKind = 'contract' | 'disclaimer';
+
+export interface Plan {
+  id: number;
+  name_ar: string;
+  name_en: string;
+  months: number;
+  price: number | null;
+  currency: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface SubscriptionInfo {
+  id: number;
+  client_id: number;
+  plan_id: number | null;
+  plan_name_ar: string;
+  plan_name_en: string;
+  months: number;
+  price: number | null;
+  currency: string;
+  start_date: string;
+  end_date: string;
+  kind: 'initial' | 'renewal' | 'change';
+  status: 'active' | 'expired' | 'upcoming' | null;
+  days_left: number | null;
+  contract_signed: boolean | null;
+  created_at: string;
+}
+
+export interface MedicalFileInfo {
+  id: number;
+  declaration_id: number | null;
+  original_name: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_at: string;
+}
+
+export interface HealthDeclarationInfo {
+  id: number;
+  has_chronic: boolean;
+  conditions: string[];
+  details: string | null;
+  medications: string | null;
+  injuries: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  files: MedicalFileInfo[];
+}
+
+export interface SignedDocumentInfo {
+  id: number;
+  client_id: number;
+  kind: TemplateKind;
+  template_version: number;
+  language: 'ar' | 'en';
+  rendered_text: string;
+  typed_name: string;
+  signed_at: string;
+  ip_address: string | null;
+  subscription_id: number | null;
+  health_declaration_id: number | null;
+  details: Record<string, string>;
+}
+
+export interface OnboardingStatus {
+  complete: boolean;
+  step: 1 | 2 | 3 | null;
+  steps: { subscription: boolean; health: boolean; contract: boolean };
+  subscription: SubscriptionInfo | null;
+  plans: Plan[];
+  pending_files: MedicalFileInfo[];
+  coach_name: string | null;
+}
+
+export interface RenderedTemplate {
+  template_id: number;
+  version: number;
+  language: 'ar' | 'en';
+  text: string;
+  subscription?: SubscriptionInfo;
+}
+
+export interface HealthInput {
+  has_chronic: boolean;
+  conditions: string[];
+  details?: string | null;
+  medications?: string | null;
+  injuries?: string | null;
+  file_ids: number[];
+}
+
+export interface TemplateVersion {
+  id: number;
+  kind: TemplateKind;
+  version: number;
+  body_ar: string;
+  body_en: string;
+  is_active: boolean;
+  created_at: string;
+  created_by_name: string | null;
 }

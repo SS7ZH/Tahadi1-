@@ -134,6 +134,10 @@ api.interceptors.response.use(
     const config = error.config as RetriableConfig | undefined;
     const url = config?.url ?? '';
     const isAuthCall = url.includes('/auth/login') || url.includes('/auth/refresh');
+    const code = (error.response?.data as Partial<ApiErrorBody> | undefined)?.code;
+    if (error.response?.status === 403 && code === 'ONBOARDING_REQUIRED' && !window.location.pathname.startsWith('/onboarding')) {
+      window.location.assign('/onboarding');
+    }
     if (error.response?.status === 401 && config && !config._retried && !isAuthCall && tokens.refresh) {
       config._retried = true;
       try {

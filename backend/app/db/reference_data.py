@@ -237,3 +237,111 @@ _EX = [
 EXERCISES = [
     {"name_ar": a, "name_en": e, "muscle_group": m, "equipment": q, "is_active": True} for a, e, m, q in _EX
 ]
+
+
+# v5: subscription plans and the first contract / disclaimer templates (applied by migration 0005).
+SUBSCRIPTION_PLANS = [
+    {"name_ar": "شهر واحد", "name_en": "1 month", "months": 1, "price": None, "currency": "SAR", "is_active": True, "sort_order": 10},
+    {"name_ar": "3 أشهر", "name_en": "3 months", "months": 3, "price": None, "currency": "SAR", "is_active": True, "sort_order": 20},
+    {"name_ar": "6 أشهر", "name_en": "6 months", "months": 6, "price": None, "currency": "SAR", "is_active": True, "sort_order": 30},
+    {"name_ar": "سنة", "name_en": "1 year", "months": 12, "price": None, "currency": "SAR", "is_active": True, "sort_order": 40},
+]
+
+# Placeholders available in templates (filled when the client signs).
+TEMPLATE_PLACEHOLDERS = ("client_name", "coach_name", "plan", "start_date", "end_date", "price", "today")
+
+# SAMPLE TEXT ONLY: must be reviewed by a legal advisor before real use (shown in the admin screen too).
+CONTRACT_V1_AR = """عقد اشتراك في برنامج تدريب شخصي – منصة تحدي
+
+تاريخ العقد: {today}
+
+الطرف الأول (المدرب): {coach_name}
+الطرف الثاني (المتدرب): {client_name}
+
+أولاً: مدة الاشتراك
+خطة الاشتراك: {plan}
+تاريخ البداية: {start_date}
+تاريخ النهاية: {end_date}
+قيمة الاشتراك: {price}
+
+ثانياً: التزامات المدرب
+1. تسجيل قياسات المتدرب بشكل دوري ومتابعة تقدمه على منصة تحدي.
+2. إعداد برنامج تدريبي وتوصيات غذائية عامة مناسبة لهدف المتدرب.
+3. الرد على أسئلة المتدرب عبر المنصة في وقت معقول.
+4. المحافظة على سرية بيانات المتدرب الصحية وعدم مشاركتها مع أي طرف ثالث.
+
+ثالثاً: التزامات المتدرب
+1. تقديم معلومات صحية صحيحة وكاملة، وإبلاغ المدرب فوراً بأي تغير في حالته الصحية.
+2. الالتزام بالبرنامج قدر الإمكان، وإيقاف التمرين عند الشعور بأي ألم أو أعراض غير طبيعية.
+3. استشارة الطبيب قبل البدء عند وجود أي مرض مزمن أو إصابة.
+
+رابعاً: التجديد والإلغاء
+يتم التجديد أو تغيير الخطة بالاتفاق مع المدرب، ويتطلب ذلك توقيع عقد جديد.
+
+خامساً: إقرار
+أقر أنا {client_name} بأنني قرأت هذا العقد وفهمت جميع بنوده ووافقت عليها.
+"""
+
+CONTRACT_V1_EN = """Personal Training Subscription Agreement – Tahadi
+
+Agreement date: {today}
+
+Party one (Coach): {coach_name}
+Party two (Client): {client_name}
+
+1. Subscription period
+Plan: {plan}
+Start date: {start_date}
+End date: {end_date}
+Price: {price}
+
+2. Coach obligations
+1. Record the client's measurements regularly and follow their progress on Tahadi.
+2. Prepare a training program and general nutrition guidance suited to the client's goal.
+3. Answer the client's questions through the platform within a reasonable time.
+4. Keep the client's health information confidential and never share it with third parties.
+
+3. Client obligations
+1. Provide accurate and complete health information and tell the coach immediately about any change in health.
+2. Follow the program as far as possible, and stop exercising if they feel pain or unusual symptoms.
+3. Consult a doctor before starting if they have any chronic condition or injury.
+
+4. Renewal and cancellation
+Renewing or changing the plan is agreed with the coach and requires signing a new agreement.
+
+5. Acknowledgement
+I, {client_name}, confirm that I have read this agreement, understood all of its terms, and agree to them.
+"""
+
+DISCLAIMER_V1_AR = """الإقرار الصحي وإخلاء المسؤولية – منصة تحدي
+
+أقر أنا {client_name} بما يلي:
+
+1. أن المعلومات الصحية التي قدمتها صحيحة وكاملة حسب علمي، وأنني سأبلغ مدربي {coach_name} بأي تغير في حالتي الصحية.
+2. أن البرامج التدريبية والتوصيات الغذائية المقدمة عبر المنصة إرشادات عامة، ولا تُعد تشخيصاً طبياً أو بديلاً عن استشارة الطبيب أو أخصائي التغذية.
+3. أنني استشرت طبيباً، أو سأستشيره، قبل البدء في أي برنامج رياضي إذا كنت أعاني من مرض مزمن أو إصابة أو أتناول أدوية.
+4. أنني سأتوقف عن التمرين فوراً وأطلب المساعدة الطبية عند الشعور بألم في الصدر أو دوار أو ضيق تنفس أو أي أعراض غير طبيعية.
+5. أنني أتحمل مسؤولية مشاركتي في التمارين، وأن المدرب والمنصة لا يتحملان مسؤولية أي إصابة ناتجة عن عدم الالتزام بالتعليمات أو عن معلومات صحية غير صحيحة.
+
+التاريخ: {today}
+"""
+
+DISCLAIMER_V1_EN = """Health Declaration and Disclaimer – Tahadi
+
+I, {client_name}, confirm that:
+
+1. The health information I have provided is accurate and complete to the best of my knowledge, and I will tell my coach {coach_name} about any change in my health.
+2. The training programs and nutrition guidance on this platform are general guidance; they are not a medical diagnosis and do not replace advice from a doctor or dietitian.
+3. I have consulted, or will consult, a doctor before starting any exercise program if I have a chronic condition or injury, or take medication.
+4. I will stop exercising immediately and seek medical help if I feel chest pain, dizziness, shortness of breath or any unusual symptoms.
+5. I take responsibility for my participation in exercise, and the coach and the platform are not responsible for injuries caused by not following instructions or by inaccurate health information.
+
+Date: {today}
+"""
+
+DOCUMENT_TEMPLATES = [
+    {"kind": "contract", "version": 1, "body_ar": CONTRACT_V1_AR, "body_en": CONTRACT_V1_EN, "is_active": True},
+    {"kind": "disclaimer", "version": 1, "body_ar": DISCLAIMER_V1_AR, "body_en": DISCLAIMER_V1_EN, "is_active": True},
+]
+
+CHRONIC_CONDITIONS = ("diabetes", "hypertension", "heart_disease", "asthma", "joint_back", "other")

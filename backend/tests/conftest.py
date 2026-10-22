@@ -5,7 +5,7 @@ Set TEST_DATABASE_URL to run the same suite against PostgreSQL, e.g.
     TEST_DATABASE_URL=postgresql://tahadi:tahadi@localhost:5432/tahadi_test pytest
 """
 import os
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,18 +14,31 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault("UPLOAD_DIR", os.path.join(os.path.dirname(__file__), "..", "var", "test-uploads"))
 
 from app.core.security import hash_password  # noqa: E402
-from app.db.reference_data import EXERCISES, NUTRITION_SETTINGS, activity_factors_v2, definitions_v2  # noqa: E402
+from app.db.reference_data import (  # noqa: E402
+    DOCUMENT_TEMPLATES,
+    EXERCISES,
+    NUTRITION_SETTINGS,
+    SUBSCRIPTION_PLANS,
+    activity_factors_v2,
+    definitions_v2,
+)
 from app.db.session import get_db, normalize_db_url  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import (  # noqa: E402
     ActivityFactor,
     Base,
     ClientProfile,
+    DocumentTemplate,
     Exercise,
+    HealthDeclaration,
     MeasurementDefinition,
     NutritionSetting,
+    SignedDocument,
+    Subscription,
+    SubscriptionPlan,
     User,
 )
 from app.routers.auth import login_limiter  # noqa: E402
@@ -57,6 +70,8 @@ def db_session():
         conn.execute(insert(MeasurementDefinition), definitions_v2())
         conn.execute(insert(NutritionSetting), NUTRITION_SETTINGS)
         conn.execute(insert(Exercise), EXERCISES)
+        conn.execute(insert(SubscriptionPlan), SUBSCRIPTION_PLANS)
+        conn.execute(insert(DocumentTemplate), DOCUMENT_TEMPLATES)
     Session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     session = Session()
     yield session, Session
@@ -81,6 +96,26 @@ def client(db_session):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+def onboard(db, client, start=None):
+    """Give a player a subscription, health declaration and signed disclaimer + contract."""
+    start = start or date.today()
+    sub = Subscription(
+        client_id=client.id, plan_id=1, plan_name_ar="شهر واحد", plan_name_en="1 month", months=1,
+        start_date=start, end_date=start + timedelta(days=29), kind="initial",
+    )
+    decl = HealthDeclaration(client_id=client.id, has_chronic=False, conditions=[])
+    db.add_all([sub, decl])
+    db.flush()
+    for kind, sid in (("disclaimer", None), ("contract", sub.id)):
+        db.add(SignedDocument(
+            client_id=client.id, kind=kind, template_id=1 if kind == "contract" else 2, template_version=1,
+            language="ar", rendered_text="test", typed_name=client.full_name, subscription_id=sid,
+            health_declaration_id=decl.id if kind == "disclaimer" else None,
+        ))
+    db.commit()
+    return sub
 
 
 @pytest.fixture()
@@ -108,6 +143,9 @@ def users(db_session):
     trainer_b = mk("مدرب ب", "tb@test.app", "trainer")
     client_a = mk("عميل أ", "ca@test.app", "client", trainer_a)
     client_b = mk("عميل ب", "cb@test.app", "client", trainer_b, sex="female")
+    # Existing-feature tests use players who already finished onboarding.
+    onboard(db, client_a)
+    onboard(db, client_b)
     return {"admin": admin, "trainer_a": trainer_a, "trainer_b": trainer_b, "client_a": client_a, "client_b": client_b}
 
 

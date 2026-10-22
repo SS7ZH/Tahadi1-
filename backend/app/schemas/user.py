@@ -184,3 +184,8 @@ class ClientListItem(BaseModel):
     weight_change: float | None
     weight_trend: str  # good | bad | neutral
     open_questions: int
+    has_chronic: bool = False
+    health_update_pending: bool = False
+    subscription_end_date: date | None = None
+    subscription_days_left: int | None = None
+    subscription_status: str | None = None

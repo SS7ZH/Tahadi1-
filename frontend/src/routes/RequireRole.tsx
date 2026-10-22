@@ -4,6 +4,7 @@ import type { Role } from '@/api/types';
 import { LogoMark } from '@/components/Logo';
 import { Spinner } from '@/components/ui';
 import { homePathFor, useAuth } from '@/hooks/useAuth';
+import { useOnboarding } from '@/hooks/queries';
 
 export function FullScreenLoader() {
   return (
@@ -21,5 +22,18 @@ export function RequireRole({ roles, children }: { roles?: Role[]; children: Rea
   if (status === 'loading') return <FullScreenLoader />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (roles && !roles.includes(user.role)) return <Navigate to={homePathFor(user.role)} replace />;
+  return <>{children}</>;
+}
+
+/** Players must finish onboarding before using the app (the API enforces the same rule with 403). */
+export function OnboardingGate({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const location = useLocation();
+  const isClient = user?.role === 'client';
+  const exempt = location.pathname.startsWith('/onboarding') || location.pathname === '/profile';
+  const status = useOnboarding(isClient && !exempt);
+  if (!isClient || exempt) return <>{children}</>;
+  if (status.isLoading) return <FullScreenLoader />;
+  if (status.data && !status.data.complete) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }
