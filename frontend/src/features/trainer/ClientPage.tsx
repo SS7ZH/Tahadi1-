@@ -5,6 +5,7 @@ import { errorMessage } from '@/api/client';
 import type { Session } from '@/api/types';
 import { CommentThread } from '@/components/CommentThread';
 import { NutritionPanel } from '@/components/NutritionPanel';
+import { ProgramsTab } from '@/components/ProgramsTab';
 import { ProgressPanel } from '@/components/ProgressPanel';
 import { QuestionThread } from '@/components/QuestionThread';
 import { SessionForm } from '@/components/SessionForm';
@@ -17,8 +18,8 @@ import { loc, tr } from '@/i18n';
 import { fmtDate, fmtNumber } from '@/lib/format';
 import { ClientFormModal } from './ClientFormModal';
 
-type Tab = 'summary' | 'progress' | 'history' | 'new' | 'nutrition' | 'comments' | 'questions';
-const TABS: Tab[] = ['summary', 'progress', 'history', 'new', 'nutrition', 'comments', 'questions'];
+type Tab = 'summary' | 'progress' | 'history' | 'new' | 'nutrition' | 'program' | 'comments' | 'questions';
+const TABS: Tab[] = ['summary', 'progress', 'history', 'new', 'nutrition', 'program', 'comments', 'questions'];
 
 export function ClientPage() {
   const user = useCurrentUser();
@@ -58,6 +59,7 @@ export function ClientPage() {
     { value: 'history', label: tr.tabs.history, icon: <History className="h-4 w-4" /> },
     { value: 'new', label: editing ? tr.tabs.editSession : tr.tabs.newSession, icon: <PlusCircle className="h-4 w-4" /> },
     { value: 'nutrition', label: tr.tabs.nutrition, icon: <Salad className="h-4 w-4" />, badge: nutrition.data?.suggestion_changed ? 1 : 0 },
+    { value: 'program', label: tr.tabs.program, icon: <ClipboardList className="h-4 w-4" /> },
     { value: 'comments', label: tr.tabs.comments, icon: <MessageSquare className="h-4 w-4" /> },
     { value: 'questions', label: tr.tabs.questions, icon: <MessageCircleQuestion className="h-4 w-4" />, badge: openQ },
   ];
@@ -143,6 +145,7 @@ export function ClientPage() {
           />
         )}
         {tab === 'nutrition' && <NutritionPanel clientId={clientId} />}
+        {tab === 'program' && <ProgramsTab client={c} />}
         {tab === 'comments' && <CommentThread clientId={clientId} canWrite />}
         {tab === 'questions' && <QuestionThread clientId={clientId} mode="staff" />}
       </div>

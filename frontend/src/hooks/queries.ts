@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminApi, clientsApi, nutritionApi, questionsApi, referenceApi, sessionsApi } from '@/api/endpoints';
+import { adminApi, clientsApi, nutritionApi, programsApi, questionsApi, referenceApi, sessionsApi } from '@/api/endpoints';
 import type { QuestionStatus, Role } from '@/api/types';
 
 export const qk = {
@@ -21,6 +21,11 @@ export const qk = {
   nutrition: (id: number) => ['client', id, 'nutrition'] as const,
   nutritionHistory: (id: number) => ['client', id, 'nutrition', 'history'] as const,
   nutritionSettings: ['nutrition-settings'] as const,
+  programs: (id: number) => ['client', id, 'programs'] as const,
+  currentProgram: (id: number) => ['client', id, 'program', 'current'] as const,
+  program: (id: number) => ['program', id] as const,
+  templates: ['program-templates'] as const,
+  exercises: (all = false) => ['exercises', all] as const,
 };
 
 export const useDefinitions = () =>
@@ -63,6 +68,25 @@ export const useNutritionHistory = (id: number, enabled = true) =>
 
 export const useNutritionSettings = () =>
   useQuery({ queryKey: qk.nutritionSettings, queryFn: nutritionApi.settings, staleTime: 10 * 60_000 });
+
+export const usePrograms = (clientId: number) =>
+  useQuery({ queryKey: qk.programs(clientId), queryFn: () => programsApi.listForClient(clientId) });
+
+export const useCurrentProgram = (clientId: number) =>
+  useQuery({ queryKey: qk.currentProgram(clientId), queryFn: () => programsApi.current(clientId) });
+
+export const useProgram = (id: number | null) =>
+  useQuery({ queryKey: qk.program(id ?? 0), queryFn: () => programsApi.get(id!), enabled: id != null });
+
+export const useProgramTemplates = (enabled = true) =>
+  useQuery({ queryKey: qk.templates, queryFn: programsApi.templates, enabled });
+
+export const useExercises = (includeInactive = false) =>
+  useQuery({
+    queryKey: qk.exercises(includeInactive),
+    queryFn: () => programsApi.exercises({ include_inactive: includeInactive }),
+    staleTime: 10 * 60_000,
+  });
 
 export const useAdminStats = () => useQuery({ queryKey: qk.adminStats, queryFn: adminApi.stats });
 

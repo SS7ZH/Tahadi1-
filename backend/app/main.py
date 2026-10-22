@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.errors import register_exception_handlers
 from app.core.i18n import LanguageMiddleware, tr
 from app.db.session import get_db
-from app.routers import admin, auth, calculate, clients, comments, nutrition, questions, reference, sessions
+from app.routers import admin, auth, calculate, clients, comments, nutrition, programs, questions, reference, sessions
 
 logging.basicConfig(level=logging.INFO)
 
@@ -53,7 +53,7 @@ def health(db: Session = Depends(get_db)):
     return {"status": "ok", "database": "ok"}
 
 
-for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition):
+for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs):
     api.include_router(r.router)
 
 app.include_router(api)

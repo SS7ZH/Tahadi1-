@@ -172,3 +172,68 @@ NUTRITION_SETTINGS = [
     {"goal": "maintenance", "calorie_adjustment": 0, "protein_pct": 20, "carbs_pct": 55, "fat_pct": 25, "meals_min": 4, "meals_max": 5},
     {"goal": "weight_gain", "calorie_adjustment": 500, "protein_pct": 15, "carbs_pct": 60, "fat_pct": 25, "meals_min": 5, "meals_max": 6},
 ]
+
+
+# v4: shared exercise library (applied by migration 0004).
+MUSCLE_GROUPS = (
+    "chest", "back", "shoulders", "biceps", "triceps", "quads", "hamstrings",
+    "glutes", "calves", "core", "full_body", "cardio",
+)
+EQUIPMENT = ("barbell", "dumbbell", "machine", "cable", "bodyweight", "kettlebell", "band", "other")
+CARDIO_TYPES = ("walking", "running", "cycling", "treadmill", "jump_rope", "swimming", "hiit")
+
+_EX = [
+    # chest
+    ("ضغط البنش بالبار", "Barbell bench press", "chest", "barbell"),
+    ("ضغط البنش المائل بالدمبل", "Incline dumbbell press", "chest", "dumbbell"),
+    ("تفتيح بالدمبل", "Dumbbell fly", "chest", "dumbbell"),
+    ("تفتيح بالكيبل", "Cable crossover", "chest", "cable"),
+    ("تمرين الضغط", "Push-up", "chest", "bodyweight"),
+    ("ضغط الصدر بالجهاز", "Machine chest press", "chest", "machine"),
+    # back
+    ("السحب العلوي", "Lat pulldown", "back", "cable"),
+    ("العقلة", "Pull-up", "back", "bodyweight"),
+    ("التجديف بالبار", "Barbell row", "back", "barbell"),
+    ("التجديف بالدمبل بيد واحدة", "One-arm dumbbell row", "back", "dumbbell"),
+    ("السحب الأرضي بالكيبل", "Seated cable row", "back", "cable"),
+    ("الرفعة الميتة", "Deadlift", "back", "barbell"),
+    # shoulders
+    ("ضغط الكتف بالدمبل", "Dumbbell shoulder press", "shoulders", "dumbbell"),
+    ("ضغط الكتف العسكري بالبار", "Barbell overhead press", "shoulders", "barbell"),
+    ("رفرفة جانبية", "Lateral raise", "shoulders", "dumbbell"),
+    ("رفرفة أمامية", "Front raise", "shoulders", "dumbbell"),
+    ("رفرفة خلفية", "Reverse fly", "shoulders", "dumbbell"),
+    ("سحب الوجه بالكيبل", "Face pull", "shoulders", "cable"),
+    # biceps / triceps
+    ("ثني الذراع بالبار", "Barbell curl", "biceps", "barbell"),
+    ("ثني الذراع بالدمبل", "Dumbbell curl", "biceps", "dumbbell"),
+    ("ثني المطرقة", "Hammer curl", "biceps", "dumbbell"),
+    ("سحب الترايسبس بالكيبل", "Triceps pushdown", "triceps", "cable"),
+    ("التمديد فوق الرأس", "Overhead triceps extension", "triceps", "dumbbell"),
+    ("الغطس على المتوازي", "Dips", "triceps", "bodyweight"),
+    # legs
+    ("القرفصاء بالبار", "Barbell back squat", "quads", "barbell"),
+    ("القرفصاء الأمامية بالدمبل (جوبلت)", "Goblet squat", "quads", "dumbbell"),
+    ("دفع الأرجل بالجهاز", "Leg press", "quads", "machine"),
+    ("تمديد الأرجل", "Leg extension", "quads", "machine"),
+    ("الطعنات", "Walking lunge", "quads", "dumbbell"),
+    ("الرفعة الرومانية", "Romanian deadlift", "hamstrings", "barbell"),
+    ("ثني الأرجل بالجهاز", "Lying leg curl", "hamstrings", "machine"),
+    ("دفع الحوض بالبار", "Barbell hip thrust", "glutes", "barbell"),
+    ("الجسر الأرضي", "Glute bridge", "glutes", "bodyweight"),
+    ("رفع السمانة واقفاً", "Standing calf raise", "calves", "machine"),
+    # core
+    ("البلانك", "Plank", "core", "bodyweight"),
+    ("البلانك الجانبي", "Side plank", "core", "bodyweight"),
+    ("الكرنش", "Crunch", "core", "bodyweight"),
+    ("رفع الأرجل معلقاً", "Hanging leg raise", "core", "bodyweight"),
+    ("الدوران الروسي", "Russian twist", "core", "bodyweight"),
+    # full body
+    ("تأرجح الكيتل بل", "Kettlebell swing", "full_body", "kettlebell"),
+    ("البيربي", "Burpee", "full_body", "bodyweight"),
+    ("متسلق الجبال", "Mountain climber", "full_body", "bodyweight"),
+]
+
+EXERCISES = [
+    {"name_ar": a, "name_en": e, "muscle_group": m, "equipment": q, "is_active": True} for a, e, m, q in _EX
+]

@@ -6,7 +6,7 @@ from app.core.deps import get_accessible_client, get_current_user, require_role
 from app.core.errors import AppError
 from app.core.i18n import tr
 from app.db.session import get_db
-from app.models import MeasurementSession, Question, QuestionReply, User
+from app.models import MeasurementSession, ProgramDay, Question, QuestionReply, User
 from app.schemas.interaction import QuestionIn, QuestionOut, QuestionStatus, QuestionStatusIn, ReplyIn
 from app.services import permissions
 from app.services.serializers import question_out
@@ -22,7 +22,16 @@ def _out_many(db: Session, questions: list[Question]) -> list[dict]:
         if session_ids
         else {}
     )
-    return [question_out(q, dates.get(q.session_id)) for q in questions]
+    day_ids = {q.program_day_id for q in questions if q.program_day_id}
+    days = (
+        {
+            r.id: {"title": r.title, "program_id": r.program_id}
+            for r in db.execute(select(ProgramDay.id, ProgramDay.title, ProgramDay.program_id).where(ProgramDay.id.in_(day_ids)))
+        }
+        if day_ids
+        else {}
+    )
+    return [question_out(q, dates.get(q.session_id), days.get(q.program_day_id)) for q in questions]
 
 
 @router.get("/clients/{client_id}/questions", response_model=list[QuestionOut])
@@ -46,7 +55,10 @@ def ask_question(
 ):
     client = permissions.get_accessible_client(db, actor, client_id)  # a client can only reach themselves
     permissions.ensure_session_belongs(db, data.session_id, client.id)
-    question = Question(client_id=client.id, session_id=data.session_id, body=data.body, status="open")
+    permissions.ensure_program_day_belongs(db, data.program_day_id, client.id)
+    question = Question(
+        client_id=client.id, session_id=data.session_id, program_day_id=data.program_day_id, body=data.body, status="open"
+    )
     db.add(question)
     db.commit()
     db.refresh(question)

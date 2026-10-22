@@ -1,6 +1,8 @@
 import clsx from 'clsx';
 import {
   Calculator,
+  ClipboardList,
+  Dumbbell,
   History,
   LayoutDashboard,
   Link2,
@@ -44,6 +46,7 @@ function useNavItems(role: Role): NavItem[] {
       { to: '/admin/assign', label: tr.nav.assign, icon: <Link2 className={ic} /> },
       { to: '/admin/questions', label: tr.nav.inbox, icon: <MessageCircleQuestion className={ic} />, badge: open },
       { to: '/admin/settings', label: tr.nav.settings, icon: <SlidersHorizontal className={ic} /> },
+      { to: '/admin/exercises', label: tr.nav.exercises, icon: <Dumbbell className={ic} /> },
       { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} /> },
     ];
   if (role === 'trainer')
@@ -55,8 +58,9 @@ function useNavItems(role: Role): NavItem[] {
     ];
   return [
     { to: '/me', label: tr.nav.myProgress, icon: <TrendingUp className={ic} />, end: true },
-    { to: '/me/history', label: tr.nav.myHistory, icon: <History className={ic} /> },
+    { to: '/me/program', label: tr.nav.myProgram, icon: <ClipboardList className={ic} /> },
     { to: '/me/nutrition', label: tr.nav.myNutrition, icon: <Salad className={ic} /> },
+    { to: '/me/history', label: tr.nav.myHistory, icon: <History className={ic} /> },
     { to: '/me/ask', label: tr.nav.ask, icon: <MessageCircleQuestion className={ic} /> },
     { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} /> },
     { to: '/profile', label: tr.nav.profile, icon: <UserRound className={ic} /> },

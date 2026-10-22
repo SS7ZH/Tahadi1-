@@ -89,13 +89,16 @@ def comment_out(c: Comment) -> dict:
     }
 
 
-def question_out(q: Question, session_date: date | None = None) -> dict:
+def question_out(q: Question, session_date: date | None = None, day: dict | None = None) -> dict:
     return {
         "id": q.id,
         "client_id": q.client_id,
         "client_name": q.client.full_name,
         "session_id": q.session_id,
         "session_date": session_date,
+        "program_day_id": q.program_day_id,
+        "program_day_title": day["title"] if day else None,
+        "program_id": day["program_id"] if day else None,
         "body": q.body,
         "status": q.status,
         "created_at": q.created_at,

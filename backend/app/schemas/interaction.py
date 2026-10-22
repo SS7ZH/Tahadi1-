@@ -26,6 +26,7 @@ class CommentIn(BaseModel):
 class QuestionIn(BaseModel):
     body: Body
     session_id: int | None = None
+    program_day_id: int | None = None
 
 
 class ReplyIn(BaseModel):
@@ -51,6 +52,9 @@ class QuestionOut(BaseModel):
     client_name: str
     session_id: int | None
     session_date: date | None
+    program_day_id: int | None = None
+    program_day_title: str | None = None
+    program_id: int | None = None
     body: str
     status: QuestionStatus
     created_at: datetime

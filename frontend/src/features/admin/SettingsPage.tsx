@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Gauge, Plus, Save, Sliders } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
 import { adminApi } from '@/api/endpoints';
@@ -300,9 +301,14 @@ export function SettingsPage() {
       <PageHeader
         title={tr.admin.settingsTitle}
         actions={
+          <>
+          <Link to="/admin/exercises">
+            <Button variant="outline">{tr.nav.exercises}</Button>
+          </Link>
           <Button icon={<Plus className="h-4 w-4" />} onClick={() => setShowNew(true)}>
             {tr.admin.newDefinition}
           </Button>
+          </>
         }
       />
 

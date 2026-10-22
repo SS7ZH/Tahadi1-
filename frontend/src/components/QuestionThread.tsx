@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { CalendarDays, ExternalLink, HelpCircle, Lock, Send } from 'lucide-react';
+import { CalendarDays, ClipboardList, ExternalLink, HelpCircle, Lock, Send } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,7 +8,7 @@ import { errorMessage } from '@/api/client';
 import { clientsApi, questionsApi } from '@/api/endpoints';
 import type { Question, QuestionStatus } from '@/api/types';
 import { useCurrentUser } from '@/hooks/useAuth';
-import { qk, useQuestions, useSessions } from '@/hooks/queries';
+import { qk, useCurrentProgram, useQuestions, useSessions } from '@/hooks/queries';
 import { tr } from '@/i18n';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { Badge, Button, Card, EmptyState, ErrorState, Select, Skeleton, Textarea } from './ui';
@@ -60,6 +60,12 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={statusTone[question.status]}>{tr.questionStatus[question.status]}</Badge>
+            {question.program_day_title && (
+              <Badge tone="primary">
+                <ClipboardList className="h-3 w-3" />
+                {question.program_day_title}
+              </Badge>
+            )}
             {question.session_date && (
               <Badge tone="accent">
                 <CalendarDays className="h-3 w-3" />
@@ -155,17 +161,25 @@ export function QuestionCard({ question, showClient }: { question: Question; sho
   );
 }
 
-function AskForm({ clientId }: { clientId: number }) {
+function AskForm({ clientId, dayId, onClearDay }: { clientId: number; dayId?: number | null; onClearDay?: () => void }) {
+  const program = useCurrentProgram(clientId);
+  const day = dayId ? program.data?.days.find((d) => d.id === dayId) : undefined;
   const sessions = useSessions(clientId);
   const invalidate = useInvalidateQuestions();
   const [body, setBody] = useState('');
   const [sessionId, setSessionId] = useState('');
 
   const ask = useMutation({
-    mutationFn: () => clientsApi.ask(clientId, { body: body.trim(), session_id: sessionId ? Number(sessionId) : null }),
+    mutationFn: () =>
+      clientsApi.ask(clientId, {
+        body: body.trim(),
+        session_id: !dayId && sessionId ? Number(sessionId) : null,
+        program_day_id: dayId ?? null,
+      }),
     onSuccess: async () => {
       setBody('');
       setSessionId('');
+      onClearDay?.();
       toast.success(tr.questions.asked);
       await invalidate(clientId);
     },
@@ -194,6 +208,18 @@ function AskForm({ clientId }: { clientId: number }) {
           maxLength={5000}
         />
         <div className="flex flex-wrap items-end gap-3">
+          {dayId ? (
+            <div className="flex min-w-[12rem] flex-1 flex-col gap-1.5">
+              <span className="text-sm font-medium">{tr.program.aboutDay}</span>
+              <span className="flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
+                <ClipboardList className="h-4 w-4 text-primary" />
+                <span className="flex-1">{day?.title ?? '…'}</span>
+                <button type="button" onClick={onClearDay} className="text-xs text-muted hover:text-ink">
+                  {tr.common.cancel}
+                </button>
+              </span>
+            </div>
+          ) : (
           <Select
             label={tr.questions.aboutSession}
             value={sessionId}
@@ -207,6 +233,7 @@ function AskForm({ clientId }: { clientId: number }) {
               </option>
             ))}
           </Select>
+          )}
           <Button type="submit" loading={ask.isPending} disabled={!body.trim()} icon={<Send className="h-4 w-4 rtl:-scale-x-100" />}>
             {tr.questions.ask}
           </Button>
@@ -216,11 +243,21 @@ function AskForm({ clientId }: { clientId: number }) {
   );
 }
 
-export function QuestionThread({ clientId, mode }: { clientId: number; mode: 'staff' | 'client' }) {
+export function QuestionThread({
+  clientId,
+  mode,
+  dayId,
+  onClearDay,
+}: {
+  clientId: number;
+  mode: 'staff' | 'client';
+  dayId?: number | null;
+  onClearDay?: () => void;
+}) {
   const questions = useQuestions(clientId);
   return (
     <div className="flex flex-col gap-4">
-      {mode === 'client' && <AskForm clientId={clientId} />}
+      {mode === 'client' && <AskForm clientId={clientId} dayId={dayId} onClearDay={onClearDay} />}
       {questions.isLoading ? (
         <Skeleton className="h-40" />
       ) : questions.error ? (

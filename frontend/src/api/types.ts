@@ -219,6 +219,9 @@ export interface Question {
   client_name: string;
   session_id: number | null;
   session_date: string | null;
+  program_day_id: number | null;
+  program_day_title: string | null;
+  program_id: number | null;
   body: string;
   status: QuestionStatus;
   created_at: string;
@@ -343,4 +346,110 @@ export interface NutritionPlanInput {
   fat_g?: number | null;
   meals_per_day?: number | null;
   note?: string | null;
+}
+
+/* ---------------- Training programs ---------------- */
+export type ProgramStatus = 'draft' | 'active' | 'archived';
+export type ItemKind = 'resistance' | 'cardio';
+export type LoadUnit = 'kg' | 'pct_1rm' | 'rpe';
+export const MUSCLE_GROUPS = ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'full_body', 'cardio'] as const;
+export const EQUIPMENT = ['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight', 'kettlebell', 'band', 'other'] as const;
+export const CARDIO_TYPES = ['walking', 'running', 'cycling', 'treadmill', 'jump_rope', 'swimming', 'hiit'] as const;
+
+export interface Exercise {
+  id: number;
+  name_ar: string;
+  name_en: string;
+  muscle_group: string;
+  equipment: string | null;
+  video_url: string | null;
+  is_active: boolean;
+}
+
+export interface ProgramItemInput {
+  kind: ItemKind;
+  exercise_id?: number | null;
+  custom_name?: string | null;
+  muscle_group?: string | null;
+  sets?: number | null;
+  reps?: string | null;
+  load_value?: number | null;
+  load_unit?: LoadUnit | null;
+  rest_seconds?: number | null;
+  tempo?: string | null;
+  cardio_type?: string | null;
+  duration_min?: number | null;
+  hr_zone?: number | null;
+  speed?: number | null;
+  incline?: number | null;
+  work_seconds?: number | null;
+  interval_rest_seconds?: number | null;
+  rounds?: number | null;
+  notes?: string | null;
+  video_url?: string | null;
+}
+
+export interface ProgramItem extends ProgramItemInput {
+  id: number;
+  exercise_name_ar: string | null;
+  exercise_name_en: string | null;
+  hr_target: { zone: number; min_bpm: number; max_bpm: number; pct: [number, number] } | null;
+}
+
+export interface ProgramDayInput {
+  day_number: number;
+  week_number: number | null;
+  title: string;
+  is_rest: boolean;
+  warmup?: string | null;
+  cooldown?: string | null;
+  notes?: string | null;
+  items: ProgramItemInput[];
+}
+
+export interface ProgramDay extends Omit<ProgramDayInput, 'items'> {
+  id: number;
+  items: ProgramItem[];
+}
+
+export interface ProgramInput {
+  title: string;
+  goal?: string | null;
+  start_date?: string | null;
+  weeks: number;
+  days_per_week: number;
+  notes?: string | null;
+  days: ProgramDayInput[];
+}
+
+export interface ProgramSummary {
+  id: number;
+  client_id: number | null;
+  is_template: boolean;
+  title: string;
+  goal: string | null;
+  start_date: string | null;
+  weeks: number;
+  days_per_week: number;
+  status: ProgramStatus;
+  days_count: number;
+  created_at: string;
+  updated_at: string;
+  created_by_id: number | null;
+  created_by_name: string | null;
+}
+
+export interface Program extends Omit<ProgramSummary, 'days_count'> {
+  client_name: string | null;
+  notes: string | null;
+  activated_at: string | null;
+  max_hr: number | null;
+  today: {
+    state: 'running' | 'not_started' | 'finished' | 'no_start_date';
+    week: number | null;
+    day_number: number | null;
+    day_id: number | null;
+    starts_in_days?: number;
+  } | null;
+  days: ProgramDay[];
 }

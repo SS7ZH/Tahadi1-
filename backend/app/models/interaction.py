@@ -29,6 +29,8 @@ class Question(CreatedAtMixin, Base):
     session_id: Mapped[int | None] = mapped_column(
         ForeignKey("measurement_sessions.id", ondelete="SET NULL"), index=True
     )
+    # optional link to a program day (v4); a question is about a session OR a day OR neither
+    program_day_id: Mapped[int | None] = mapped_column(ForeignKey("program_days.id", ondelete="SET NULL"), index=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="open", index=True, nullable=False)  # open|answered|closed
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)

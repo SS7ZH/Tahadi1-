@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { AdminDashboard } from '@/features/admin/AdminDashboard';
 import { AssignPage } from '@/features/admin/AssignPage';
+import { ExercisesPage } from '@/features/admin/ExercisesPage';
 import { SettingsPage } from '@/features/admin/SettingsPage';
 import { UsersPage } from '@/features/admin/UsersPage';
 import { LoginPage } from '@/features/auth/LoginPage';
@@ -11,6 +12,7 @@ import { CalculatorPage } from '@/features/calculator/CalculatorPage';
 import { AskTrainerPage } from '@/features/client/AskTrainerPage';
 import { MyHistoryPage } from '@/features/client/MyHistoryPage';
 import { MyNutritionPage } from '@/features/client/MyNutritionPage';
+import { MyProgramPage } from '@/features/client/MyProgramPage';
 import { MyProgressPage } from '@/features/client/MyProgressPage';
 import { ClientPage } from '@/features/trainer/ClientPage';
 import { InboxPage } from '@/features/trainer/InboxPage';
@@ -46,6 +48,7 @@ export function AppRoutes() {
         <Route path="/admin/users" element={<RequireRole roles={['admin']}><UsersPage /></RequireRole>} />
         <Route path="/admin/assign" element={<RequireRole roles={['admin']}><AssignPage /></RequireRole>} />
         <Route path="/admin/settings" element={<RequireRole roles={['admin']}><SettingsPage /></RequireRole>} />
+        <Route path="/admin/exercises" element={<RequireRole roles={['admin']}><ExercisesPage /></RequireRole>} />
         <Route path="/admin/questions" element={<RequireRole roles={['admin']}><InboxPage /></RequireRole>} />
         <Route path="/admin/clients/:clientId" element={<RequireRole roles={['admin']}><ClientPage /></RequireRole>} />
 
@@ -57,6 +60,7 @@ export function AppRoutes() {
         {/* client / player */}
         <Route path="/me" element={<RequireRole roles={['client']}><MyProgressPage /></RequireRole>} />
         <Route path="/me/history" element={<RequireRole roles={['client']}><MyHistoryPage /></RequireRole>} />
+        <Route path="/me/program" element={<RequireRole roles={['client']}><MyProgramPage /></RequireRole>} />
         <Route path="/me/nutrition" element={<RequireRole roles={['client']}><MyNutritionPage /></RequireRole>} />
         <Route path="/me/ask" element={<RequireRole roles={['client']}><AskTrainerPage /></RequireRole>} />
 

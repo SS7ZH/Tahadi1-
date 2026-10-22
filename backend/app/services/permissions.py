@@ -70,6 +70,19 @@ def get_accessible_comment(db: Session, user: User, comment_id: int) -> Comment:
     return comment
 
 
+def ensure_program_day_belongs(db: Session, day_id: int | None, client_id: int) -> None:
+    """Optional program_day_id on a question must be a day of that client's (non-draft) program."""
+    if day_id is None:
+        return
+    from app.models import Program, ProgramDay  # local import keeps this module light
+
+    row = db.execute(
+        select(Program.client_id, Program.status).join(ProgramDay, ProgramDay.program_id == Program.id).where(ProgramDay.id == day_id)
+    ).first()
+    if row is None or row.client_id != client_id or row.status == "draft":
+        raise not_found(tr("يوم البرنامج غير موجود", "Program day not found"))
+
+
 def ensure_session_belongs(db: Session, session_id: int | None, client_id: int) -> MeasurementSession | None:
     """Optional session_id on comments/questions must belong to the same client."""
     if session_id is None:

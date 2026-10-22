@@ -5,6 +5,10 @@ import type {
   ClientListItem,
   Comment,
   Definition,
+  Exercise,
+  Program,
+  ProgramInput,
+  ProgramSummary,
   NutritionOverview,
   NutritionPlan,
   NutritionPlanInput,
@@ -64,7 +68,7 @@ export const clientsApi = {
   addComment: (id: number, body: { body: string; session_id?: number | null }) =>
     data(api.post<Comment>(`/clients/${id}/comments`, body)),
   questions: (id: number) => data(api.get<Question[]>(`/clients/${id}/questions`)),
-  ask: (id: number, body: { body: string; session_id?: number | null }) =>
+  ask: (id: number, body: { body: string; session_id?: number | null; program_day_id?: number | null }) =>
     data(api.post<Question>(`/clients/${id}/questions`, body)),
 };
 
@@ -126,4 +130,22 @@ export const nutritionApi = {
   settings: () => data(api.get<NutritionSettingRow[]>('/nutrition-settings')),
   updateSetting: (id: number, body: Partial<NutritionSettingRow>) =>
     data(api.patch<NutritionSettingRow>(`/admin/nutrition-settings/${id}`, body)),
+};
+
+export const programsApi = {
+  exercises: (params?: { q?: string; muscle_group?: string; include_inactive?: boolean }) =>
+    data(api.get<Exercise[]>('/exercises', { params })),
+  createExercise: (body: Partial<Exercise>) => data(api.post<Exercise>('/admin/exercises', body)),
+  updateExercise: (id: number, body: Partial<Exercise>) => data(api.patch<Exercise>(`/admin/exercises/${id}`, body)),
+  listForClient: (clientId: number) => data(api.get<ProgramSummary[]>(`/clients/${clientId}/programs`)),
+  current: (clientId: number) => data(api.get<Program | null>(`/clients/${clientId}/program/current`)),
+  create: (clientId: number, body: ProgramInput) => data(api.post<Program>(`/clients/${clientId}/programs`, body)),
+  templates: () => data(api.get<ProgramSummary[]>('/program-templates')),
+  get: (id: number) => data(api.get<Program>(`/programs/${id}`)),
+  update: (id: number, body: ProgramInput) => data(api.put<Program>(`/programs/${id}`, body)),
+  remove: (id: number) => api.delete(`/programs/${id}`),
+  activate: (id: number) => data(api.post<Program>(`/programs/${id}/activate`)),
+  archive: (id: number) => data(api.post<Program>(`/programs/${id}/archive`)),
+  duplicate: (id: number, body: { client_id?: number; as_template?: boolean; title?: string }) =>
+    data(api.post<Program>(`/programs/${id}/duplicate`, body)),
 };
