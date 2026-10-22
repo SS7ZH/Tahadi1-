@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArrowRight, BookmarkPlus, ClipboardList, Copy, Eye, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { Archive, ArrowRight, BookmarkPlus, ClipboardList, Copy, Eye, FileDown, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
@@ -7,6 +7,7 @@ import { programsApi } from '@/api/endpoints';
 import type { Program, ProgramInput, ProgramSummary, User } from '@/api/types';
 import { useClients, useProgram, usePrograms, useProgramTemplates } from '@/hooks/queries';
 import { tr } from '@/i18n';
+import { downloadPdf } from '@/lib/download';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { ChronicBadge } from './documents';
 import { ProgramBuilder } from './ProgramBuilder';
@@ -28,6 +29,19 @@ function useInvalidatePrograms(clientId: number) {
 const statusTone = { active: 'good', draft: 'warn', archived: 'neutral' } as const;
 
 function ProgramRow({ p, onView, onEdit }: { p: ProgramSummary; onView: () => void; onEdit: () => void }) {
+  const [downloading, setDownloading] = useState(false);
+  const handleExport = async () => {
+    setDownloading(true);
+    try {
+      await downloadPdf(`/pdf/program/${p.id}`);
+      toast.success(tr.pdf.exported);
+    } catch (err) {
+      toast.error(errorMessage(err) || tr.pdf.exportFailed);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
       <div className="min-w-0 flex-1">
@@ -40,6 +54,9 @@ function ProgramRow({ p, onView, onEdit }: { p: ProgramSummary; onView: () => vo
           {tr.program.days}: <span className="num">{p.days_count}</span> · {fmtDateTime(p.updated_at)}
         </p>
       </div>
+      <Button size="sm" variant="ghost" icon={<FileDown className="h-4 w-4" />} loading={downloading} onClick={handleExport} title={tr.pdf.exportPdf}>
+        {tr.pdf.exportPdf}
+      </Button>
       <Button size="sm" variant="ghost" icon={<Eye className="h-4 w-4" />} onClick={onView}>
         {tr.program.view}
       </Button>

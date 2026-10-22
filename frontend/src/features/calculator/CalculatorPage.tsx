@@ -1,15 +1,19 @@
 import clsx from 'clsx';
-import { Flame, Info, Sigma, Target } from 'lucide-react';
+import { FileDown, Flame, Info, Sigma, Target } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { errorMessage } from '@/api/client';
 import type { MacroSettings, NutritionGoal, Sex } from '@/api/types';
 import { MacroView } from '@/components/MacroView';
-import { Badge, Card, CardHeader, Input, PageHeader, Select } from '@/components/ui';
+import { Badge, Button, Card, CardHeader, Input, PageHeader, Select } from '@/components/ui';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { useActivityFactors, useNutritionSettings, useSummary } from '@/hooks/queries';
 import { loc, tr } from '@/i18n';
 import { bmi, bmiLabel, bmrMifflin } from '@/lib/calc';
+import { downloadPdf } from '@/lib/download';
 import { buildPlan, DEFAULT_SETTINGS, GOAL_MAP } from '@/lib/nutrition';
 import { fmtInt, fmtNumber } from '@/lib/format';
+import { ExportCalculatorModal } from './ExportCalculatorModal';
 
 const LIMITS = { age: [10, 100], weight: [20, 300], height: [100, 250] } as const;
 
@@ -34,6 +38,8 @@ export function CalculatorPage() {
   const [activity, setActivity] = useState('moderate');
   const [goal, setGoal] = useState<NutritionGoal>('maintenance');
   const [prefilled, setPrefilled] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Players get their own data pre-filled.
   useEffect(() => {
@@ -66,6 +72,42 @@ export function CalculatorPage() {
     const b = bmi(w.value, h.value);
     return { bmr, tdee, plan: buildPlan(tdee, settings[goal]), bmi: b };
   }, [a.value, w.value, h.value, factor, sex, settings, goal]);
+
+  const runExport = async (names?: { clientId?: number; clientName?: string; coachName?: string }) => {
+    if (a.value === null || w.value === null || h.value === null || !factor) return;
+    setExporting(true);
+    try {
+      await downloadPdf('/pdf/calculator', {
+        method: 'POST',
+        body: {
+          sex,
+          age: a.value,
+          weight: w.value,
+          height: h.value,
+          activity_key: activity,
+          goal,
+          meals_per_day: result?.plan?.meals_per_day,
+          client_id: names?.clientId,
+          client_name: names?.clientName,
+          coach_name: names?.coachName,
+        },
+      });
+      toast.success(tr.pdf.exported);
+      setModalOpen(false);
+    } catch (err) {
+      toast.error(errorMessage(err) || tr.pdf.exportFailed);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportClick = () => {
+    if (isClient) {
+      runExport();
+    } else {
+      setModalOpen(true);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -131,7 +173,21 @@ export function CalculatorPage() {
                 </Card>
               </div>
               <Card>
-                <CardHeader title={tr.calculator.targets} icon={<Target className="h-5 w-5" />} />
+                <CardHeader
+                  title={tr.calculator.targets}
+                  icon={<Target className="h-5 w-5" />}
+                  actions={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={<FileDown className="h-4 w-4" />}
+                      loading={exporting && isClient}
+                      onClick={handleExportClick}
+                    >
+                      {tr.pdf.exportPdf}
+                    </Button>
+                  }
+                />
                 <ul className="divide-y divide-line px-4 sm:px-5">
                   {(['maintenance', 'weight_loss', 'weight_gain'] as NutritionGoal[]).map((g) => ({
                     label: tr.nutritionGoals[g],
@@ -191,6 +247,14 @@ export function CalculatorPage() {
           </div>
         </Card>
       </div>
+
+      <ExportCalculatorModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        userRole={user.role}
+        exporting={exporting}
+        onExport={runExport}
+      />
     </div>
   );
 }

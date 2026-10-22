@@ -699,6 +699,32 @@ export const ar = {
     text: 'ربما تم نقل الصفحة أو أن الرابط غير صحيح.',
     home: 'العودة للرئيسية',
   },
+
+  pdf: {
+    exportPdf: 'تصدير PDF',
+    exporting: 'جاري التصدير…',
+    download: 'تنزيل PDF',
+    exported: 'تم تنزيل ملف PDF بنجاح',
+    exportFailed: 'تعذر تصدير ملف PDF',
+    measurementsExport: 'تصدير تقرير القياسات',
+    measurementsSubtitle: 'تحديد النطاق الزمني والمؤشرات والملاحظات للتضمين في تقرير PDF',
+    dateRange: 'النطاق الزمني',
+    dateFrom: 'من تاريخ',
+    dateTo: 'إلى تاريخ',
+    allDates: 'كافة التواريخ',
+    last30Days: 'آخر 30 يوماً',
+    last90Days: 'آخر 90 يوماً',
+    selectMetrics: 'المؤشرات والرسوم البيانية (حتى 8)',
+    selectedCount: (n: number) => `تم اختيار ${n} من 8`,
+    includeComments: 'تضمين ملاحظات المدرب في التقرير',
+    calculatorExport: 'تصدير تقرير حاسبة السعرات',
+    calculatorSubtitle: 'أدخل الأسماء المطلوبة لإصدار التقرير الرسمي',
+    coachName: 'اسم المدرب',
+    clientName: 'اسم العميل',
+    chooseClient: 'اختر عميلاً من القائمة',
+    orTypeClientName: 'أو اكتب اسماً يدوياً',
+    namesRequired: 'يرجى إدخال اسم المدرب واسم العميل',
+  },
 };
 
 export type Messages = typeof ar;

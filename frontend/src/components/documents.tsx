@@ -1,11 +1,12 @@
 import clsx from 'clsx';
-import { FileText, Loader2, Paperclip, ShieldAlert, Trash2, Upload } from 'lucide-react';
+import { FileDown, FileText, Loader2, Paperclip, ShieldAlert, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
 import { documentsApi } from '@/api/endpoints';
 import { CHRONIC_CONDITIONS, type HealthDeclarationInfo, type HealthInput, type MedicalFileInfo, type SignedDocumentInfo } from '@/api/types';
 import { tr } from '@/i18n';
+import { downloadPdf } from '@/lib/download';
 import { fmtDate, fmtDateTime } from '@/lib/format';
 import { Badge, Button, IconButton, Modal, Textarea } from './ui';
 
@@ -199,8 +200,35 @@ export function HealthForm({
 }
 
 export function SignedDocModal({ doc, onClose }: { doc: SignedDocumentInfo | null; onClose: () => void }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleExport = async () => {
+    if (!doc) return;
+    setDownloading(true);
+    try {
+      await downloadPdf(`/pdf/documents/${doc.id}`);
+      toast.success(tr.pdf.exported);
+    } catch (err) {
+      toast.error(errorMessage(err) || tr.pdf.exportFailed);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
-    <Modal open={!!doc} onClose={onClose} title={doc ? `${tr.docKinds[doc.kind]} · ${tr.documents.version(doc.template_version)}` : ''} size="lg">
+    <Modal
+      open={!!doc}
+      onClose={onClose}
+      title={doc ? `${tr.docKinds[doc.kind]} · ${tr.documents.version(doc.template_version)}` : ''}
+      size="lg"
+      footer={
+        doc ? (
+          <Button icon={<FileDown className="h-4 w-4" />} loading={downloading} onClick={handleExport}>
+            {tr.pdf.exportPdf}
+          </Button>
+        ) : undefined
+      }
+    >
       {doc && (
         <div className="flex flex-col gap-3">
           <pre dir={doc.language === 'ar' ? 'rtl' : 'ltr'} className="max-h-[55vh] overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2 p-4 font-sans text-sm leading-relaxed">
@@ -225,6 +253,20 @@ export function SignedDocModal({ doc, onClose }: { doc: SignedDocumentInfo | nul
 }
 
 export function SignedDocList({ docs, onOpen }: { docs: SignedDocumentInfo[]; onOpen: (d: SignedDocumentInfo) => void }) {
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  const handleDownload = async (id: number) => {
+    setDownloadingId(id);
+    try {
+      await downloadPdf(`/pdf/documents/${id}`);
+      toast.success(tr.pdf.exported);
+    } catch (err) {
+      toast.error(errorMessage(err) || tr.pdf.exportFailed);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   if (!docs.length) return <p className="p-4 text-sm text-muted">{tr.documents.noDocs}</p>;
   return (
     <ul className="divide-y divide-line">
@@ -239,6 +281,15 @@ export function SignedDocList({ docs, onOpen }: { docs: SignedDocumentInfo[]; on
             </span>
           )}
           <span className="ms-auto text-xs text-muted">{fmtDateTime(d.signed_at)}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            icon={<FileDown className="h-4 w-4" />}
+            loading={downloadingId === d.id}
+            onClick={() => handleDownload(d.id)}
+          >
+            {tr.pdf.exportPdf}
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => onOpen(d)}>
             {tr.documents.view}
           </Button>

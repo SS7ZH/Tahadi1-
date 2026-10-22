@@ -1,4 +1,4 @@
-import { ArrowLeftRight, LineChart as LineChartIcon } from 'lucide-react';
+import { ArrowLeftRight, FileDown, LineChart as LineChartIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   CartesianGrid,
@@ -17,8 +17,9 @@ import { useChartColors } from '@/hooks/useTheme';
 import { loc, tr, useLang } from '@/i18n';
 import { fmtDate, fmtNumber, fmtShortDate } from '@/lib/format';
 import { trendOf } from '@/lib/trend';
+import { ExportMeasurementsModal } from './ExportMeasurementsModal';
 import { TrendChip } from './TrendChip';
-import { Card, CardHeader, EmptyState, ErrorState, Select, Skeleton } from './ui';
+import { Button, Card, CardHeader, EmptyState, ErrorState, Select, Skeleton } from './ui';
 
 function MetricSelect({ progress, value, onChange }: { progress: Progress; value: string; onChange: (k: string) => void }) {
   return (
@@ -233,6 +234,7 @@ export function ProgressPanel({ clientId }: { clientId: number }) {
   const progress = useProgress(clientId);
   const sessions = useSessions(clientId);
   const [metric, setMetric] = useState('weight');
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Fall back to the first metric that has data.
   useEffect(() => {
@@ -250,7 +252,20 @@ export function ProgressPanel({ clientId }: { clientId: number }) {
   return (
     <div className="flex flex-col gap-4">
       <Card>
-        <CardHeader title={tr.progress.chartTitle} icon={<LineChartIcon className="h-5 w-5" />} />
+        <CardHeader
+          title={tr.progress.chartTitle}
+          icon={<LineChartIcon className="h-5 w-5" />}
+          actions={
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<FileDown className="h-4 w-4" />}
+              onClick={() => setExportOpen(true)}
+            >
+              {tr.pdf.exportPdf}
+            </Button>
+          }
+        />
         <div className="flex flex-col gap-4 p-4 sm:p-5">
           <MetricSelect progress={progress.data} value={metric} onChange={setMetric} />
           <ProgressChart progress={progress.data} metric={metric} />
@@ -260,6 +275,11 @@ export function ProgressPanel({ clientId }: { clientId: number }) {
         <CardHeader title={tr.progress.compare} subtitle={tr.progress.compareHint} icon={<ArrowLeftRight className="h-5 w-5" />} />
         {sessions.data ? <ComparePanel progress={progress.data} sessions={sessions.data} /> : <Skeleton className="m-5 h-40" />}
       </Card>
+      <ExportMeasurementsModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        clientId={clientId}
+      />
     </div>
   );
 }

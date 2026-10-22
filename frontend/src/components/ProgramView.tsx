@@ -1,11 +1,14 @@
 import clsx from 'clsx';
-import { CalendarDays, Dumbbell, ExternalLink, HeartPulse, MessageCircleQuestion, Moon, Timer } from 'lucide-react';
+import { CalendarDays, Dumbbell, ExternalLink, FileDown, HeartPulse, MessageCircleQuestion, Moon, Timer } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { errorMessage } from '@/api/client';
 import type { Program, ProgramDay, ProgramItem } from '@/api/types';
 import { loc, tr } from '@/i18n';
+import { downloadPdf } from '@/lib/download';
 import { fmtDate, fmtNumber, fmtShortDate, parseDate } from '@/lib/format';
-import { Badge, Card, Select } from './ui';
+import { Badge, Button, Card, Select } from './ui';
 
 export function itemName(it: ProgramItem): string {
   if (it.kind === 'cardio') return tr.cardioTypes[it.cardio_type ?? ''] ?? it.cardio_type ?? '';
@@ -167,16 +170,40 @@ export function ProgramView({ program, askHref }: { program: Program; askHref?: 
   const today = program.today;
   const currentWeek = today?.week ?? 1;
   const [week, setWeek] = useState(currentWeek);
+  const [exporting, setExporting] = useState(false);
   const todayDay = today?.day_id ? program.days.find((d) => d.id === today.day_id) : undefined;
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await downloadPdf(`/pdf/program/${program.id}`);
+      toast.success(tr.pdf.exported);
+    } catch (err) {
+      toast.error(errorMessage(err) || tr.pdf.exportFailed);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <Card className="flex flex-col gap-2 p-4 sm:p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-bold">{program.title}</h2>
-          <Badge tone={program.status === 'active' ? 'good' : program.status === 'draft' ? 'warn' : 'neutral'}>
-            {tr.programStatus[program.status]}
-          </Badge>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-bold">{program.title}</h2>
+            <Badge tone={program.status === 'active' ? 'good' : program.status === 'draft' ? 'warn' : 'neutral'}>
+              {tr.programStatus[program.status]}
+            </Badge>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<FileDown className="h-4 w-4" />}
+            loading={exporting}
+            onClick={handleExport}
+          >
+            {tr.pdf.exportPdf}
+          </Button>
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
           {program.goal && (
