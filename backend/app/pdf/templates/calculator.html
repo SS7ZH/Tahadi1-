@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ L.inputs }}</h2>
+<table class="kv">
+  <tr><td class="k">{{ L.sex }}</td><td>{{ L.sexes[inputs.sex] }}</td><td class="k">{{ L.age }}</td><td><span class="num">{{ inputs.age }}</span> {{ L.years }}</td></tr>
+  <tr><td class="k">{{ L.weight }}</td><td><span class="num">{{ inputs.weight | num }}</span> {{ L.kg }}</td><td class="k">{{ L.height }}</td><td><span class="num">{{ inputs.height | num }}</span> {{ L.cm }}</td></tr>
+  <tr><td class="k">{{ L.activity }}</td><td colspan="3">{{ activity_name }} (<span class="num">× {{ activity_factor }}</span>)</td></tr>
+  <tr><td class="k">{{ L.goal }}</td><td colspan="3">{{ L.nutrition_goals[goal] }}</td></tr>
+</table>
+
+<table class="cards"><tr>
+  <td><div class="muted">{{ L.bmr }}</div><div class="big num">{{ bmr | num(0) }}</div><div>{{ L.kcal_day }}</div></td>
+  <td><div class="muted">{{ L.tdee }}</div><div class="big num">{{ tdee | num(0) }}</div><div>{{ L.kcal_day }}</div></td>
+  <td><div class="muted">{{ L.target }}</div><div class="big num">{{ plan.calories }}</div><div>{{ L.kcal_day }}</div></td>
+  <td><div class="muted">{{ L.meals }}</div><div class="big num">{{ plan.meals_per_day }}</div><div class="num">{{ plan.per_meal.calories }} {{ L.kcal }}/{{ L.per_meal }}</div></td>
+</tr></table>
+
+<h2>{{ L.nutrition }}</h2>
+<table class="grid">
+  <tr><th>{{ L.macro }}</th><th>{{ L.grams }}</th><th>{{ L.kcal }}</th><th>{{ L.percent }}</th><th>{{ L.per_meal }}</th></tr>
+  {% for m in ['protein', 'carbs', 'fat'] %}
+  <tr><td>{{ L.macros[m] }}</td><td class="num">{{ plan.macros[m].g }}</td><td class="num">{{ plan.macros[m].kcal }}</td><td class="num">{{ plan.macros[m].pct }}%</td><td class="num">{{ plan.per_meal[m] }}</td></tr>
+  {% endfor %}
+</table>
+<p class="muted">{{ L.tip }}</p>
+
+<h2>{{ L.formulas }}</h2>
+<div class="box">
+  <p>{{ L.formula_men }}</p>
+  <p>{{ L.formula_women }}</p>
+  <p>{{ L.formula_tdee }}</p>
+</div>
+<p class="muted">{{ L.estimate }}</p>
+{% endblock %}

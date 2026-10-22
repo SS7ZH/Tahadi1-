@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+{% if doc.kind == 'contract' and doc.details %}
+<table class="kv">
+  <tr><td class="k">{{ L.plan }}</td><td>{{ doc.details.plan }}</td></tr>
+  <tr><td class="k">{{ L.start_date }}</td><td class="num">{{ doc.details.start_date }}</td></tr>
+  <tr><td class="k">{{ L.end_date }}</td><td class="num">{{ doc.details.end_date }}</td></tr>
+  <tr><td class="k">{{ L.price }}</td><td>{{ doc.details.price }}</td></tr>
+</table>
+{% endif %}
+
+<div class="box pre" dir="{{ 'rtl' if doc.language == 'ar' else 'ltr' }}">{{ doc.rendered_text }}</div>
+
+{% if declaration %}
+<h2>{{ L.declaration }}</h2>
+<table class="kv">
+  <tr><td class="k">{{ L.chronic_q }}</td><td>{{ L.yes if declaration.has_chronic else L.no }}</td></tr>
+  {% if declaration.conditions %}<tr><td class="k">{{ L.conditions }}</td><td>{% for c in declaration.conditions %}{{ L.conditions_names.get(c, c) }}{% if not loop.last %}، {% endif %}{% endfor %}</td></tr>{% endif %}
+  <tr><td class="k">{{ L.details }}</td><td>{{ declaration.details or L.none }}</td></tr>
+  <tr><td class="k">{{ L.medications }}</td><td>{{ declaration.medications or L.none }}</td></tr>
+  <tr><td class="k">{{ L.injuries }}</td><td>{{ declaration.injuries or L.none }}</td></tr>
+  <tr><td class="k">{{ L.files }}</td><td>{% if declaration.files %}{% for f in declaration.files %}<div dir="auto">{{ f.original_name }}</div>{% endfor %}{% else %}{{ L.none }}{% endif %}</td></tr>
+</table>
+{% endif %}
+
+<div class="sig">
+  <table class="kv">
+    <tr><td class="k">{{ L.signature }}</td><td><b dir="auto">{{ doc.typed_name }}</b></td></tr>
+    <tr><td class="k">{{ L.signed_at }}</td><td class="num">{{ signed_at }}</td></tr>
+    <tr><td class="k">{{ L.version }}</td><td class="num">{{ doc.template_version }}</td></tr>
+  </table>
+</div>
+{% endblock %}

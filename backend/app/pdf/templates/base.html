@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir }}">
+<head>
+<meta charset="utf-8">
+<title>{{ L.brand }} – {{ title }}</title>
+<style>
+  @font-face { font-family: Plex; src: url("fonts/IBMPlexSansArabic-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: Plex; src: url("fonts/IBMPlexSansArabic-Bold.ttf"); font-weight: 700; }
+
+  @page {
+    size: A4;
+    margin: 36mm 14mm 18mm 14mm;
+    @top-center { content: element(header); width: 100%; }
+    @bottom-center {
+      content: "{{ L.page }} " counter(page) " {{ L.of }} " counter(pages) "   ·   {{ L.issued }}";
+      font-family: Plex; font-size: 8pt; color: #686870;
+      {% if dir == 'rtl' %}direction: rtl;{% endif %}
+    }
+  }
+  html { font-family: Plex, sans-serif; font-size: 9.5pt; color: #18181b; direction: {{ dir }}; }
+  body { margin: 0; }
+  .header { position: running(header); width: 100%; border-bottom: 2px solid #F2550D; padding-bottom: 6px; }
+  .header table { width: 100%; border-collapse: collapse; }
+  .header td { vertical-align: middle; padding: 0; }
+  .brand { font-size: 15pt; font-weight: 700; }
+  .brand svg { vertical-align: middle; }
+  .doc-title { font-size: 12pt; font-weight: 700; color: #F2550D; }
+  .meta { font-size: 8pt; color: #44444c; line-height: 1.5; }
+  .meta b { color: #18181b; }
+  .end { text-align: {{ 'left' if dir == 'rtl' else 'right' }}; }
+
+  h1 { font-size: 13pt; margin: 0 0 6px; }
+  h2 { font-size: 11pt; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #E4E1DB; color: #18181b; }
+  h3 { font-size: 10pt; margin: 10px 0 4px; }
+  p { margin: 3px 0; line-height: 1.55; }
+  .muted { color: #686870; }
+  .num { direction: ltr; unicode-bidi: isolate; }
+  table.grid { width: 100%; border-collapse: collapse; margin: 4px 0 8px; page-break-inside: auto; }
+  table.grid th, table.grid td { border: 1px solid #E4E1DB; padding: 3px 5px; text-align: start; vertical-align: top; font-size: 8.5pt; }
+  table.grid th { background: #F1EFEB; font-weight: 700; }
+  table.grid tr { page-break-inside: avoid; }
+  .kv { width: 100%; border-collapse: collapse; }
+  .kv td { padding: 2px 4px; font-size: 9pt; }
+  .kv td.k { color: #686870; width: 34%; }
+  .box { border: 1px solid #E4E1DB; border-radius: 6px; padding: 8px 10px; margin: 6px 0; page-break-inside: avoid; }
+  .pill { display: inline-block; padding: 1px 6px; border-radius: 8px; background: #F1EFEB; font-size: 8pt; }
+  .pill.warn { background: #FDECEC; color: #B42318; }
+  .pre { white-space: pre-wrap; line-height: 1.6; }
+  .cards { width: 100%; border-collapse: separate; border-spacing: 4px; }
+  .cards td { border: 1px solid #E4E1DB; border-radius: 6px; padding: 6px; width: 25%; vertical-align: top; }
+  .cards .big { font-size: 13pt; font-weight: 700; }
+  .day { page-break-inside: avoid; }
+  .sig { margin-top: 10px; border-top: 1px dashed #B5B2AC; padding-top: 6px; }
+  a { color: #CD4204; text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <table><tr>
+      <td>
+        <span class="brand">
+          <svg width="22" height="22" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#F2550D"/><path d="M14 44 L26 30 L34 38 L50 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="18" r="5" fill="#fff"/></svg>
+          {{ L.brand }}
+        </span>
+        <div class="doc-title">{{ title }}</div>
+      </td>
+      <td class="end meta">
+        <div>{{ L.coach }}: <b>{{ coach_name }}</b></div>
+        <div>{{ L.client }}: <b>{{ client_name }}</b></div>
+        <div>{{ L.exported }}: <b class="num">{{ exported }}</b></div>
+      </td>
+    </tr></table>
+  </div>
+
+  {% block content %}{% endblock %}
+</body>
+</html>

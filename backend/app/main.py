@@ -19,6 +19,7 @@ from app.routers import (
     documents,
     nutrition,
     onboarding,
+    pdf,
     programs,
     questions,
     reference,
@@ -66,7 +67,7 @@ def health(db: Session = Depends(get_db)):
     return {"status": "ok", "database": "ok"}
 
 
-for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents):
+for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents, pdf):
     api.include_router(r.router)
 
 app.include_router(api)

@@ -2,18 +2,13 @@
 services:
   - type: web
     name: tahadi-api
-    runtime: python
-    rootDir: backend
+    # Docker (not the native Python runtime): the image installs Pango for WeasyPrint PDF export.
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
-    buildCommand: pip install -r requirements.txt
-    # The free plan does not run preDeployCommand, so migrations run at start-up instead
-    # (`alembic upgrade head` is a no-op when the schema is current). On a paid plan you can
-    # move it back to: preDeployCommand: alembic upgrade head
-    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
     healthCheckPath: /api/v1/health
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.7
       - key: ENVIRONMENT
         value: production
       # Supabase TRANSACTION pooler URL (port 6543), with ?sslmode=require
@@ -36,3 +31,10 @@ services:
         sync: false
       - key: SEED_ADMIN_PASSWORD
         sync: false
+      # Private bucket for medical reports
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: medical-files
