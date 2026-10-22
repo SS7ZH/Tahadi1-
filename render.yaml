@@ -31,6 +31,9 @@ services:
         sync: false
       - key: SEED_ADMIN_PASSWORD
         sync: false
+      # Optional: creates the showcase coach + trainee on startup (app.db.seed_showcase); safe to leave set
+      - key: SHOWCASE_PASSWORD
+        sync: false
       # Private bucket for medical reports
       - key: SUPABASE_URL
         sync: false

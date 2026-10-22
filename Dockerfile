@@ -18,4 +18,5 @@ COPY backend/ .
 
 EXPOSE 8000
 # Render injects $PORT. Migrations are a no-op when the schema is already current.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
+# With SHOWCASE_PASSWORD set, the two demo accounts are created once (later starts change nothing).
+CMD ["sh", "-c", "alembic upgrade head && if [ -n \"$SHOWCASE_PASSWORD\" ]; then python -m app.db.seed_showcase || echo 'showcase seed skipped'; fi && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
