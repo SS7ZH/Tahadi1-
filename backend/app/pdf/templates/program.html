@@ -31,8 +31,8 @@
       <tr>
         <td>{{ it.display_name }}{% if it.video_url %}<br><a href="{{ it.video_url }}">{{ L.video }}</a>{% endif %}</td>
         <td>{{ L.muscles.get(it.muscle_group, it.muscle_group or '') }}</td>
-        <td class="num">{{ it.sets or '—' }} × {{ it.reps or '—' }}</td>
-        <td>{% if it.load_value is not none %}<span class="num">{{ it.load_value | num }}</span> {{ L.load_units[it.load_unit or 'kg'] }}{% else %}—{% endif %}</td>
+        <td>{{ ((it.sets or '—') ~ ' × ' ~ (it.reps or '—')) | ltr }}</td>
+        <td>{% if it.load_value is none %}—{% elif it.load_unit == 'pct_1rm' %}{{ ((it.load_value | num) ~ '% 1RM') | ltr }}{% elif it.load_unit == 'rpe' %}{{ ('RPE ' ~ (it.load_value | num)) | ltr }}{% else %}{{ it.load_value | num | ltr }} {{ L.load_units['kg'] }}{% endif %}</td>
         <td>{% if it.rest_seconds is not none %}<span class="num">{{ it.rest_seconds }}</span> {{ L.seconds }}{% else %}—{% endif %}</td>
         <td class="num">{{ it.tempo or '—' }}</td>
         <td>{{ it.notes or '' }}</td>
@@ -48,10 +48,10 @@
       <tr>
         <td>{{ L.cardio_types.get(it.cardio_type, it.cardio_type) }}{% if it.video_url %}<br><a href="{{ it.video_url }}">{{ L.video }}</a>{% endif %}</td>
         <td>{% if it.duration_min is not none %}<span class="num">{{ it.duration_min | num }}</span> {{ L.minutes }}{% else %}—{% endif %}</td>
-        <td>{% if it.hr_zone %}<span class="num">{{ it.hr_zone }}</span>{% if it.hr_target %} (<span class="num">{{ it.hr_target.min_bpm }}–{{ it.hr_target.max_bpm }}</span> {{ L.bpm }}){% endif %}{% else %}—{% endif %}</td>
+        <td>{% if it.hr_zone %}{{ it.hr_zone | ltr }}{% if it.hr_target %} · {{ ((it.hr_target.min_bpm) ~ '–' ~ (it.hr_target.max_bpm)) | ltr }} {{ L.bpm }}{% endif %}{% else %}—{% endif %}</td>
         <td>{% if it.speed is not none %}<span class="num">{{ it.speed | num }}</span> {{ L.kmh }}{% else %}—{% endif %}</td>
         <td>{% if it.incline is not none %}<span class="num">{{ it.incline | num }}%</span>{% else %}—{% endif %}</td>
-        <td>{% if it.rounds %}<span class="num">{{ it.rounds }} × ({{ it.work_seconds or 0 }}/{{ it.interval_rest_seconds or 0 }})</span> {{ L.seconds }}{% else %}—{% endif %}</td>
+        <td>{% if it.rounds %}{{ ((it.rounds) ~ ' × (' ~ (it.work_seconds or 0) ~ '/' ~ (it.interval_rest_seconds or 0) ~ ')') | ltr }} {{ L.seconds }}{% else %}—{% endif %}</td>
         <td>{{ it.notes or '' }}</td>
       </tr>
       {% endfor %}

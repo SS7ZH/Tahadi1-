@@ -23,7 +23,17 @@ def _num(v, digits: int = 1) -> str:
     return f"{v:,.{digits}f}".rstrip("0").rstrip(".")
 
 
+def _ltr(v) -> str:
+    """Wrap in Unicode LEFT-TO-RIGHT ISOLATE … POP DIRECTIONAL ISOLATE.
+
+    WeasyPrint ignores CSS `unicode-bidi: isolate`, but Pango honours these characters, so mixed
+    Latin/number runs such as "70% 1RM" or "151–170" keep their order inside Arabic text.
+    """
+    return f"⁦{v}⁩"
+
+
 _env.filters["num"] = _num
+_env.filters["ltr"] = _ltr
 
 
 def render_html(template: str, *, title_key: str, coach_name: str | None, client_name: str | None, **ctx) -> str:

@@ -5,7 +5,7 @@
   <tr><td class="k">{{ L.sex }}</td><td>{{ L.sexes.get(profile.sex, '—') }}</td>
       <td class="k">{{ L.age }}</td><td>{% if age is not none %}<span class="num">{{ age }}</span> {{ L.years }}{% else %}—{% endif %}</td></tr>
   <tr><td class="k">{{ L.height }}</td><td>{% if profile.height_cm %}<span class="num">{{ profile.height_cm | num }}</span> {{ L.cm }}{% else %}—{% endif %}</td>
-      <td class="k">{{ L.period }}</td><td class="num">{{ date_from or '—' }} → {{ date_to or '—' }}</td></tr>
+      <td class="k">{{ L.period }}</td><td>{{ (date_from or '—') | ltr }} {{ '←' if dir == 'rtl' else '→' }} {{ (date_to or '—') | ltr }}</td></tr>
 </table>
 
 <h2>{{ L.summary }}</h2>
@@ -45,7 +45,7 @@
 {% for c in charts %}
 <div class="box">
   <b>{{ c.name }}</b>{% if c.unit %} <span class="muted">({{ c.unit }})</span>{% endif %}
-  <span class="muted"> — <span class="num">{{ c.first | num }}</span> → <span class="num">{{ c.latest | num }}</span></span>
+  <span class="muted"> — {{ c.first | num | ltr }} {{ '←' if dir == 'rtl' else '→' }} {{ c.latest | num | ltr }}</span>
   <div>{{ c.svg | safe }}</div>
 </div>
 {% endfor %}

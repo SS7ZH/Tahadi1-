@@ -47,7 +47,12 @@ def test_login_wrong_password_arabic_error(client, users):
     assert "كلمة المرور" in r.json()["detail"]
 
 
-def test_login_rate_limited(client, users):
+def test_login_rate_limited(client, users, monkeypatch):
+    # Pin the limit so a local .env (LOGIN_RATE_LIMIT=…) can't change the outcome.
+    from app.routers.auth import login_limiter
+
+    monkeypatch.setattr(login_limiter, "limit", 10)
+    monkeypatch.setattr(login_limiter, "window", 3600)
     codes = [
         client.post(f"{API}/auth/login", json={"email": "ca@test.app", "password": "bad"}).status_code
         for _ in range(12)

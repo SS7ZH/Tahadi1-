@@ -50,19 +50,36 @@ export function ExportMeasurementsModal({ open, onClose, clientId }: ExportMeasu
     }
   };
 
+  // Local calendar dates (toISOString() is UTC and shifts the day between 00:00 and 03:00 in Saudi Arabia).
+  const localISO = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
+  const presetRange = (days: number) => {
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    return { from: localISO(start), to: localISO(new Date()) };
+  };
   const setPreset = (days: number | null) => {
     if (days === null) {
       setDateFrom('');
       setDateTo('');
       return;
     }
-    const end = new Date();
-    const start = new Date();
-    start.setDate(end.getDate() - days);
-    const toISO = (d: Date) => d.toISOString().slice(0, 10);
-    setDateFrom(toISO(start));
-    setDateTo(toISO(end));
+    const { from, to } = presetRange(days);
+    setDateFrom(from);
+    setDateTo(to);
   };
+  const isPreset = (days: number | null) => {
+    if (days === null) return !dateFrom && !dateTo;
+    const { from, to } = presetRange(days);
+    return dateFrom === from && dateTo === to;
+  };
+  const presetClass = (days: number | null) =>
+    clsx(
+      'rounded-lg px-2.5 py-1 text-xs font-medium transition',
+      isPreset(days) ? 'bg-primary text-on-primary' : 'border border-line bg-surface hover:bg-surface-2',
+    );
 
   const handleExport = async () => {
     setExporting(true);
@@ -117,31 +134,13 @@ export function ExportMeasurementsModal({ open, onClose, clientId }: ExportMeasu
             <span>{tr.pdf.dateRange}</span>
           </div>
           <div className="flex flex-wrap gap-1.5 pt-1">
-            <button
-              type="button"
-              onClick={() => setPreset(null)}
-              className={clsx(
-                'rounded-lg px-2.5 py-1 text-xs font-medium transition',
-                !dateFrom && !dateTo ? 'bg-primary text-on-primary' : 'bg-surface border border-line hover:bg-surface-2',
-              )}
-            >
+            <button type="button" onClick={() => setPreset(null)} className={presetClass(null)}>
               {tr.pdf.allDates}
             </button>
-            <button
-              type="button"
-              onClick={() => setPreset(30)}
-              className={clsx(
-                'rounded-lg px-2.5 py-1 text-xs font-medium transition',
-                dateFrom && dateTo ? 'bg-surface border border-line hover:bg-surface-2' : 'bg-surface border border-line hover:bg-surface-2',
-              )}
-            >
+            <button type="button" onClick={() => setPreset(30)} className={presetClass(30)}>
               {tr.pdf.last30Days}
             </button>
-            <button
-              type="button"
-              onClick={() => setPreset(90)}
-              className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-medium hover:bg-surface-2 transition"
-            >
+            <button type="button" onClick={() => setPreset(90)} className={presetClass(90)}>
               {tr.pdf.last90Days}
             </button>
           </div>

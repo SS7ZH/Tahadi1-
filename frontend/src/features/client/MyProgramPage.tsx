@@ -1,52 +1,18 @@
-import { ClipboardList, FileDown } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { ClipboardList } from 'lucide-react';
 import { errorMessage } from '@/api/client';
 import { ProgramView } from '@/components/ProgramView';
-import { Button, Card, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui';
+import { Card, EmptyState, ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { useCurrentProgram } from '@/hooks/queries';
 import { tr } from '@/i18n';
-import { downloadPdf } from '@/lib/download';
 
-/** Read-only: the player's active program, today's workout first. */
+/** Read-only: the player's active program, today's workout first. The PDF button is inside ProgramView. */
 export function MyProgramPage() {
   const user = useCurrentUser();
   const { data, isLoading, error, refetch } = useCurrentProgram(user.id);
-  const [downloading, setDownloading] = useState(false);
-
-  const handleExport = async () => {
-    if (!data) return;
-    setDownloading(true);
-    try {
-      await downloadPdf(`/pdf/program/${data.id}`);
-      toast.success(tr.pdf.exported);
-    } catch (err) {
-      toast.error(errorMessage(err) || tr.pdf.exportFailed);
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader
-        title={tr.nav.myProgram}
-        subtitle={user.trainer_name ? `${tr.client.trainer}: ${user.trainer_name}` : undefined}
-        actions={
-          data ? (
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<FileDown className="h-4 w-4" />}
-              loading={downloading}
-              onClick={handleExport}
-            >
-              {tr.pdf.exportPdf}
-            </Button>
-          ) : undefined
-        }
-      />
+      <PageHeader title={tr.nav.myProgram} subtitle={user.trainer_name ? `${tr.client.trainer}: ${user.trainer_name}` : undefined} />
       {isLoading ? (
         <Skeleton className="h-96" />
       ) : error ? (

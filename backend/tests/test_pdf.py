@@ -145,3 +145,53 @@ def test_real_pdf_render():
                              "per_meal": {"calories": 504, "protein": 25, "carbs": 69, "fat": 14}})
     pdf = html_to_pdf(html)
     assert pdf.startswith(b"%PDF") and len(pdf) > 10_000 and weasyprint
+
+
+def test_render_sample_pdfs(client, users, auth):
+    """Real rendering of all five documents in Arabic and English (Docker / CI only).
+
+    With PDF_SAMPLES_DIR set, the files are written there so they can be inspected visually.
+    """
+    pytest.importorskip("weasyprint", exc_type=OSError, reason="needs Pango (runs in Docker)")
+    import os
+
+    out = os.environ.get("PDF_SAMPLES_DIR")
+    cid, coach, player = users["client_a"].id, auth("trainer_a"), auth("client_a")
+    for day, w in (("2026-07-01", 95), ("2026-08-01", 92), ("2026-09-01", 89)):
+        _session(client, coach, cid, w, day)
+    client.post(f"{API}/clients/{cid}/comments", json={"body": "تقدم ممتاز، استمر على نفس البرنامج"}, headers=coach)
+    client.post(f"{API}/clients/{cid}/nutrition", json={}, headers=coach)
+    program = client.post(
+        f"{API}/clients/{cid}/programs",
+        json={
+            "title": "برنامج خسارة الدهون – المرحلة 1",
+            "goal": "خسارة الدهون",
+            "start_date": TODAY,
+            "days": [
+                {"day_number": 1, "title": "اليوم 1: صدر وترايسبس", "warmup": "5 دقائق دراجة", "items": [
+                    {"kind": "resistance", "exercise_id": 1, "sets": 4, "reps": "8-12", "load_value": 70, "load_unit": "pct_1rm", "rest_seconds": 90},
+                    {"kind": "resistance", "custom_name": "تمرين مخصص", "sets": 3, "reps": "15"},
+                    {"kind": "cardio", "cardio_type": "hiit", "duration_min": 12, "hr_zone": 4, "work_seconds": 30, "interval_rest_seconds": 30, "rounds": 10},
+                ]},
+                {"day_number": 2, "title": "راحة", "is_rest": True},
+            ],
+        },
+        headers=coach,
+    ).json()
+    docs = client.get(f"{API}/clients/{cid}/documents", headers=player).json()
+    calc = {"sex": "male", "age": 30, "weight": 80, "height": 180, "activity_key": "moderate", "goal": "weight_loss"}
+
+    for lang in ("ar", "en"):
+        responses = {
+            "measurements": client.get(f"{API}/pdf/measurements/{cid}?lang={lang}&keys=weight,waist,bmi", headers=coach),
+            "program": client.get(f"{API}/pdf/program/{program['id']}?lang={lang}", headers=coach),
+            "calculator": client.post(f"{API}/pdf/calculator?lang={lang}", json={**calc, "client_id": cid}, headers=coach),
+            **{d["kind"]: client.get(f"{API}/pdf/documents/{d['id']}?lang={lang}", headers=coach) for d in docs},
+        }
+        for name, r in responses.items():
+            assert r.status_code == 200, (name, lang, r.text[:300])
+            assert r.content.startswith(b"%PDF") and len(r.content) > 5_000, (name, lang)
+            if out:
+                os.makedirs(out, exist_ok=True)
+                with open(os.path.join(out, f"{name}_{lang}.pdf"), "wb") as fh:
+                    fh.write(r.content)
