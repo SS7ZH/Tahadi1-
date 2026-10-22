@@ -5,6 +5,10 @@ import type {
   ClientListItem,
   Comment,
   Definition,
+  NutritionOverview,
+  NutritionPlan,
+  NutritionPlanInput,
+  NutritionSettingRow,
   Progress,
   Question,
   QuestionStatus,
@@ -112,4 +116,14 @@ export const adminApi = {
   activityFactors: () => data(api.get<ActivityFactor[]>('/admin/activity-factors')),
   updateActivityFactor: (id: number, body: Partial<ActivityFactor>) =>
     data(api.patch<ActivityFactor>(`/admin/activity-factors/${id}`, body)),
+};
+
+export const nutritionApi = {
+  overview: (clientId: number) => data(api.get<NutritionOverview>(`/clients/${clientId}/nutrition`)),
+  history: (clientId: number) => data(api.get<NutritionPlan[]>(`/clients/${clientId}/nutrition/history`)),
+  save: (clientId: number, body: NutritionPlanInput) =>
+    data(api.post<NutritionOverview>(`/clients/${clientId}/nutrition`, body)),
+  settings: () => data(api.get<NutritionSettingRow[]>('/nutrition-settings')),
+  updateSetting: (id: number, body: Partial<NutritionSettingRow>) =>
+    data(api.patch<NutritionSettingRow>(`/admin/nutrition-settings/${id}`, body)),
 };

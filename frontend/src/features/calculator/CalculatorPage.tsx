@@ -1,12 +1,14 @@
 import clsx from 'clsx';
 import { Flame, Info, Sigma, Target } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import type { Sex } from '@/api/types';
+import type { MacroSettings, NutritionGoal, Sex } from '@/api/types';
+import { MacroView } from '@/components/MacroView';
 import { Badge, Card, CardHeader, Input, PageHeader, Select } from '@/components/ui';
 import { useCurrentUser } from '@/hooks/useAuth';
-import { useActivityFactors, useSummary } from '@/hooks/queries';
+import { useActivityFactors, useNutritionSettings, useSummary } from '@/hooks/queries';
 import { loc, tr } from '@/i18n';
-import { bmi, bmiLabel, bmrMifflin, calorieTargets } from '@/lib/calc';
+import { bmi, bmiLabel, bmrMifflin } from '@/lib/calc';
+import { buildPlan, DEFAULT_SETTINGS, GOAL_MAP } from '@/lib/nutrition';
 import { fmtInt, fmtNumber } from '@/lib/format';
 
 const LIMITS = { age: [10, 100], weight: [20, 300], height: [100, 250] } as const;
@@ -21,6 +23,7 @@ function parse(v: string, [lo, hi]: readonly [number, number]) {
 export function CalculatorPage() {
   const user = useCurrentUser();
   const factors = useActivityFactors();
+  const nutritionSettings = useNutritionSettings();
   const isClient = user.role === 'client';
   const summary = useSummary(user.id, isClient);
 
@@ -29,6 +32,7 @@ export function CalculatorPage() {
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
   const [activity, setActivity] = useState('moderate');
+  const [goal, setGoal] = useState<NutritionGoal>('maintenance');
   const [prefilled, setPrefilled] = useState(false);
 
   // Players get their own data pre-filled.
@@ -39,6 +43,7 @@ export function CalculatorPage() {
     if (user.age != null) setAge(String(user.age));
     if (p.height_cm) setHeight(String(p.height_cm));
     if (p.activity_key) setActivity(p.activity_key);
+    setGoal(GOAL_MAP[p.goal]);
     const w = summary.data?.results.weight;
     if (w) setWeight(String(w));
     if (summary.data || summary.isError) setPrefilled(true);
@@ -48,14 +53,19 @@ export function CalculatorPage() {
   const w = parse(weight, LIMITS.weight);
   const h = parse(height, LIMITS.height);
   const factor = factors.data?.find((f) => f.key === activity);
+  const settings = useMemo(() => {
+    const out: Record<NutritionGoal, MacroSettings> = { ...DEFAULT_SETTINGS };
+    nutritionSettings.data?.forEach((r) => (out[r.goal] = r));
+    return out;
+  }, [nutritionSettings.data]);
 
   const result = useMemo(() => {
     if (a.value === null || w.value === null || h.value === null || !factor) return null;
     const bmr = bmrMifflin(sex, w.value, h.value, a.value);
     const tdee = bmr * factor.factor;
     const b = bmi(w.value, h.value);
-    return { bmr, tdee, targets: calorieTargets(tdee), bmi: b };
-  }, [a.value, w.value, h.value, factor, sex]);
+    return { bmr, tdee, plan: buildPlan(tdee, settings[goal]), bmi: b };
+  }, [a.value, w.value, h.value, factor, sex, settings, goal]);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -123,11 +133,12 @@ export function CalculatorPage() {
               <Card>
                 <CardHeader title={tr.calculator.targets} icon={<Target className="h-5 w-5" />} />
                 <ul className="divide-y divide-line px-4 sm:px-5">
-                  {[
-                    { label: tr.calculator.maintenance, hint: 'TDEE', value: result.targets.maintenance, tone: 'text-ink' },
-                    { label: tr.calculator.fatLoss, hint: tr.calculator.fatLossHint, value: result.targets.fat_loss, tone: 'text-accent' },
-                    { label: tr.calculator.muscleGain, hint: tr.calculator.muscleGainHint, value: result.targets.muscle_gain, tone: 'text-primary' },
-                  ].map((t) => (
+                  {(['maintenance', 'weight_loss', 'weight_gain'] as NutritionGoal[]).map((g) => ({
+                    label: tr.nutritionGoals[g],
+                    hint: tr.calculator.delta(settings[g].calorie_adjustment),
+                    value: result.tdee + settings[g].calorie_adjustment,
+                    tone: g === 'weight_loss' ? 'text-accent' : g === 'weight_gain' ? 'text-primary' : 'text-ink',
+                  })).map((t) => (
                     <li key={t.label} className="flex items-center justify-between py-3">
                       <div>
                         <p className="text-sm font-semibold">{t.label}</p>
@@ -145,6 +156,19 @@ export function CalculatorPage() {
                   <span className="ms-auto">
                     {tr.summary.bmi}: <b className="num text-ink">{fmtNumber(result.bmi, 1)}</b> <Badge>{bmiLabel(result.bmi)}</Badge>
                   </span>
+                </div>
+              </Card>
+              <Card>
+                <CardHeader title={tr.calculator.macrosTitle} icon={<Flame className="h-5 w-5" />} />
+                <div className="flex flex-col gap-4 p-4 sm:p-5">
+                  <Select label={tr.calculator.goal} value={goal} onChange={(e) => setGoal(e.target.value as NutritionGoal)}>
+                    {(['weight_loss', 'maintenance', 'weight_gain'] as NutritionGoal[]).map((g) => (
+                      <option key={g} value={g}>
+                        {tr.nutritionGoals[g]} ({tr.calculator.delta(settings[g].calorie_adjustment)})
+                      </option>
+                    ))}
+                  </Select>
+                  <MacroView numbers={result.plan} />
                 </div>
               </Card>
             </>

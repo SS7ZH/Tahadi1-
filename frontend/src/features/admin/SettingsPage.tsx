@@ -8,6 +8,7 @@ import { adminApi } from '@/api/endpoints';
 import { CATEGORIES, type ActivityFactor, type Category, type ChoiceOption, type Definition, type Direction, type ValueType } from '@/api/types';
 import { Badge, Button, Card, CardHeader, ErrorState, Input, Modal, PageHeader, Select, Skeleton, Textarea } from '@/components/ui';
 import { qk } from '@/hooks/queries';
+import { NutritionSettingsCard } from './NutritionSettingsCard';
 import { tr } from '@/i18n';
 
 const numOrNull = (s: string) => (s.trim() === '' ? null : Number(s));
@@ -304,6 +305,8 @@ export function SettingsPage() {
           </Button>
         }
       />
+
+      <NutritionSettingsCard />
 
       <Card>
         <CardHeader title={tr.admin.activityFactors} subtitle={tr.admin.activityHint} icon={<Gauge className="h-5 w-5" />} />

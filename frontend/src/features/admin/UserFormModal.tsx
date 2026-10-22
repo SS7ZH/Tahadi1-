@@ -22,7 +22,7 @@ const makeSchema = () =>
     sex: z.enum(['male', 'female']),
     birth_date: z.string(),
     height_cm: z.string(),
-    goal: z.enum(['fat_loss', 'muscle_gain', 'fitness', 'health']),
+    goal: z.enum(['fat_loss', 'muscle_gain', 'fitness', 'health', 'performance']),
     activity_key: z.string(),
     trainer_id: z.string(),
     notes: z.string().optional(),

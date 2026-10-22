@@ -1,9 +1,10 @@
-import { ArrowRight, ClipboardList, History, LayoutGrid, LineChart, MessageCircleQuestion, MessageSquare, Pencil, PlusCircle } from 'lucide-react';
+import { ArrowRight, ClipboardList, History, LayoutGrid, LineChart, MessageCircleQuestion, MessageSquare, Pencil, PlusCircle, Salad } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { errorMessage } from '@/api/client';
 import type { Session } from '@/api/types';
 import { CommentThread } from '@/components/CommentThread';
+import { NutritionPanel } from '@/components/NutritionPanel';
 import { ProgressPanel } from '@/components/ProgressPanel';
 import { QuestionThread } from '@/components/QuestionThread';
 import { SessionForm } from '@/components/SessionForm';
@@ -11,13 +12,13 @@ import { SessionHistory } from '@/components/SessionHistory';
 import { SummaryView } from '@/components/SummaryView';
 import { Badge, Button, Card, ErrorState, Skeleton, Tabs, type TabItem } from '@/components/ui';
 import { useCurrentUser } from '@/hooks/useAuth';
-import { useActivityFactors, useClient, useQuestions } from '@/hooks/queries';
+import { useActivityFactors, useClient, useNutrition, useQuestions } from '@/hooks/queries';
 import { loc, tr } from '@/i18n';
 import { fmtDate, fmtNumber } from '@/lib/format';
 import { ClientFormModal } from './ClientFormModal';
 
-type Tab = 'summary' | 'progress' | 'history' | 'new' | 'comments' | 'questions';
-const TABS: Tab[] = ['summary', 'progress', 'history', 'new', 'comments', 'questions'];
+type Tab = 'summary' | 'progress' | 'history' | 'new' | 'nutrition' | 'comments' | 'questions';
+const TABS: Tab[] = ['summary', 'progress', 'history', 'new', 'nutrition', 'comments', 'questions'];
 
 export function ClientPage() {
   const user = useCurrentUser();
@@ -29,6 +30,7 @@ export function ClientPage() {
 
   const client = useClient(clientId);
   const questions = useQuestions(clientId);
+  const nutrition = useNutrition(clientId);
   const factors = useActivityFactors();
   const [editing, setEditing] = useState<Session | null>(null);
   const [editProfile, setEditProfile] = useState(false);
@@ -55,6 +57,7 @@ export function ClientPage() {
     { value: 'progress', label: tr.tabs.progress, icon: <LineChart className="h-4 w-4" /> },
     { value: 'history', label: tr.tabs.history, icon: <History className="h-4 w-4" /> },
     { value: 'new', label: editing ? tr.tabs.editSession : tr.tabs.newSession, icon: <PlusCircle className="h-4 w-4" /> },
+    { value: 'nutrition', label: tr.tabs.nutrition, icon: <Salad className="h-4 w-4" />, badge: nutrition.data?.suggestion_changed ? 1 : 0 },
     { value: 'comments', label: tr.tabs.comments, icon: <MessageSquare className="h-4 w-4" /> },
     { value: 'questions', label: tr.tabs.questions, icon: <MessageCircleQuestion className="h-4 w-4" />, badge: openQ },
   ];
@@ -139,6 +142,7 @@ export function ClientPage() {
             }
           />
         )}
+        {tab === 'nutrition' && <NutritionPanel clientId={clientId} />}
         {tab === 'comments' && <CommentThread clientId={clientId} canWrite />}
         {tab === 'questions' && <QuestionThread clientId={clientId} mode="staff" />}
       </div>

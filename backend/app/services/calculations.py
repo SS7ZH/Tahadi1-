@@ -3,8 +3,9 @@ from datetime import date
 
 from app.core.i18n import tr
 
-FAT_LOSS_DEFICIT = 500
-MUSCLE_GAIN_SURPLUS = 300
+# Defaults match the coach's chart; callers with a DB pass the admin-edited values (nutrition_settings).
+FAT_LOSS_ADJUSTMENT = -500
+MUSCLE_GAIN_ADJUSTMENT = 500
 
 
 def age_on(birth_date: date, on_date: date) -> int:
@@ -29,11 +30,13 @@ def tdee(bmr: float, activity_factor: float) -> float:
     return bmr * activity_factor
 
 
-def calorie_targets(tdee_value: float) -> dict:
+def calorie_targets(
+    tdee_value: float, loss_adjustment: int = FAT_LOSS_ADJUSTMENT, gain_adjustment: int = MUSCLE_GAIN_ADJUSTMENT
+) -> dict:
     return {
         "maintenance": round(tdee_value),
-        "fat_loss": round(tdee_value - FAT_LOSS_DEFICIT),
-        "muscle_gain": round(tdee_value + MUSCLE_GAIN_SURPLUS),
+        "fat_loss": round(tdee_value + loss_adjustment),
+        "muscle_gain": round(tdee_value + gain_adjustment),
     }
 
 
@@ -86,6 +89,7 @@ def compute_results(
     systolic: float | None = None,
     diastolic: float | None = None,
     activity_factor: float | None = None,
+    adjustments: tuple[int, int] = (FAT_LOSS_ADJUSTMENT, MUSCLE_GAIN_ADJUSTMENT),
     activity_key: str | None = None,
     activity_name_ar: str | None = None,
     activity_name_en: str | None = None,
@@ -115,7 +119,7 @@ def compute_results(
         bmr_value = bmr_mifflin_st_jeor(sex, weight_kg, height_cm, age)
         if activity_factor:
             tdee_value = tdee(bmr_value, activity_factor)
-            targets = calorie_targets(tdee_value)
+            targets = calorie_targets(tdee_value, *adjustments)
 
     return {
         "age": age,

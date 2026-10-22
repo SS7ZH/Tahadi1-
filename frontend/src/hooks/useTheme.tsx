@@ -82,5 +82,6 @@ function readColors() {
     surface: c('surface'),
     good: c('good'),
     bad: c('bad'),
+    warn: c('warn'),
   };
 }

@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.models import ActivityFactor, User
 from app.schemas.calculate import BmrTdeeIn, BmrTdeeOut
 from app.services import calculations as calc
+from app.services import nutrition_plans
 
 router = APIRouter(prefix="/calculate", tags=["calculator"])
 
@@ -28,7 +29,7 @@ def bmr_tdee(data: BmrTdeeIn, _: User = Depends(get_current_user), db: Session =
         activity_factor=factor.factor,
         activity_name_ar=factor.name_ar,
         activity_name_en=factor.name_en,
-        targets=calc.calorie_targets(tdee),
+        targets=calc.calorie_targets(tdee, *nutrition_plans.calorie_adjustments(db)),
         bmi={"value": round(bmi_value, 1), "category": key, "label": label},
         note=tr("هذه تقديرات عامة وليست بديلاً عن استشارة مختص تغذية", "These are general estimates, not a substitute for advice from a nutrition professional"),
     )

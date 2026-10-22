@@ -10,6 +10,7 @@ import { ProfilePage } from '@/features/auth/ProfilePage';
 import { CalculatorPage } from '@/features/calculator/CalculatorPage';
 import { AskTrainerPage } from '@/features/client/AskTrainerPage';
 import { MyHistoryPage } from '@/features/client/MyHistoryPage';
+import { MyNutritionPage } from '@/features/client/MyNutritionPage';
 import { MyProgressPage } from '@/features/client/MyProgressPage';
 import { ClientPage } from '@/features/trainer/ClientPage';
 import { InboxPage } from '@/features/trainer/InboxPage';
@@ -56,6 +57,7 @@ export function AppRoutes() {
         {/* client / player */}
         <Route path="/me" element={<RequireRole roles={['client']}><MyProgressPage /></RequireRole>} />
         <Route path="/me/history" element={<RequireRole roles={['client']}><MyHistoryPage /></RequireRole>} />
+        <Route path="/me/nutrition" element={<RequireRole roles={['client']}><MyNutritionPage /></RequireRole>} />
         <Route path="/me/ask" element={<RequireRole roles={['client']}><AskTrainerPage /></RequireRole>} />
 
         <Route path="*" element={<NotFoundPage />} />

@@ -5,8 +5,8 @@ Revises:
 Create Date: 2026-10-20
 """
 import sqlalchemy as sa
-
 from alembic import op
+
 from app.db.reference_data import ACTIVITY_FACTORS, MEASUREMENT_DEFINITIONS
 
 revision = "0001_initial"

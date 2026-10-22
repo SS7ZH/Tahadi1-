@@ -11,14 +11,6 @@ export function bmrMifflin(sex: Sex, weightKg: number, heightCm: number, age: nu
   return sex === 'male' ? base + 5 : base - 161;
 }
 
-export function calorieTargets(tdee: number) {
-  return {
-    maintenance: Math.round(tdee),
-    fat_loss: Math.round(tdee - 500),
-    muscle_gain: Math.round(tdee + 300),
-  };
-}
-
 export function bmi(weightKg: number, heightCm: number): number {
   return weightKg / (heightCm / 100) ** 2;
 }

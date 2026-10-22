@@ -302,4 +302,4 @@ def test_calculator_endpoint(client, users, auth):
     assert r.status_code == 200
     body = r.json()
     assert body["bmr"] == 1780 and body["tdee"] == 2670
-    assert body["targets"] == {"maintenance": 2670, "fat_loss": 2170, "muscle_gain": 2970}
+    assert body["targets"] == {"maintenance": 2670, "fat_loss": 2170, "muscle_gain": 3170}

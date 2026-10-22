@@ -7,7 +7,7 @@ from app.core.i18n import tr
 
 Role = Literal["admin", "trainer", "client"]
 Sex = Literal["male", "female"]
-Goal = Literal["fat_loss", "muscle_gain", "fitness", "health"]
+Goal = Literal["fat_loss", "muscle_gain", "fitness", "health", "performance"]
 
 PASSWORD_MIN = 8
 

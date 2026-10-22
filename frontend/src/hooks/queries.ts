@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminApi, clientsApi, questionsApi, referenceApi, sessionsApi } from '@/api/endpoints';
+import { adminApi, clientsApi, nutritionApi, questionsApi, referenceApi, sessionsApi } from '@/api/endpoints';
 import type { QuestionStatus, Role } from '@/api/types';
 
 export const qk = {
@@ -18,6 +18,9 @@ export const qk = {
   adminUsers: (role?: string, q?: string) => ['admin', 'users', role ?? 'all', q ?? ''] as const,
   adminDefinitions: ['admin', 'definitions'] as const,
   adminFactors: ['admin', 'factors'] as const,
+  nutrition: (id: number) => ['client', id, 'nutrition'] as const,
+  nutritionHistory: (id: number) => ['client', id, 'nutrition', 'history'] as const,
+  nutritionSettings: ['nutrition-settings'] as const,
 };
 
 export const useDefinitions = () =>
@@ -51,6 +54,15 @@ export const useQuestions = (id: number) =>
 
 export const useInbox = (status: QuestionStatus | '', enabled = true) =>
   useQuery({ queryKey: qk.inbox(status), queryFn: () => questionsApi.inbox(status), enabled, refetchInterval: 60_000 });
+
+export const useNutrition = (id: number) =>
+  useQuery({ queryKey: qk.nutrition(id), queryFn: () => nutritionApi.overview(id) });
+
+export const useNutritionHistory = (id: number, enabled = true) =>
+  useQuery({ queryKey: qk.nutritionHistory(id), queryFn: () => nutritionApi.history(id), enabled });
+
+export const useNutritionSettings = () =>
+  useQuery({ queryKey: qk.nutritionSettings, queryFn: nutritionApi.settings, staleTime: 10 * 60_000 });
 
 export const useAdminStats = () => useQuery({ queryKey: qk.adminStats, queryFn: adminApi.stats });
 

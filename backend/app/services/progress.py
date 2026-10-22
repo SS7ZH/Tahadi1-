@@ -71,6 +71,12 @@ def _height_for(vm: dict[str, MeasurementValue], client: User) -> float | None:
     return _num(vm, "height") or (client.profile.height_cm if client.profile else None)
 
 
+def _adjustments(db: Session) -> tuple[int, int]:
+    from app.services.nutrition_plans import calorie_adjustments  # local import avoids a cycle
+
+    return calorie_adjustments(db)
+
+
 def _activity(db: Session, client: User) -> ActivityFactor | None:
     if client.profile and client.profile.activity_key:
         return db.scalar(select(ActivityFactor).where(ActivityFactor.key == client.profile.activity_key))
@@ -96,6 +102,7 @@ def session_results(db: Session, client: User, session: MeasurementSession) -> d
         activity_key=act.key if act else None,
         activity_name_ar=act.name_ar if act else None,
         activity_name_en=act.name_en if act else None,
+        adjustments=_adjustments(db),
     )
 
 
@@ -220,6 +227,7 @@ def build_summary(db: Session, client: User) -> dict:
         activity_key=act.key if act else None,
         activity_name_ar=act.name_ar if act else None,
         activity_name_en=act.name_en if act else None,
+        adjustments=_adjustments(db),
     )
     latest_bmi = results["bmi"]["value"] if results["bmi"] else None
 

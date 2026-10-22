@@ -17,7 +17,7 @@ const makeBase = () => ({
   sex: z.enum(['male', 'female']),
   birth_date: z.string().min(1, tr.common.required).refine((v) => v < todayISO(), tr.common.required),
   height_cm: z.coerce.number({ invalid_type_error: tr.client.heightRange }).min(100, tr.client.heightRange).max(250, tr.client.heightRange),
-  goal: z.enum(['fat_loss', 'muscle_gain', 'fitness', 'health']),
+  goal: z.enum(['fat_loss', 'muscle_gain', 'fitness', 'health', 'performance']),
   activity_key: z.string().min(1),
   notes: z.string().max(5000).optional(),
 });

@@ -164,3 +164,11 @@ def activity_factors_v2() -> list[dict]:
         name_en, desc_en = ACTIVITY_TRANSLATIONS.get(f["key"], (None, None))
         out.append({**f, "name_en": name_en, "description_en": desc_en})
     return out
+
+
+# v3: calories & macros per goal (coach's General Dietary Advice Chart). Applied by migration 0003.
+NUTRITION_SETTINGS = [
+    {"goal": "weight_loss", "calorie_adjustment": -500, "protein_pct": 25, "carbs_pct": 50, "fat_pct": 25, "meals_min": 4, "meals_max": 5},
+    {"goal": "maintenance", "calorie_adjustment": 0, "protein_pct": 20, "carbs_pct": 55, "fat_pct": 25, "meals_min": 4, "meals_max": 5},
+    {"goal": "weight_gain", "calorie_adjustment": 500, "protein_pct": 15, "carbs_pct": 60, "fat_pct": 25, "meals_min": 5, "meals_max": 6},
+]

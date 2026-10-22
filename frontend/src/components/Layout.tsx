@@ -7,6 +7,7 @@ import {
   LogOut,
   MessageCircleQuestion,
   Moon,
+  Salad,
   SlidersHorizontal,
   Sun,
   TrendingUp,
@@ -55,6 +56,7 @@ function useNavItems(role: Role): NavItem[] {
   return [
     { to: '/me', label: tr.nav.myProgress, icon: <TrendingUp className={ic} />, end: true },
     { to: '/me/history', label: tr.nav.myHistory, icon: <History className={ic} /> },
+    { to: '/me/nutrition', label: tr.nav.myNutrition, icon: <Salad className={ic} /> },
     { to: '/me/ask', label: tr.nav.ask, icon: <MessageCircleQuestion className={ic} /> },
     { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} /> },
     { to: '/profile', label: tr.nav.profile, icon: <UserRound className={ic} /> },

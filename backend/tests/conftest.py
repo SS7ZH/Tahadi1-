@@ -16,10 +16,10 @@ from sqlalchemy.pool import StaticPool
 os.environ.setdefault("ENVIRONMENT", "test")
 
 from app.core.security import hash_password  # noqa: E402
-from app.db.reference_data import activity_factors_v2, definitions_v2  # noqa: E402
+from app.db.reference_data import NUTRITION_SETTINGS, activity_factors_v2, definitions_v2  # noqa: E402
 from app.db.session import get_db, normalize_db_url  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import ActivityFactor, Base, ClientProfile, MeasurementDefinition, User  # noqa: E402
+from app.models import ActivityFactor, Base, ClientProfile, MeasurementDefinition, NutritionSetting, User  # noqa: E402
 from app.routers.auth import login_limiter  # noqa: E402
 
 PASSWORD = "Passw0rd!"
@@ -47,6 +47,7 @@ def db_session():
     with engine.begin() as conn:
         conn.execute(insert(ActivityFactor), activity_factors_v2())
         conn.execute(insert(MeasurementDefinition), definitions_v2())
+        conn.execute(insert(NutritionSetting), NUTRITION_SETTINGS)
     Session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     session = Session()
     yield session, Session

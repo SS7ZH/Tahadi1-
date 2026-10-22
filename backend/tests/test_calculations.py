@@ -25,7 +25,7 @@ def test_bmr_rejects_unknown_sex():
 
 
 def test_calorie_targets():
-    assert calc.calorie_targets(2670) == {"maintenance": 2670, "fat_loss": 2170, "muscle_gain": 2970}
+    assert calc.calorie_targets(2670) == {"maintenance": 2670, "fat_loss": 2170, "muscle_gain": 3170}
 
 
 @pytest.mark.parametrize(

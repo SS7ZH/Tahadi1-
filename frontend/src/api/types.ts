@@ -1,6 +1,6 @@
 export type Role = 'admin' | 'trainer' | 'client';
 export type Sex = 'male' | 'female';
-export type Goal = 'fat_loss' | 'muscle_gain' | 'fitness' | 'health';
+export type Goal = 'fat_loss' | 'muscle_gain' | 'fitness' | 'health' | 'performance';
 export type Category = 'vital' | 'body' | 'movement' | 'physical';
 export type ValueType = 'number' | 'text' | 'choice' | 'blood_pressure';
 export type Direction = 'up' | 'down' | 'none';
@@ -260,4 +260,87 @@ export interface SessionInput {
 export interface ApiErrorBody {
   detail: string;
   code: string;
+}
+
+/* ---------------- Nutrition (calories & macros) ---------------- */
+export type NutritionGoal = 'weight_loss' | 'maintenance' | 'weight_gain';
+export type Macro = 'protein' | 'carbs' | 'fat';
+export const MACROS: Macro[] = ['protein', 'carbs', 'fat'];
+
+export interface MacroSettings {
+  calorie_adjustment: number;
+  protein_pct: number;
+  carbs_pct: number;
+  fat_pct: number;
+  meals_min: number;
+  meals_max: number;
+}
+
+export interface NutritionSettingRow extends MacroSettings {
+  id: number;
+  goal: NutritionGoal;
+}
+
+export interface MacroLine {
+  g: number;
+  kcal: number;
+  pct: number;
+}
+
+export interface NutritionNumbers {
+  calories: number;
+  percentages: Record<Macro, number>;
+  grams: Record<Macro, number>;
+  macros: Record<Macro, MacroLine>;
+  meals_per_day: number;
+  per_meal: { calories: number } & Record<Macro, number>;
+  overridden: string[];
+}
+
+export interface NutritionSuggestion extends NutritionNumbers {
+  dcn: number;
+  suggested_calories: number;
+  meals_range: [number, number];
+  settings: MacroSettings;
+}
+
+export interface NutritionPlan extends NutritionNumbers {
+  id: number;
+  goal: Goal;
+  nutrition_goal: NutritionGoal;
+  based_on_weight: number | null;
+  dcn: number | null;
+  suggested_calories: number | null;
+  note: string | null;
+  created_at: string;
+  created_by_name: string | null;
+}
+
+export interface NutritionOverview {
+  client_id: number;
+  goal: Goal;
+  nutrition_goal: NutritionGoal;
+  current: NutritionPlan | null;
+  suggestion: NutritionSuggestion | null;
+  basis: {
+    weight: number | null;
+    height_cm: number | null;
+    age: number | null;
+    activity_factor: number | null;
+    bmr: number | null;
+    dcn: number | null;
+    missing: string[];
+  } | null;
+  suggestion_changed: boolean;
+  settings: Record<NutritionGoal, MacroSettings> | null;
+}
+
+export interface NutritionPlanInput {
+  goal?: Goal;
+  calories?: number | null;
+  protein_g?: number | null;
+  carbs_g?: number | null;
+  fat_g?: number | null;
+  meals_per_day?: number | null;
+  note?: string | null;
 }
