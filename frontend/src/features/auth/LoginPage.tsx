@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Activity, HeartPulse, LineChart } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { errorMessage } from '@/api/client';
@@ -60,7 +60,9 @@ export function LoginPage() {
           className="absolute -start-24 -top-24 h-96 w-96 rounded-full bg-primary/40 blur-3xl"
         />
         <div aria-hidden className="absolute -bottom-32 end-0 h-80 w-80 rounded-full bg-accent/30 blur-3xl" />
-        <Logo className="relative [&_span]:text-white" />
+        <Link to="/" className="relative self-start" aria-label={tr.brand}>
+          <Logo className="[&_span]:text-white" />
+        </Link>
         <div className="relative max-w-md">
           <h1 className="text-4xl font-bold leading-tight">{tr.auth.heroTitle}</h1>
           <p className="mt-4 text-lg leading-relaxed text-white/70">{tr.auth.heroText}</p>
@@ -80,7 +82,9 @@ export function LoginPage() {
         <LanguageSwitch className="absolute end-4 top-4" />
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
-            <Logo />
+            <Link to="/" className="inline-block" aria-label={tr.brand}>
+              <Logo />
+            </Link>
             <p className="mt-2 text-sm text-muted">{tr.tagline}</p>
           </div>
           <h2 className="text-2xl font-bold">{tr.auth.title}</h2>

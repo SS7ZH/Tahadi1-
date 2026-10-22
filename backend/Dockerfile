@@ -18,4 +18,4 @@ COPY . .
 
 EXPOSE 8000
 # Render injects $PORT; locally it defaults to 8000. Migrations are a no-op when the schema is current.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
+CMD ["sh", "-c", "alembic upgrade head && if [ -n \"$SHOWCASE_PASSWORD\" ]; then python -m app.db.seed_showcase || echo 'showcase seed skipped'; fi && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
