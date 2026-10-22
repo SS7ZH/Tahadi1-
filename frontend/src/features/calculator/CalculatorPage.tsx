@@ -6,7 +6,8 @@ import { errorMessage } from '@/api/client';
 import type { MacroSettings, NutritionGoal, Sex } from '@/api/types';
 import { MacroView } from '@/components/MacroView';
 import { Badge, Button, Card, CardHeader, Input, PageHeader, Select } from '@/components/ui';
-import { useCurrentUser } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useActivityFactors, useNutritionSettings, useSummary } from '@/hooks/queries';
 import { loc, tr } from '@/i18n';
 import { bmi, bmiLabel, bmrMifflin } from '@/lib/calc';
@@ -25,11 +26,14 @@ function parse(v: string, [lo, hi]: readonly [number, number]) {
 }
 
 export function CalculatorPage() {
-  const user = useCurrentUser();
+  // Public page: `user` is null for visitors (PDF export then asks them to log in).
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const factors = useActivityFactors();
   const nutritionSettings = useNutritionSettings();
-  const isClient = user.role === 'client';
-  const summary = useSummary(user.id, isClient);
+  const isClient = user?.role === 'client';
+  const summary = useSummary(user?.id ?? 0, isClient);
 
   const [sex, setSex] = useState<Sex>('male');
   const [age, setAge] = useState('');
@@ -43,7 +47,7 @@ export function CalculatorPage() {
 
   // Players get their own data pre-filled.
   useEffect(() => {
-    if (!isClient || prefilled || !user.profile) return;
+    if (!user || !isClient || prefilled || !user.profile) return;
     const p = user.profile;
     setSex(p.sex);
     if (user.age != null) setAge(String(user.age));
@@ -102,6 +106,11 @@ export function CalculatorPage() {
   };
 
   const handleExportClick = () => {
+    if (!user) {
+      toast.info(tr.calculator.loginToExport);
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
     if (isClient) {
       runExport();
     } else {
@@ -251,7 +260,7 @@ export function CalculatorPage() {
       <ExportCalculatorModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        userRole={user.role}
+        userRole={user?.role ?? 'client'}
         exporting={exporting}
         onExport={runExport}
       />

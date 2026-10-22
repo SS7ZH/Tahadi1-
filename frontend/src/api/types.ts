@@ -565,3 +565,23 @@ export interface TemplateVersion {
   created_at: string;
   created_by_name: string | null;
 }
+
+/* ---------------- Public site content ---------------- */
+export const HOME_FEATURE_KEYS = ['measurements', 'programs', 'nutrition', 'reports', 'questions'] as const;
+
+export interface HomeFeature {
+  key: (typeof HOME_FEATURE_KEYS)[number];
+  title_ar: string;
+  title_en: string;
+  text_ar: string;
+  text_en: string;
+}
+
+export interface HomeContent {
+  hero_title_ar: string;
+  hero_title_en: string;
+  hero_text_ar: string;
+  hero_text_en: string;
+  features: HomeFeature[];
+  contact: { phone: string; whatsapp: string; email: string };
+}

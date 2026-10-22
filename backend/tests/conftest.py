@@ -18,6 +18,7 @@ os.environ.setdefault("UPLOAD_DIR", os.path.join(os.path.dirname(__file__), ".."
 
 from app.core.security import hash_password  # noqa: E402
 from app.db.reference_data import (  # noqa: E402
+    DEFAULT_HOME,
     DOCUMENT_TEMPLATES,
     EXERCISES,
     NUTRITION_SETTINGS,
@@ -37,6 +38,7 @@ from app.models import (  # noqa: E402
     MeasurementDefinition,
     NutritionSetting,
     SignedDocument,
+    SiteSetting,
     Subscription,
     SubscriptionPlan,
     User,
@@ -72,6 +74,7 @@ def db_session():
         conn.execute(insert(Exercise), EXERCISES)
         conn.execute(insert(SubscriptionPlan), SUBSCRIPTION_PLANS)
         conn.execute(insert(DocumentTemplate), DOCUMENT_TEMPLATES)
+        conn.execute(insert(SiteSetting), [{"key": "home", "value": DEFAULT_HOME}])
     Session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     session = Session()
     yield session, Session

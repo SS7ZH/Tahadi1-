@@ -9,6 +9,7 @@ import {
   questionsApi,
   referenceApi,
   sessionsApi,
+  siteApi,
 } from '@/api/endpoints';
 import type { QuestionStatus, Role } from '@/api/types';
 
@@ -116,6 +117,12 @@ export const useDocuments = (clientId: number) =>
 
 export const useStaffPlans = (enabled = true) =>
   useQuery({ queryKey: ['plans'], queryFn: documentsApi.plans, enabled, staleTime: 5 * 60_000 });
+
+export const usePublicSite = () =>
+  useQuery({ queryKey: ['public', 'site'], queryFn: siteApi.publicSite, staleTime: 5 * 60_000 });
+
+export const usePublicPlans = () =>
+  useQuery({ queryKey: ['public', 'plans'], queryFn: documentsApi.publicPlans, staleTime: 5 * 60_000 });
 
 export const useAdminStats = () => useQuery({ queryKey: qk.adminStats, queryFn: adminApi.stats });
 

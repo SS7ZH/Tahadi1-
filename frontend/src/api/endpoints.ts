@@ -6,6 +6,7 @@ import type {
   Comment,
   Definition,
   HealthDeclarationInfo,
+  HomeContent,
   HealthInput,
   MedicalFileInfo,
   OnboardingStatus,
@@ -46,7 +47,8 @@ export const authApi = {
 
 export const referenceApi = {
   definitions: () => data(api.get<Definition[]>('/measurement-definitions')),
-  activityFactors: () => data(api.get<ActivityFactor[]>('/activity-factors')),
+  // public (no login) so the calorie calculator works for visitors too
+  activityFactors: () => data(api.get<ActivityFactor[]>('/public/activity-factors')),
 };
 
 export interface ClientCreateBody {
@@ -137,7 +139,7 @@ export const nutritionApi = {
   history: (clientId: number) => data(api.get<NutritionPlan[]>(`/clients/${clientId}/nutrition/history`)),
   save: (clientId: number, body: NutritionPlanInput) =>
     data(api.post<NutritionOverview>(`/clients/${clientId}/nutrition`, body)),
-  settings: () => data(api.get<NutritionSettingRow[]>('/nutrition-settings')),
+  settings: () => data(api.get<NutritionSettingRow[]>('/public/nutrition-settings')),
   updateSetting: (id: number, body: Partial<NutritionSettingRow>) =>
     data(api.patch<NutritionSettingRow>(`/admin/nutrition-settings/${id}`, body)),
 };
@@ -205,4 +207,9 @@ export const documentsApi = {
     data(api.get<{ placeholders: string[]; versions: TemplateVersion[] }>('/admin/templates', { params: { kind } })),
   newTemplateVersion: (body: { kind: TemplateKind; body_ar: string; body_en: string }) =>
     data(api.post<TemplateVersion>('/admin/templates', body)),
+};
+
+export const siteApi = {
+  publicSite: () => data(api.get<{ home: HomeContent }>('/public/site')),
+  updateHome: (body: HomeContent) => data(api.put<{ home: HomeContent }>('/admin/site/home', body)),
 };

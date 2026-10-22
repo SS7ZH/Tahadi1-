@@ -1,5 +1,8 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
+import { PublicShell } from '@/components/PublicShell';
+import { SiteContentPage } from '@/features/admin/SiteContentPage';
+import { LandingPage } from '@/features/home/LandingPage';
 import { AdminDashboard } from '@/features/admin/AdminDashboard';
 import { AssignPage } from '@/features/admin/AssignPage';
 import { ExercisesPage } from '@/features/admin/ExercisesPage';
@@ -22,22 +25,32 @@ import { MyProgressPage } from '@/features/client/MyProgressPage';
 import { ClientPage } from '@/features/trainer/ClientPage';
 import { InboxPage } from '@/features/trainer/InboxPage';
 import { TrainerDashboard } from '@/features/trainer/TrainerDashboard';
-import { homePathFor, useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { FullScreenLoader, OnboardingGate, RequireRole } from './RequireRole';
 
-function HomeRedirect() {
+/** Public pages: signed-in users keep the app layout (and onboarding gate), visitors get the public header/footer. */
+function AppOrPublicLayout() {
   const { user, status } = useAuth();
   if (status === 'loading') return <FullScreenLoader />;
-  return <Navigate to={user ? homePathFor(user.role) : '/login'} replace />;
+  if (!user) return <PublicShell />;
+  return (
+    <OnboardingGate>
+      <Layout />
+    </OnboardingGate>
+  );
 }
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<HomeRedirect />} />
+      <Route path="/" element={<LandingPage />} />
 
       <Route path="/onboarding" element={<RequireRole roles={['client']}><OnboardingPage /></RequireRole>} />
+
+      <Route element={<AppOrPublicLayout />}>
+        <Route path="/calculator" element={<CalculatorPage />} />
+      </Route>
 
       <Route
         element={
@@ -49,7 +62,6 @@ export function AppRoutes() {
         }
       >
         {/* shared */}
-        <Route path="/calculator" element={<CalculatorPage />} />
         <Route path="/profile" element={<ProfilePage />} />
 
         {/* admin */}
@@ -59,6 +71,7 @@ export function AppRoutes() {
         <Route path="/admin/settings" element={<RequireRole roles={['admin']}><SettingsPage /></RequireRole>} />
         <Route path="/admin/plans" element={<RequireRole roles={['admin']}><PlansPage /></RequireRole>} />
         <Route path="/admin/templates" element={<RequireRole roles={['admin']}><TemplatesPage /></RequireRole>} />
+        <Route path="/admin/site" element={<RequireRole roles={['admin']}><SiteContentPage /></RequireRole>} />
         <Route path="/admin/exercises" element={<RequireRole roles={['admin']}><ExercisesPage /></RequireRole>} />
         <Route path="/admin/questions" element={<RequireRole roles={['admin']}><InboxPage /></RequireRole>} />
         <Route path="/admin/clients/:clientId" element={<RequireRole roles={['admin']}><ClientPage /></RequireRole>} />
