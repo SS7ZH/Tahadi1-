@@ -3,9 +3,11 @@ import logging
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.agents.intake import handle_message
 from app.core.config import settings
 from app.core.errors import register_exception_handlers
 from app.core.i18n import LanguageMiddleware, tr
@@ -56,6 +58,11 @@ app.add_middleware(
 api = APIRouter(prefix="/api/v1")
 
 
+class TelegramMessagePayload(BaseModel):
+    chat_id: int
+    text: str = Field(min_length=1, max_length=4096)
+
+
 @api.get("/health", tags=["health"])
 def health(db: Session = Depends(get_db)):
     try:
@@ -75,6 +82,11 @@ for r in (auth, admin, clients, sessions, comments, questions, calculate, refere
 app.include_router(api)
 # Also include telegram router at root level for direct /telegram, /summary/{client}, /draft/{client}
 app.include_router(telegram.router)
+
+
+@app.post("/telegram/message")
+def telegram_message(payload: TelegramMessagePayload):
+    return {"reply": handle_message(payload.chat_id, payload.text)}
 
 
 @app.get("/", include_in_schema=False)
