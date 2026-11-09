@@ -11,6 +11,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "")
 # DevAI Desktop agents (see app/llm.py and docs/devai-agents.md)
 DEVAI_HOST_URL = os.getenv("DEVAI_HOST_URL", "http://127.0.0.1:7588").rstrip("/")
 DEVAI_API_KEY = os.getenv("DEVAI_API_KEY", "")
+DEVAI_MODEL = os.getenv("DEVAI_MODEL", "DeepSeek-V4.1-Flash")
 AGENT_IDS = {
     "intake": os.getenv("DEVAI_INTAKE_AGENT_ID", ""),
     "analyst": os.getenv("DEVAI_ANALYST_AGENT_ID", ""),

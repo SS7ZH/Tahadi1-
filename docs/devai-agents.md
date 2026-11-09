@@ -4,11 +4,15 @@ The three language agents are built and edited in **DevAI Desktop**. The backend
 them by id and checks what they return. Numbers, trends and alerts are always computed in
 code (`backend/app/rules/`); the agents only read them and write text.
 
-| Agent | Env var for its id | Called when |
-| --- | --- | --- |
-| Intake | `DEVAI_INTAKE_AGENT_ID` | A Telegram message the regex parser could not read |
-| Progress Analyst | `DEVAI_ANALYST_AGENT_ID` | `GET /summary/{client_id}` |
-| Coach Assistant | `DEVAI_COACH_AGENT_ID` | `POST /draft/{client_id}` |
+| Agent | DevAI id | Env var | Temperature | Called when |
+| --- | --- | --- | --- | --- |
+| Tahadi Intake | `tahadi-intake` | `DEVAI_INTAKE_AGENT_ID` | Precise (0) | A Telegram message the regex parser could not read |
+| Tahadi Progress Analyst | `tahadi-progress-analyst` | `DEVAI_ANALYST_AGENT_ID` | Precise (0) | `GET /summary/{client_id}` |
+| Tahadi Coach Assistant | `tahadi-coach-assistant` | `DEVAI_COACH_AGENT_ID` | Balanced (0.7) | `POST /draft/{client_id}` |
+
+All three have no tools, no rule files and no MCP servers, and run on `DeepSeek-V4.1-Flash`
+(`DEVAI_MODEL`). Check them through the backend with `python -m scripts.check_agents`
+(from `backend/`, DevAI Desktop open); last run 6/6 passed, about 4–6 s per call.
 
 If an agent is not set up, DevAI is closed, or the reply is not in the expected format,
 the backend uses its built-in template text instead. The demo never breaks.

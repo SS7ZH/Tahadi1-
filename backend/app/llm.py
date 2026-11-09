@@ -35,7 +35,7 @@ def _create_session(client: httpx.Client, agent_id: str, name: str) -> str:
     r = client.post(
         f"{config.DEVAI_HOST_URL}/api/sessions",
         headers=_headers(),
-        json={"agentId": agent_id, "name": name, "workspaceMode": "none"},
+        json={"agentId": agent_id, "name": name, "workspaceMode": "none", "model": config.DEVAI_MODEL},
     )
     if r.status_code not in (200, 201):
         raise LLMError(f"DevAI session failed ({r.status_code}): {r.text[:200]}")
@@ -88,7 +88,7 @@ def run_agent(agent_id: str, message: str, name: str = "Tahadi") -> str:
                     }
                 ],
                 "agentId": agent_id,
-                "modelId": "default",
+                "modelId": config.DEVAI_MODEL,
                 "message": {"role": "user", "content": message},
                 "streaming": True,
             }
