@@ -7,9 +7,15 @@ import httpx
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.request import HTTPXRequest
-from telegram.ext import Application, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 logger = logging.getLogger("tahadi.telegram_bot")
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.effective_message
+    if message is not None:
+        await message.reply_text("أهلًا بك في تحدي! أرسل وزنك بهذا الشكل: وزني ٨٢٫٥")
 
 
 async def forward_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -60,6 +66,7 @@ def main() -> None:
         .build()
     )
     application.bot_data["backend_url"] = backend_url
+    application.add_handler(CommandHandler("start", start))
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, forward_message)
     )
