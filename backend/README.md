@@ -40,7 +40,10 @@ copy ..\.env.example .env      # then fill SUPABASE_URL and SUPABASE_SERVICE_KEY
    set `telegram_chat_id`). Get your chat id by messaging the bot and reading
    `message.chat.id` from the update.
 4. Start: `uvicorn app.main:app --reload` → open http://localhost:8000/docs
-5. Tests (no network or database needed): `pytest -q`
+5. In a second terminal, run `python -m app.telegram_bot`. Set `TELEGRAM_BOT_TOKEN`
+   and `BACKEND_URL` in `backend/.env`; keep this process running to receive and
+   reply to Telegram messages.
+6. Tests (no network or database needed): `pytest -q`
 
 ## Deploy on Render
 
