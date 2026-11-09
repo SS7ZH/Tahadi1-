@@ -25,7 +25,12 @@
 | R-009 | AI use not clearly disclosed → academic integrity concern | Low | High | Dishonest/missing disclosure in `AI_USE_DISCLOSURE.md` | Follow `RULES.md`; commit raw/fix separately; every AI contribution disclosed; team signs | Team |
 | R-010 | Dependency/licensing or library breakage | Low | Medium | Build fails on a dependency update | Pin versions; lockfiles committed; CI build on push | Team |
 | R-011 | Database schema grows beyond 8 tables or is hard to change | Medium | Medium | Table count > 8; adding a metric requires many file changes | Keep schema narrow; metric catalogue table; add metrics via config; NFR-6 monitor | Backend lead |
-| R-012 | Messaging thread ownership model confuses coach/client boundaries | Medium | Medium | A message from the wrong author appears; thread access wrong | Thread has `client_id` + `coach_id`; owner-scoped queries; tests for author checks | Backend lead |
+| R-012 | Messaging thread ownership model confuses coach/client boundaries *(superseded by ADR-0007: threads replaced by drafts)* | Medium | Medium | A message from the wrong author appears; thread access wrong | Thread has `client_id` + `coach_id`; owner-scoped queries; tests for author checks | Backend lead |
+| R-013 | Demo agent endpoints run without JWT auth (ADR-0007) | Medium | High | Backend URL used with non-synthetic data, or demo build reused after the demo | Synthetic data only; re-apply ADR-0002 auth before any non-demo use | Backend lead |
+| R-014 | LLM produces wrong numbers or unsafe advice in a draft | Medium | High | Any draft states a figure not in the computed `facts`; any medical claim | LLM receives only computed facts; every draft needs coach approval; rules tested without the LLM | Backend lead |
+| R-015 | LLM cost or outage during the demo | Low | Medium | Provider error rate > 5% or spend over the agreed budget | Regex-first parsing; one wrapper with timeouts; low-cost model; 502 with a clear message | Backend lead |
+| R-017 | Two deployment targets (Vercel + Render, ADR-0009) drift apart: wrong API URL, CORS blocked, mismatched env vars | Medium | Medium | Frontend shows a CORS or network error against `/health`; deployed services ≠ 2 | `FRONTEND_URL` in backend CORS; both platforms' settings in README; smoke-test `/health` from the deployed frontend | Team |
+| R-016 | Telegram bot token or Supabase service key leaked | Low | High | Secret scanner flags a token; bot sends messages nobody approved | Tokens only in `.env` / Render env vars; rotate on any leak; `.env.example` placeholders only | Team |
 
 ## Review cadence
 

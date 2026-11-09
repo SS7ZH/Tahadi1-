@@ -38,7 +38,7 @@
 | NFR-4 (reject real personal data) | — | `ADR-0006` | R-003 | — | — |
 | NFR-5 (availability ≥99%) | — | `ADR-0001` | R-004 | — | — |
 | NFR-6 (maintainability ≤2 files) | — | `ADR-0001`, `ADR-0002` | R-011 | — | — |
-| NFR-7 (scope compliance) | — | `ADR-0001`, `ADR-0005` | R-001 | — | — |
+| NFR-7 (scope compliance) | — | `ADR-0001`, `ADR-0005`, `ADR-0007`, `ADR-0009` | R-001, R-017 | — | — |
 | NFR-8 (accessibility WCAG AA) | — | `ADR-0005` | R-007 | — | — |
 | NFR-9 (secret/config hygiene) | — | `ADR-0006` | R-003 | — | — |
 

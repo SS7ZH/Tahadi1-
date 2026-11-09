@@ -48,7 +48,7 @@ and can ask their coach a question.
 * Coach accounts are seeded by an idempotent script (no admin role).
 * Synthetic data generator for coaches, clients, and measurements.
 * Arabic-first, RTL UI.
-* Deployed to a single target (Render) with Supabase PostgreSQL as the store.
+* Deployed to two targets (Vercel frontend, Render backend; see ADR-0009) with Supabase PostgreSQL as the store.
 
 ### Out of scope (non-goals)
 
@@ -74,7 +74,7 @@ scope-change process (see `RULES.md` and `docs/adr/ADR-TEMPLATE.md`).
 | API endpoints | 10 | Endpoint inventory in `docs/requirements/requirements.md` |
 | Database tables | 8 | Schema is constrained; see ADRs |
 | Roles | 2 | `coach` and `client` only |
-| Deployment targets | 1 | Render (frontend + backend) |
+| Deployment targets | 2 | Vercel (frontend) + Render (backend) — raised from 1 by ADR-0009 |
 
 ## Success criteria (Milestone 1)
 

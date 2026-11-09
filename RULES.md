@@ -75,7 +75,7 @@ an AI and which were written/corrected by a human.
 | API endpoints | 10 |
 | Database tables | 8 |
 | Roles | 2 |
-| Deployment targets | 1 |
+| Deployment targets | 2 (raised from 1 by ADR-0009) |
 
 * Any new feature must fit within these caps.
 * Adding anything that pushes past a cap requires an explicit scope-change ADR

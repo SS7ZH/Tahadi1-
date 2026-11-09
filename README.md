@@ -1,13 +1,27 @@
 # Tahadi — تحدي
 
-Tahadi (تحدي, "challenge") is an Arabic-first, right-to-left (RTL) web application
-for fitness coaches and their clients. Coaches record client body measurements
-(wrap, skinfold, weight, etc.) and clients log in to view their own progress
-(read-only) and send questions to their coach.
+Tahadi (تحدي, "challenge") is an Arabic-first team of AI agents that helps fitness
+coaches track clients, check exercise form and reply faster. Clients check in through
+a Telegram bot, agents turn those messages into measurements, flag stalled or silent
+clients and draft replies, and **nothing reaches a client without the coach's approval**.
 
-> **Milestone 1** — Requirements and architecture. This repository currently holds
-> the project charter, requirements, architecture records, risk register,
-> traceability, and templates. Application code arrives in later milestones.
+> **Concept change (2026-11-09):** the original M1 design (in-app Q&A thread) was
+> replaced by the agent concept. See `docs/adr/ADR-0007-pivot-to-agent-assisted-coaching.md`
+> and `docs/adr/ADR-0008-telegram-instead-of-whatsapp.md`. The M1 requirements below are
+> kept for history and are being updated to match.
+
+### The agents
+
+| # | Agent | Reads | Produces | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Intake | Telegram messages | Saved measurements | Building |
+| 2 | Form check | Squat video, in the browser (MediaPipe) | Rep count and form errors | Building (frontend) |
+| 3 | Progress photos | Check-in photos | Aligned comparison | Out of scope (photo non-goal) |
+| 4 | Progress analyst | Measurement history | Trends, alerts, bilingual summary | Building |
+| 5 | Coach assistant | Agent results | Draft replies for coach approval | Building |
+
+Code decides (regex parsing, trend rules, joint-angle rules); the language model only
+explains those results in friendly Arabic or English.
 
 ## Project at a glance
 
@@ -16,10 +30,12 @@ for fitness coaches and their clients. Coaches record client body measurements
 | Project type | App (web application) |
 | Team size | 2 students |
 | Primary language | Arabic (RTL-first) |
-| Frontend | React (TypeScript) |
+| Frontend | React (TypeScript) on Vercel; MediaPipe Pose in the browser |
 | Backend | FastAPI (Python 3.12) |
 | Database | Supabase — managed PostgreSQL (data store) + Supabase Auth (authentication) |
-| Hosting | Render (both frontend and backend) |
+| Hosting | Render (backend), Vercel (frontend) |
+| Messaging | Telegram Bot API (ADR-0008) |
+| Agents | FastAPI services; LLM behind one swappable wrapper |
 | Roles | `coach`, `client` (only; no admin — coaches are seeded by a script) |
 | Data | Synthetic/generated only. No real personal data, no secrets in the repo |
 
@@ -53,7 +69,7 @@ of their progress plus a direct channel to ask their coach a question.
 | API endpoints | 10 |
 | Database tables | 8 |
 | Roles | 2 |
-| Deployment targets | 1 |
+| Deployment targets | 2 (raised from 1 by ADR-0009) |
 
 These limits are enforced by the team and reviewed in `docs/risk-register.md` and
 `docs/traceability-matrix.md`.

@@ -33,7 +33,7 @@ The architecture must support:
   client progress, client thread).
 * **API endpoints:** ≤10.
 * **Database tables:** ≤8.
-* **Deployment:** one target (Render), with Supabase PostgreSQL as the store.
+* **Deployment:** two targets since ADR-0009 (Vercel frontend, Render backend), with Supabase PostgreSQL as the store.
 * **Auth:** stateless JWT validated by the backend. **Supabase is used only as a
   SQL database** — no Supabase Auth, Storage, Realtime, or Edge Functions
   (see `README.md` and `requirements.md` §8).
@@ -48,7 +48,7 @@ The architecture must support:
 | API endpoints | 10 |
 | Database tables | 8 |
 | Roles | 2 |
-| Deployment targets | 1 |
+| Deployment targets | 2 (raised from 1 by ADR-0009) |
 
 ---
 
