@@ -14,8 +14,8 @@ def get_client(client_id: str) -> dict | None:
 
 def analyze(client: dict) -> dict:
     rows = (
-        get_db().table("measurements").select("date,weight_kg,waist_cm")
-        .eq("client_id", client["id"]).order("date").execute().data
+        get_db().table("measurements").select("date,weight_kg,waist_cm,created_at")
+        .eq("client_id", client["id"]).order("date").order("created_at").execute().data
     )
     facts, alerts = compute_facts(rows, date.today())
     summary_ar, summary_en = t.summary(client["name"], facts, alerts)

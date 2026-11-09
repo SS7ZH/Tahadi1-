@@ -71,3 +71,11 @@ def test_unsorted_input_and_waist_only_entries():
     facts, _ = compute_facts(list(reversed(rows)), TODAY)
     assert facts["latest_weight_kg"] == 87.0
     assert facts["latest_waist_cm"] == 99.0
+
+
+def test_same_day_entries_keep_the_last_one():
+    rows = weekly([80.0, 80.0, 80.0, 80.0])
+    rows += [{"date": TODAY.isoformat(), "weight_kg": 79.0, "waist_cm": None},
+             {"date": TODAY.isoformat(), "weight_kg": 78.5, "waist_cm": None}]
+    facts, _ = compute_facts(rows, TODAY)
+    assert facts["latest_weight_kg"] == 78.5
