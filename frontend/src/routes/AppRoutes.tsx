@@ -25,6 +25,7 @@ import { MyProgressPage } from '@/features/client/MyProgressPage';
 import { ClientPage } from '@/features/trainer/ClientPage';
 import { InboxPage } from '@/features/trainer/InboxPage';
 import { TrainerDashboard } from '@/features/trainer/TrainerDashboard';
+import { DemoPage } from '@/features/trainer/demo/DemoPage';
 import { useAuth } from '@/hooks/useAuth';
 import { FullScreenLoader, OnboardingGate, RequireRole } from './RequireRole';
 
@@ -50,6 +51,7 @@ export function AppRoutes() {
 
       <Route element={<AppOrPublicLayout />}>
         <Route path="/calculator" element={<CalculatorPage />} />
+        <Route path="/demo" element={<DemoPage />} />
       </Route>
 
       <Route

@@ -25,6 +25,7 @@ from app.routers import (
     reference,
     sessions,
     site,
+    telegram,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -68,10 +69,12 @@ def health(db: Session = Depends(get_db)):
     return {"status": "ok", "database": "ok"}
 
 
-for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents, pdf, site):
+for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents, pdf, site, telegram):
     api.include_router(r.router)
 
 app.include_router(api)
+# Also include telegram router at root level for direct /telegram, /summary/{client}, /draft/{client}
+app.include_router(telegram.router)
 
 
 @app.get("/", include_in_schema=False)

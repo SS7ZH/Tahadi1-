@@ -15,6 +15,7 @@ import {
   Moon,
   Salad,
   SlidersHorizontal,
+  Sparkles,
   Sun,
   TrendingUp,
   UserRound,
@@ -56,11 +57,13 @@ function useNavItems(role: Role): NavItem[] {
       { to: '/admin/plans', label: tr.nav.plans, icon: <CreditCard className={ic} />, menu: true },
       { to: '/admin/templates', label: tr.nav.templates, icon: <FileSignature className={ic} />, menu: true },
       { to: '/admin/site', label: tr.nav.siteContent, icon: <Globe className={ic} />, menu: true },
+      { to: '/demo', label: 'المساعد الذكي (AI)', icon: <Sparkles className={ic} />, menu: true },
       { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} />, menu: true },
     ];
   if (role === 'trainer')
     return [
       { to: '/trainer', label: tr.nav.trainerHome, icon: <Users className={ic} />, end: true },
+      { to: '/demo', label: 'المساعد الذكي (AI)', icon: <Sparkles className={ic} /> },
       { to: '/trainer/questions', label: tr.nav.inbox, icon: <MessageCircleQuestion className={ic} />, badge: open },
       { to: '/calculator', label: tr.nav.calculator, icon: <Calculator className={ic} /> },
       { to: '/profile', label: tr.nav.profile, icon: <UserRound className={ic} /> },
