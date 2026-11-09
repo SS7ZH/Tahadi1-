@@ -1,9 +1,14 @@
 """Intake flow and API shape tests with the database and LLM replaced by fakes."""
 
+import asyncio
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 from fastapi.testclient import TestClient
 
 from app.agents import intake, text
 from app.main import app
+from app.telegram_bot import forward_message, start
 
 client = TestClient(app)
 
@@ -51,6 +56,60 @@ def test_telegram_endpoint(monkeypatch):
     monkeypatch.setattr("app.main.handle_message", lambda chat_id, t: f"echo {chat_id}")
     r = client.post("/telegram/message", json={"chat_id": 5, "text": "hi"})
     assert r.status_code == 200 and r.json() == {"reply": "echo 5"}
+
+
+def test_telegram_start_sends_arabic_welcome():
+    message = SimpleNamespace(reply_text=AsyncMock())
+    update = SimpleNamespace(effective_message=message)
+
+    asyncio.run(start(update, None))
+
+    message.reply_text.assert_awaited_once_with("أهلًا بك في تحدي! أرسل وزنك بهذا الشكل: وزني ٨٢٫٥")
+
+
+def test_telegram_message_is_forwarded_and_backend_reply_returned(monkeypatch):
+    requests = []
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"reply": "تم تسجيل الوزن ✅"}
+
+    class FakeAsyncClient:
+        def __init__(self, timeout):
+            assert timeout == 90
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_value, traceback):
+            pass
+
+        async def post(self, url, json):
+            requests.append((url, json))
+            return FakeResponse()
+
+    monkeypatch.setattr("app.telegram_bot.httpx.AsyncClient", FakeAsyncClient)
+    message = SimpleNamespace(text="وزني ٨٢٫٥", reply_text=AsyncMock())
+    update = SimpleNamespace(
+        effective_message=message,
+        effective_chat=SimpleNamespace(id=123456),
+    )
+    context = SimpleNamespace(
+        application=SimpleNamespace(bot_data={"backend_url": "https://api.example"})
+    )
+
+    asyncio.run(forward_message(update, context))
+
+    assert requests == [
+        (
+            "https://api.example/telegram/message",
+            {"chat_id": 123456, "text": "وزني ٨٢٫٥"},
+        )
+    ]
+    message.reply_text.assert_awaited_once_with("تم تسجيل الوزن ✅")
 
 
 def test_bad_ids_and_bodies_are_422():
