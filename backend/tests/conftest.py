@@ -4,6 +4,7 @@ By default tests run against an in-memory SQLite database purely for speed and i
 Set TEST_DATABASE_URL to run the same suite against PostgreSQL, e.g.
     TEST_DATABASE_URL=postgresql://tahadi:tahadi@localhost:5432/tahadi_test pytest
 """
+
 import os
 from datetime import date, timedelta
 
@@ -13,6 +14,7 @@ from sqlalchemy import create_engine, event, insert
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+# Ensure test environment variables are set
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("UPLOAD_DIR", os.path.join(os.path.dirname(__file__), "..", "var", "test-uploads"))
 
@@ -25,7 +27,7 @@ from app.db.reference_data import (  # noqa: E402
     SUBSCRIPTION_PLANS,
     activity_factors_v2,
     definitions_v2,
-)
+)  # noqa: E402
 from app.db.session import get_db, normalize_db_url  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import (  # noqa: E402
@@ -42,8 +44,9 @@ from app.models import (  # noqa: E402
     Subscription,
     SubscriptionPlan,
     User,
-)
+)  # noqa: E402
 from app.routers.auth import login_limiter  # noqa: E402
+from app import config  # noqa: E402
 
 PASSWORD = "Passw0rd!"
 PASSWORD_HASH = hash_password(PASSWORD)  # hash once; bcrypt is deliberately slow
@@ -105,18 +108,32 @@ def onboard(db, client, start=None):
     """Give a player a subscription, health declaration and signed disclaimer + contract."""
     start = start or date.today()
     sub = Subscription(
-        client_id=client.id, plan_id=1, plan_name_ar="شهر واحد", plan_name_en="1 month", months=1,
-        start_date=start, end_date=start + timedelta(days=29), kind="initial",
+        client_id=client.id,
+        plan_id=1,
+        plan_name_ar="شهر واحد",
+        plan_name_en="1 month",
+        months=1,
+        start_date=start,
+        end_date=start + timedelta(days=29),
+        kind="initial",
     )
     decl = HealthDeclaration(client_id=client.id, has_chronic=False, conditions=[])
     db.add_all([sub, decl])
     db.flush()
     for kind, sid in (("disclaimer", None), ("contract", sub.id)):
-        db.add(SignedDocument(
-            client_id=client.id, kind=kind, template_id=1 if kind == "contract" else 2, template_version=1,
-            language="ar", rendered_text="test", typed_name=client.full_name, subscription_id=sid,
-            health_declaration_id=decl.id if kind == "disclaimer" else None,
-        ))
+        db.add(
+            SignedDocument(
+                client_id=client.id,
+                kind=kind,
+                template_id=1 if kind == "contract" else 2,
+                template_version=1,
+                language="ar",
+                rendered_text="test",
+                typed_name=client.full_name,
+                subscription_id=sid,
+                health_declaration_id=decl.id if kind == "disclaimer" else None,
+            )
+        )
     db.commit()
     return sub
 
@@ -146,7 +163,6 @@ def users(db_session):
     trainer_b = mk("مدرب ب", "tb@test.app", "trainer")
     client_a = mk("عميل أ", "ca@test.app", "client", trainer_a)
     client_b = mk("عميل ب", "cb@test.app", "client", trainer_b, sex="female")
-    # Existing-feature tests use players who already finished onboarding.
     onboard(db, client_a)
     onboard(db, client_b)
     return {"admin": admin, "trainer_a": trainer_a, "trainer_b": trainer_b, "client_a": client_a, "client_b": client_b}
@@ -165,3 +181,11 @@ def auth(client, users):
         return cache[who]
 
     return _headers
+
+
+# Ensure agents are offline during tests to avoid external calls.
+@pytest.fixture(autouse=True)
+def offline_agents(monkeypatch):
+    """Tests never call the real DevAI agents, even when backend/.env has a key.
+    Live agent checks: python -m scripts.check_agents"""
+    monkeypatch.setattr(config, "DEVAI_API_KEY", "")
