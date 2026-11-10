@@ -43,7 +43,10 @@ copy ..\.env.example .env      # then fill SUPABASE_URL and SUPABASE_SERVICE_KEY
 5. In a second terminal, run `python -m app.telegram_bot`. Set `TELEGRAM_BOT_TOKEN`
    and `BACKEND_URL` in `backend/.env`; keep this process running to receive and
    reply to Telegram messages.
-6. Tests (no network or database needed): `pytest -q`
+6. To link a Telegram account, sign in as a trainer/admin, open `/demo`, create a
+   Telegram link for the client, and send it to them. The client opens it and taps
+   Start; the signed link expires after 10 minutes and can only be used once.
+7. Tests (no network or database needed): `pytest -q`
 
 ## Deploy on Render
 

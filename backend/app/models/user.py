@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, CreatedAtMixin
@@ -44,6 +44,7 @@ class ClientProfile(Base):
         ForeignKey("activity_factors.key", ondelete="SET NULL", onupdate="CASCADE")
     )
     notes: Mapped[str | None] = mapped_column(Text)
+    telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True)
 
     user: Mapped[User] = relationship(back_populates="profile", foreign_keys=[user_id])
     trainer: Mapped[User | None] = relationship(foreign_keys=[trainer_id], lazy="joined")

@@ -6,16 +6,12 @@
  *  - لوحة متابعة المشترك، المخطط البياني، تحليل التقدم ومسودات الرد الآلية عبر تيليجرام
  */
 
-import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { PageHeader } from '@/components/ui';
 import { SquatChecker } from './SquatChecker';
 import { CoachView } from './CoachView';
-import { DEMO_CLIENTS } from './demoApi';
 
 export function DemoPage() {
-  const [activeClient, setActiveClient] = useState(DEMO_CLIENTS[0]);
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -30,10 +26,10 @@ export function DemoPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* اللوحة الأولى: فحص أداء السكوات */}
-        <SquatChecker selectedClient={activeClient} />
+        <SquatChecker />
 
         {/* اللوحة الثانية: واجهة المدرب ومتابعة القياسات والردود */}
-        <CoachView onClientChange={setActiveClient} />
+        <CoachView />
       </div>
     </div>
   );

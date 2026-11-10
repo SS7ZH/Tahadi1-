@@ -2,26 +2,61 @@
 
 from datetime import date
 
+from sqlalchemy import select
+
 from app.agents import text as t
-from app.db import get_db
+from app.db.session import get_sessionmaker
+from app.models import ClientProfile, MeasurementSession, User
 from app.rules.parsing import is_arabic, normalize, parse_measurement, validate_measurement
+from app.schemas.measurement import ValueIn
+from app.services import audit, measurements
 
 
 def find_client_by_chat(chat_id: int) -> dict | None:
-    rows = get_db().table("clients").select("id,name").eq("telegram_chat_id", chat_id).limit(1).execute().data
-    return rows[0] if rows else None
+    with get_sessionmaker()() as db:
+        row = db.execute(
+            select(User.id, User.full_name)
+            .join(ClientProfile, ClientProfile.user_id == User.id)
+            .where(
+                ClientProfile.telegram_chat_id == chat_id,
+                User.role == "client",
+                User.is_active.is_(True),
+                User.deleted_at.is_(None),
+            )
+            .limit(1)
+        ).first()
+    return {"id": row.id, "name": row.full_name} if row else None
 
 
-def save_measurement(client_id: str, values: dict) -> None:
-    get_db().table("measurements").insert(
-        {
-            "client_id": client_id,
-            "date": date.today().isoformat(),
-            "weight_kg": values.get("weight_kg"),
-            "waist_cm": values.get("waist_cm"),
-            "source": "telegram",
-        }
-    ).execute()
+def save_measurement(client_id: int, values: dict) -> None:
+    inputs = [
+        ValueIn(key=key, value_number=values[value_key])
+        for key, value_key in (("weight", "weight_kg"), ("waist", "waist_cm"))
+        if values.get(value_key) is not None
+    ]
+    with get_sessionmaker()() as db:
+        client = db.get(User, client_id)
+        if client is None or client.profile is None:
+            return
+        session = MeasurementSession(
+            client_id=client.id,
+            trainer_id=None,
+            updated_by_id=client.id,
+            session_date=date.today(),
+            source="telegram",
+        )
+        session.values = measurements.build_values(db, inputs)
+        db.add(session)
+        db.flush()
+        audit.record(
+            db,
+            client,
+            "create",
+            "measurement_session",
+            session.id,
+            {"client_id": client.id, "source": "telegram", "after": audit.session_snapshot(session)},
+        )
+        db.commit()
 
 
 def handle_message(chat_id: int, text: str) -> str:

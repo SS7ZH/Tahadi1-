@@ -17,7 +17,8 @@
  */
 
 import axios from 'axios';
-import { API_URL } from '@/api/client';
+import { API_URL, api } from '@/api/client';
+import { clientsApi } from '@/api/endpoints';
 
 export interface MeasurementPoint {
   date: string;
@@ -45,6 +46,12 @@ export interface FormCheckPayload {
   client: string;
   reps: number;
   errors?: string | null;
+}
+
+export interface TelegramLinkClient {
+  id: number;
+  name: string;
+  linked: boolean;
 }
 
 export const DEMO_CLIENTS = ['Ahmed Al-Rashidi', 'Sara Al-Zahrani', 'Mohammed Al-Otaibi'];
@@ -97,6 +104,35 @@ const ROOT_URL = API_URL.replace(/\/api\/v1\/?$/, '');
 
 export const demoApi = {
   clients: () => DEMO_CLIENTS,
+
+  telegramClients: async (): Promise<TelegramLinkClient[]> =>
+    (await api.get<TelegramLinkClient[]>('/telegram/clients')).data,
+
+  createTelegramLink: async (clientId: number): Promise<{ url: string; expires_in: number }> =>
+    (await api.post<{ url: string; expires_in: number }>(`/telegram/clients/${clientId}/link`)).data,
+
+  clientSummary: async (clientId: number, clientName: string): Promise<ProgressSummary> => {
+    const [summary, progress] = await Promise.all([
+      clientsApi.summary(clientId),
+      clientsApi.progress(clientId, ['weight']),
+    ]);
+    const latestWeight = summary.latest_values.find((value) => value.key === 'weight');
+    const measurements = (progress.series.weight?.points ?? []).map((point) => ({
+      date: point.date,
+      weight_kg: point.value,
+    }));
+    const aiSummary = latestWeight
+      ? `آخر وزن مسجل لـ ${clientName} هو ${latestWeight.value_number} كجم${latestWeight.change === null ? '.' : `، والتغير ${latestWeight.change > 0 ? '+' : ''}${latestWeight.change} كجم.`}`
+      : `لا توجد قياسات وزن مسجلة لـ ${clientName} بعد.`;
+
+    return {
+      clientName,
+      measurements,
+      aiSummary,
+      lastUpdated: new Date().toISOString(),
+      isLiveBackend: true,
+    };
+  },
 
   /** GET /summary/{client} — Progress analyst summary + measurements */
   summary: async (clientName: string): Promise<ProgressSummary> => {

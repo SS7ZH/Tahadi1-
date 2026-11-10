@@ -15,6 +15,32 @@ logger = logging.getLogger("tahadi.telegram_bot")
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     message = update.effective_message
     if message is not None:
+        chat = update.effective_chat
+        if chat is None or chat.type != "private":
+            await message.reply_text("افتح رابط الربط في محادثة خاصة مع البوت.")
+            return
+        if context.args:
+            backend_url = context.application.bot_data["backend_url"]
+            try:
+                async with httpx.AsyncClient(timeout=90) as client:
+                    response = await client.post(
+                        f"{backend_url}/telegram/link/claim",
+                        json={"token": context.args[0], "chat_id": chat.id},
+                    )
+                    response.raise_for_status()
+                    reply = response.json().get("reply", "تم ربط حساب تيليجرام بنجاح ✅")
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 410:
+                    reply = "انتهت صلاحية رابط الربط. اطلب رابطاً جديداً من مدربك."
+                elif exc.response.status_code == 409:
+                    reply = "هذا الرابط مستخدم أو أن حساب العميل مربوط مسبقاً."
+                else:
+                    reply = "تعذر إكمال الربط. اطلب رابطاً جديداً من مدربك."
+            except httpx.HTTPError:
+                logger.exception("Could not complete Telegram account linking")
+                reply = "تعذر الاتصال بالخادم لإكمال الربط. حاول مرة أخرى."
+            await message.reply_text(reply)
+            return
         await message.reply_text("أهلًا بك في تحدي! أرسل وزنك بهذا الشكل: وزني ٨٢٫٥")
 
 

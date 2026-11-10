@@ -16,11 +16,12 @@ import {
 } from 'recharts';
 import {
   Users, TrendingUp, MessageSquare, CheckCircle2, XCircle,
-  RefreshCw, Bot, Send, Clock, SendHorizontal,
+  RefreshCw, Bot, Send, Clock, Link2, Copy, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardHeader, Button, Badge, Spinner, Input } from '@/components/ui';
-import { demoApi, type ProgressSummary, type DraftReply } from './demoApi';
+import { Card, CardHeader, Button, Badge, Spinner } from '@/components/ui';
+import { useAuth } from '@/hooks/useAuth';
+import { demoApi, type ProgressSummary, type DraftReply, type TelegramLinkClient } from './demoApi';
 
 /* ---- تنسيق التاريخ ---- */
 function fmtDate(d: string) {
@@ -35,9 +36,9 @@ function fmtDate(d: string) {
 /* ---- المكونات الفرعية ---- */
 
 function ClientSelector({ clients, selected, onSelect }: {
-  clients: string[];
-  selected: string;
-  onSelect: (c: string) => void;
+  clients: TelegramLinkClient[];
+  selected: number | null;
+  onSelect: (id: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -47,16 +48,16 @@ function ClientSelector({ clients, selected, onSelect }: {
       <div className="flex flex-wrap gap-2">
         {clients.map((c) => (
           <button
-            key={c}
+            key={c.id}
             type="button"
-            onClick={() => onSelect(c)}
+            onClick={() => onSelect(c.id)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-              selected === c
+              selected === c.id
                 ? 'bg-primary text-on-primary shadow-sm'
                 : 'bg-surface-2 text-ink hover:bg-line/70'
             }`}
           >
-            {c}
+            {c.name}
           </button>
         ))}
       </div>
@@ -220,10 +221,102 @@ function DraftPanel({
   );
 }
 
+function TelegramLinkPanel({
+  client,
+  onRefresh,
+  refreshing,
+}: {
+  client: TelegramLinkClient | null;
+  onRefresh: () => void;
+  refreshing: boolean;
+}) {
+  const { status, user } = useAuth();
+  const canManageLinks = status === 'authenticated' && (user?.role === 'trainer' || user?.role === 'admin');
+  const [creatingLink, setCreatingLink] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+
+  useEffect(() => {
+    setLinkUrl('');
+  }, [client?.id]);
+
+  const createLink = async () => {
+    if (!client || client.linked) return;
+    setCreatingLink(true);
+    setLinkUrl('');
+    try {
+      const result = await demoApi.createTelegramLink(client.id);
+      setLinkUrl(result.url);
+      toast.success('الرابط جاهز؛ أرسله للعميل ليضغط Start خلال 10 دقائق.');
+    } catch {
+      toast.error('تعذر إنشاء رابط الربط. حدّث قائمة اللاعبين وحاول مجدداً.');
+    } finally {
+      setCreatingLink(false);
+    }
+  };
+
+  const copyLink = async () => {
+    if (!linkUrl) return;
+    try {
+      await navigator.clipboard.writeText(linkUrl);
+      toast.success('تم نسخ رابط الربط');
+    } catch {
+      toast.error('تعذر نسخ الرابط؛ افتحه ثم انسخه من شريط العنوان.');
+    }
+  };
+
+  if (!canManageLinks) {
+    return (
+      <div className="flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
+        <Link2 className="h-4 w-4" />
+        <span>لربط عميل بتيليجرام، سجّل الدخول بحساب مدرب أو إداري.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-line pt-4">
+      <div className="flex items-center gap-2">
+        <Link2 className="h-4 w-4 text-accent" />
+        <span className="font-semibold text-sm">ربط عميل بتيليجرام</span>
+        <Button size="sm" variant="outline" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={onRefresh} loading={refreshing}>
+          تحديث
+        </Button>
+      </div>
+      <p className="text-xs text-muted">
+        {client ? `العميل المحدد: ${client.name}. ` : 'اختر لاعباً من القائمة أعلاه. '}
+        أرسل له الرابط ليضغط Start مرة واحدة لإكمال الربط.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          icon={<Link2 className="h-4 w-4" />}
+          loading={creatingLink}
+          disabled={!client || client.linked}
+          onClick={createLink}
+        >
+          {client?.linked ? 'مرتبط بتيليجرام' : 'إنشاء رابط الربط'}
+        </Button>
+      </div>
+      {linkUrl && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-2 p-3">
+          <a className="inline-flex items-center gap-1 text-sm font-semibold text-primary underline" href={linkUrl} target="_blank" rel="noreferrer">
+            فتح تيليجرام <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+          <Button size="sm" variant="outline" icon={<Copy className="h-3.5 w-3.5" />} onClick={copyLink}>
+            نسخ الرابط
+          </Button>
+          <span className="text-xs text-muted">صالح لمدة 10 دقائق ويُستخدم مرة واحدة.</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---- المكون الرئيسي ---- */
-export function CoachView({ onClientChange }: { onClientChange?: (c: string) => void }) {
-  const clients = demoApi.clients();
-  const [selectedClient, setSelectedClient] = useState(clients[0]);
+export function CoachView() {
+  const [clients, setClients] = useState<TelegramLinkClient[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [summary, setSummary] = useState<ProgressSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [draft, setDraft] = useState<DraftReply | null>(null);
@@ -232,19 +325,29 @@ export function CoachView({ onClientChange }: { onClientChange?: (c: string) => 
   const [loadingApprove, setLoadingApprove] = useState(false);
   const [loadingReject, setLoadingReject] = useState(false);
   const [editedText, setEditedText] = useState('');
+  const selectedClient = clients.find((client) => client.id === selectedClientId) ?? null;
 
-  // محاكي رسائل تيليجرام
-  const [telegramMsg, setTelegramMsg] = useState('weight 82');
-  const [sendingTelegram, setSendingTelegram] = useState(false);
+  const loadClients = useCallback(async () => {
+    setLoadingClients(true);
+    demoApi.telegramClients()
+      .then((rows) => {
+        setClients(rows);
+        setSelectedClientId((current) => rows.some((row) => row.id === current) ? current : rows[0]?.id ?? null);
+      })
+      .catch(() => toast.error('تعذر تحميل قائمة اللاعبين'))
+      .finally(() => setLoadingClients(false));
+  }, []);
 
-  const loadSummary = useCallback(async (client: string) => {
+  useEffect(() => { void loadClients(); }, [loadClients]);
+
+  const loadSummary = useCallback(async (client: TelegramLinkClient) => {
     setLoadingSummary(true);
     setSummary(null);
     setDraft(null);
     setDraftStatus('idle');
     setEditedText('');
     try {
-      const data = await demoApi.summary(client);
+      const data = await demoApi.clientSummary(client.id, client.name);
       setSummary(data);
     } catch {
       toast.error('تعذر جلب ملخص المشترك');
@@ -254,18 +357,18 @@ export function CoachView({ onClientChange }: { onClientChange?: (c: string) => 
   }, []);
 
   useEffect(() => {
-    loadSummary(selectedClient);
-    onClientChange?.(selectedClient);
-  }, [selectedClient, loadSummary, onClientChange]);
+    if (selectedClient) loadSummary(selectedClient);
+  }, [selectedClient, loadSummary]);
 
-  const handleClientSelect = (c: string) => {
-    setSelectedClient(c);
+  const handleClientSelect = (id: number) => {
+    setSelectedClientId(id);
   };
 
   const handleGenerateDraft = async () => {
+    if (!selectedClient) return;
     setLoadingDraft(true);
     try {
-      const d = await demoApi.draft(selectedClient);
+      const d = await demoApi.draft(selectedClient.name);
       setDraft(d);
       setEditedText(d.draftText);
       setDraftStatus('pending');
@@ -277,12 +380,12 @@ export function CoachView({ onClientChange }: { onClientChange?: (c: string) => 
   };
 
   const handleApprove = async () => {
-    if (!draft) return;
+    if (!draft || !selectedClient) return;
     setLoadingApprove(true);
     try {
-      await demoApi.approveDraft(selectedClient, editedText);
+      await demoApi.approveDraft(selectedClient.name, editedText);
       setDraftStatus('approved');
-      toast.success(`تم اعتماد الرد وإرساله للمشترك ${selectedClient} عبر تيليجرام`);
+      toast.success(`تم اعتماد الرد وإرساله للمشترك ${selectedClient.name} عبر تيليجرام`);
     } catch {
       toast.error('تعذر اعتماد الرد');
     } finally {
@@ -291,33 +394,16 @@ export function CoachView({ onClientChange }: { onClientChange?: (c: string) => 
   };
 
   const handleReject = async () => {
-    if (!draft) return;
+    if (!draft || !selectedClient) return;
     setLoadingReject(true);
     try {
-      await demoApi.rejectDraft(selectedClient);
+      await demoApi.rejectDraft(selectedClient.name);
       setDraftStatus('rejected');
       toast.info('تم رفض المسودة');
     } catch {
       toast.error('تعذر رفض المسودة');
     } finally {
       setLoadingReject(false);
-    }
-  };
-
-  const handleSendTelegram = async () => {
-    if (!telegramMsg.trim()) return;
-    setSendingTelegram(true);
-    try {
-      const res = await demoApi.sendTelegramMessage(telegramMsg.trim(), selectedClient);
-      toast.success(`تم استلام رسالة تيليجرام: "${telegramMsg.trim()}"`);
-      if (res.weight_kg) {
-        toast.info(`سجل وكيل الاستقبال وزناً جديداً: ${res.weight_kg} كجم لـ ${selectedClient}`);
-      }
-      await loadSummary(selectedClient);
-    } catch {
-      toast.error('تعذر معالجة رسالة تيليجرام');
-    } finally {
-      setSendingTelegram(false);
     }
   };
 
@@ -336,35 +422,12 @@ export function CoachView({ onClientChange }: { onClientChange?: (c: string) => 
         {/* اختيار المشترك */}
         <ClientSelector
           clients={clients}
-          selected={selectedClient}
+          selected={selectedClientId}
           onSelect={handleClientSelect}
         />
+        {loadingClients && <div className="text-sm text-muted"><Spinner className="me-2 inline h-4 w-4" />جارٍ تحميل اللاعبين…</div>}
 
-        {/* محاكي استقبال قياسات تيليجرام */}
-        <div className="rounded-xl border border-accent/25 bg-accent/5 p-3.5 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-accent flex items-center gap-1.5">
-              <SendHorizontal className="h-3.5 w-3.5" /> استقبال القياسات عبر تيليجرام (Telegram Intake)
-            </span>
-            <span className="text-[11px] text-muted">جرب إرسال وزن جديد لتحديث الشارت فوراً</span>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              value={telegramMsg}
-              onChange={(e) => setTelegramMsg(e.target.value)}
-              placeholder="مثال: weight 82 أو وزن 82"
-              className="text-xs py-1.5"
-            />
-            <Button
-              size="sm"
-              loading={sendingTelegram}
-              icon={<Send className="h-3.5 w-3.5" />}
-              onClick={handleSendTelegram}
-            >
-              إرسال للبوت
-            </Button>
-          </div>
-        </div>
+        <TelegramLinkPanel client={selectedClient} onRefresh={loadClients} refreshing={loadingClients} />
 
         {/* مخطط القياسات */}
         <div className="flex flex-col gap-2">
@@ -411,7 +474,7 @@ export function CoachView({ onClientChange }: { onClientChange?: (c: string) => 
 
         {/* مسودة الرد */}
         <DraftPanel
-          clientName={selectedClient}
+          clientName={selectedClient?.name ?? ''}
           draft={draft}
           draftStatus={draftStatus}
           loadingDraft={loadingDraft}

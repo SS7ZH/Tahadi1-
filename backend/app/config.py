@@ -6,6 +6,7 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "tahadi_coach_bot").removeprefix("@")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "")
 
 # DevAI Desktop agents (see app/llm.py and docs/devai-agents.md)

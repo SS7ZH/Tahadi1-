@@ -94,6 +94,7 @@ def create_session(db: Session, actor: User, client: User, data: SessionIn) -> M
         updated_by_id=actor.id,
         session_date=data.session_date,
         notes=(data.notes or "").strip() or None,
+        source="manual",
     )
     session.values = build_values(db, data.values)
     db.add(session)
