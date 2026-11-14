@@ -19,4 +19,10 @@ AGENT_IDS = {
     "coach": os.getenv("DEVAI_COACH_AGENT_ID", ""),
 }
 
+# Which agent provider to use: "claude" or "devai" (unset: claude if ANTHROPIC_API_KEY is set).
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-5-5")
+CLAUDE_EFFORT = os.getenv("CLAUDE_EFFORT", "low")
+
 ALLOWED_ORIGINS = [o for o in [FRONTEND_URL, "http://localhost:5173"] if o]

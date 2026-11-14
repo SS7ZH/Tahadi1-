@@ -7,7 +7,7 @@ anything they return. Input/output contracts: docs/devai-agents.md.
 import json
 import logging
 
-from app import config, llm
+from app import llm
 
 log = logging.getLogger("tahadi.agents")
 
@@ -15,7 +15,7 @@ log = logging.getLogger("tahadi.agents")
 def ask_agent(agent: str, payload: str) -> str | None:
     """Run one DevAI agent; None if it isn't configured or the call failed (caller uses a template)."""
     try:
-        text = llm.run_agent(config.AGENT_IDS[agent], payload, name=f"Tahadi {agent}").strip()
+        text = llm.ask(agent, payload).strip()
         return text or None
     except llm.LLMNotConfigured:
         return None
@@ -89,12 +89,20 @@ def _template_summary(name: str, facts: dict, alerts: list[str]) -> tuple[str, s
     return " ".join(ar), " ".join(en)
 
 
-def summary(name: str, facts: dict, alerts: list[str]) -> tuple[str, str]:
+def summary_result(name: str, facts: dict, alerts: list[str]) -> dict:
+    """Progress Analyst agent; {"summary_ar", "summary_en", "source": "agent" | "template"}."""
     payload = json.dumps({"client": name, "facts": facts, "alerts": alerts}, ensure_ascii=False)
     out = _json(ask_agent("analyst", payload)) or {}
-    t_ar, t_en = _template_summary(name, facts, alerts)
     ar, en = out.get("summary_ar"), out.get("summary_en")
-    return (ar if isinstance(ar, str) and ar else t_ar), (en if isinstance(en, str) and en else t_en)
+    if isinstance(ar, str) and ar.strip() and isinstance(en, str) and en.strip():
+        return {"summary_ar": ar.strip(), "summary_en": en.strip(), "source": "agent"}
+    t_ar, t_en = _template_summary(name, facts, alerts)
+    return {"summary_ar": t_ar, "summary_en": t_en, "source": "template"}
+
+
+def summary(name: str, facts: dict, alerts: list[str]) -> tuple[str, str]:
+    r = summary_result(name, facts, alerts)
+    return r["summary_ar"], r["summary_en"]
 
 
 # ---------- coach assistant agent ----------
@@ -132,10 +140,18 @@ def _template_draft(name: str, facts: dict, alerts: list[str], form_check: dict 
     return "\n".join(lines)
 
 
-def draft(name: str, facts: dict, alerts: list[str], form_check: dict | None) -> str:
+def draft_result(name: str, facts: dict, alerts: list[str], form_check: dict | None) -> tuple[str, str]:
+    """Coach Assistant agent; (text, "agent" | "template")."""
     payload = json.dumps(
         {"client": name, "facts": facts, "alerts": alerts, "latest_form_check": form_check},
         ensure_ascii=False,
         default=str,
     )
-    return ask_agent("coach", payload) or _template_draft(name, facts, alerts, form_check)
+    text = ask_agent("coach", payload)
+    if text:
+        return text, "agent"
+    return _template_draft(name, facts, alerts, form_check), "template"
+
+
+def draft(name: str, facts: dict, alerts: list[str], form_check: dict | None) -> str:
+    return draft_result(name, facts, alerts, form_check)[0]

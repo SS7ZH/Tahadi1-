@@ -102,6 +102,19 @@ function ProgressChart({ data }: { data: ProgressSummary['measurements'] }) {
 
 type DraftStatus = 'idle' | 'pending' | 'approved' | 'rejected';
 
+/* مصدر النص: وكيل DevAI أو النص الجاهز */
+function SourceBadge({ source }: { source?: 'agent' | 'template' }) {
+  if (!source) return null;
+  return source === 'agent'
+    ? <Badge tone="good">كتبه وكيل DevAI</Badge>
+    : <Badge tone="warn">نص جاهز (الوكيل غير متاح)</Badge>;
+}
+
+const ALERT_LABELS: Record<string, string> = {
+  stalled: 'الوزن ثابت منذ 3 أسابيع',
+  no_checkin: 'لا يوجد قياس منذ 10 أيام أو أكثر',
+};
+
 interface DraftPanelProps {
   clientName: string;
   draft: DraftReply | null;
@@ -142,6 +155,7 @@ function DraftPanel({
           <Bot className="h-5 w-5 text-primary" />
           <span className="font-semibold text-sm">مسودة الرد الذكية للمدرب</span>
           {statusBadge[draftStatus]}
+          {draft && <SourceBadge source={draft.source} />}
         </div>
         <Button
           size="sm"
@@ -168,7 +182,7 @@ function DraftPanel({
             value={editedText}
             onChange={(e) => onEditText(e.target.value)}
             rows={4}
-            disabled={draftStatus === 'approved'}
+            disabled={draftStatus !== 'pending'}
             className="field-input resize-y leading-relaxed text-sm disabled:opacity-60"
             placeholder="نص مسودة الرد الموجه للمشترك…"
           />
@@ -368,7 +382,7 @@ export function CoachView() {
     if (!selectedClient) return;
     setLoadingDraft(true);
     try {
-      const d = await demoApi.draft(selectedClient.name);
+      const d = await demoApi.clientDraft(selectedClient.id, selectedClient.name);
       setDraft(d);
       setEditedText(d.draftText);
       setDraftStatus('pending');
@@ -383,9 +397,15 @@ export function CoachView() {
     if (!draft || !selectedClient) return;
     setLoadingApprove(true);
     try {
-      await demoApi.approveDraft(selectedClient.name, editedText);
+      const result = await demoApi.approveClientDraft(Number(draft.id), editedText);
       setDraftStatus('approved');
-      toast.success(`تم اعتماد الرد وإرساله للمشترك ${selectedClient.name} عبر تيليجرام`);
+      if (result.telegram_sent) {
+        toast.success(`تم اعتماد الرد وإرساله للمشترك ${selectedClient.name} عبر تيليجرام`);
+      } else if (!result.telegram_linked) {
+        toast.warning(`تم اعتماد الرد، لكن ${selectedClient.name} غير مربوط بتيليجرام فلم يُرسل`);
+      } else {
+        toast.error('تم اعتماد الرد، لكن تعذر إرساله عبر تيليجرام');
+      }
     } catch {
       toast.error('تعذر اعتماد الرد');
     } finally {
@@ -397,7 +417,7 @@ export function CoachView() {
     if (!draft || !selectedClient) return;
     setLoadingReject(true);
     try {
-      await demoApi.rejectDraft(selectedClient.name);
+      await demoApi.rejectClientDraft(Number(draft.id));
       setDraftStatus('rejected');
       toast.info('تم رفض المسودة');
     } catch {
@@ -461,8 +481,16 @@ export function CoachView() {
               <div className="h-4 rounded bg-surface-2 animate-pulse w-5/6" />
             </div>
           ) : summary?.aiSummary ? (
-            <div className="rounded-xl bg-surface-2 border border-line px-4 py-3 text-sm leading-relaxed text-ink">
-              {summary.aiSummary}
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <SourceBadge source={summary.source} />
+                {(summary.alerts ?? []).map((a) => (
+                  <Badge key={a} tone="bad">{ALERT_LABELS[a] ?? a}</Badge>
+                ))}
+              </div>
+              <div className="rounded-xl bg-surface-2 border border-line px-4 py-3 text-sm leading-relaxed text-ink">
+                {summary.aiSummary}
+              </div>
             </div>
           ) : (
             <div className="text-sm text-muted">لا يوجد ملخص متاح حالياً.</div>

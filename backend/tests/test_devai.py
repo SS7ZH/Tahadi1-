@@ -48,3 +48,15 @@ def test_agent_failure_falls_back(monkeypatch):
     monkeypatch.setattr(llm, "run_agent", boom)
     body = text.draft("Omar Haddad", {"entries": 3}, ["stalled"], None)
     assert body.startswith("مرحبًا Omar")
+
+
+def test_model_failure_finish_event_raises():
+    """DevAI reports a failed model call as a 'finish' event with no text."""
+    lines = [
+        'data: {"type":"start","messageId":"m1"}',
+        'data: {"type":"finish","finishReason":"error","messageMetadata":{"outcome":{"status":"incomplete",'
+        '"reason":"failed","error":{"code":"model-failed","retryable":true,"phase":"before-content"}}}}',
+        "data: [DONE]",
+    ]
+    with pytest.raises(llm.LLMError, match="model-failed"):
+        llm._read_stream(lines)

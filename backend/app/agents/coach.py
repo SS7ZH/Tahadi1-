@@ -1,56 +1,55 @@
-"""Agent 5 - Coach assistant. Drafts replies; nothing is sent without coach approval."""
+"""Agent 5 - Coach assistant, on real client accounts.
 
-from datetime import datetime, timezone
+The DevAI Coach Assistant agent drafts a message (template fallback). Nothing is sent until a
+trainer approves it, and only a pending draft can be approved or rejected.
+"""
+
+from sqlalchemy import update
+from sqlalchemy.orm import Session
 
 from app.agents import text as t
 from app.agents.analyst import analyze
-from app.db import get_db
+from app.models import AgentDraft, User
+from app.models.base import utcnow
 
 
 class DraftNotPending(Exception):
     pass
 
 
-def latest_form_check(client_id: str) -> dict | None:
-    rows = (
-        get_db().table("form_checks").select("exercise,reps,errors,confidence,created_at")
-        .eq("client_id", client_id).order("created_at", desc=True).limit(1).execute().data
+def create_draft(db: Session, client: User, actor: User) -> AgentDraft:
+    analysis = analyze(db, client)
+    body, source = t.draft_result(client.full_name, analysis["facts"], analysis["alerts"], None)
+    draft = AgentDraft(client_id=client.id, text=body, source=source, status="pending", created_by_id=actor.id)
+    db.add(draft)
+    db.commit()
+    db.refresh(draft)
+    return draft
+
+
+def decide(db: Session, draft: AgentDraft, actor: User, status: str, text: str | None = None) -> AgentDraft:
+    """Approve or reject a pending draft. The conditional update stops double decisions."""
+    if draft.status != "pending":
+        raise DraftNotPending(draft.status)
+    changes = {"status": status, "decided_by_id": actor.id, "decided_at": utcnow()}
+    if text is not None and text.strip():
+        changes["text"] = text.strip()
+    result = db.execute(
+        update(AgentDraft)
+        .where(AgentDraft.id == draft.id, AgentDraft.status == "pending")
+        .values(**changes)
+        .execution_options(synchronize_session=False)
     )
-    return rows[0] if rows else None
-
-
-def create_draft(client: dict) -> dict:
-    analysis = analyze(client)
-    body = t.draft(client["name"], analysis["facts"], analysis["alerts"], latest_form_check(client["id"]))
-    return get_db().table("drafts").insert({"client_id": client["id"], "text": body}).execute().data[0]
-
-
-def list_drafts(status: str | None) -> list[dict]:
-    q = get_db().table("drafts").select("*, clients(name)").order("created_at", desc=True)
-    if status:
-        q = q.eq("status", status)
-    rows = q.execute().data
-    for r in rows:
-        r["client_name"] = (r.pop("clients", None) or {}).get("name")
-    return rows
-
-
-def get_draft(draft_id: str) -> dict | None:
-    rows = get_db().table("drafts").select("*").eq("id", draft_id).limit(1).execute().data
-    return rows[0] if rows else None
-
-
-def set_status(draft: dict, status: str) -> dict:
-    if draft["status"] != "pending":
-        raise DraftNotPending(draft["status"])
-    changes = {"status": status}
-    if status == "approved":
-        changes["sent_at"] = datetime.now(timezone.utc).isoformat()
-    # Only update while still pending, so two clicks can't approve twice.
-    rows = (
-        get_db().table("drafts").update(changes)
-        .eq("id", draft["id"]).eq("status", "pending").execute().data
-    )
-    if not rows:
+    if result.rowcount != 1:
+        db.rollback()
         raise DraftNotPending("changed")
-    return rows[0]
+    db.commit()
+    db.refresh(draft)
+    return draft
+
+
+def mark_sent(db: Session, draft: AgentDraft, sent: bool) -> AgentDraft:
+    draft.telegram_sent = sent
+    db.commit()
+    db.refresh(draft)
+    return draft

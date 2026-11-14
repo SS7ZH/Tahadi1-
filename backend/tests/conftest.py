@@ -186,6 +186,8 @@ def auth(client, users):
 # Ensure agents are offline during tests to avoid external calls.
 @pytest.fixture(autouse=True)
 def offline_agents(monkeypatch):
-    """Tests never call the real DevAI agents, even when backend/.env has a key.
+    """Tests never call the real agents (DevAI or Claude), even when backend/.env has keys.
     Live agent checks: python -m scripts.check_agents"""
     monkeypatch.setattr(config, "DEVAI_API_KEY", "")
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "")
+    monkeypatch.setattr(config, "LLM_PROVIDER", "")

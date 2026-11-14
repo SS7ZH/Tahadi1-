@@ -23,6 +23,7 @@ from app.db.session import get_db
 from app.models import ClientProfile, User
 from app.routers import (
     admin,
+    agents,
     auth,
     calculate,
     clients,
@@ -159,7 +160,7 @@ def create_telegram_link(
     }
 
 
-for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents, pdf, site, telegram):
+for r in (auth, admin, clients, sessions, comments, questions, calculate, reference, nutrition, programs, onboarding, documents, pdf, site, telegram, agents):
     api.include_router(r.router)
 
 app.include_router(api)

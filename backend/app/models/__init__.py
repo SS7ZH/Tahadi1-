@@ -16,6 +16,7 @@ from app.models.site import SiteSetting
 from app.models.reference import ActivityFactor, MeasurementDefinition
 from app.models.user import ClientProfile, User
 from app.models.demo import DemoMeasurement, DemoFormCheck, DemoDraft
+from app.models.agent import AgentDraft
 
 __all__ = [
     "Base",
@@ -45,4 +46,5 @@ __all__ = [
     "DemoMeasurement",
     "DemoFormCheck",
     "DemoDraft",
+    "AgentDraft",
 ]

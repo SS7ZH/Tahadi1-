@@ -25,10 +25,17 @@ export interface MeasurementPoint {
   weight_kg: number;
 }
 
+export type AgentSource = 'agent' | 'template';
+export type AgentAlert = 'stalled' | 'no_checkin';
+
 export interface ProgressSummary {
   clientName: string;
   measurements: MeasurementPoint[];
   aiSummary: string;
+  aiSummaryEn?: string;
+  alerts?: AgentAlert[];
+  /** 'agent' = written by the DevAI Progress Analyst, 'template' = built-in text */
+  source?: AgentSource;
   lastUpdated: string;
   isLiveBackend?: boolean;
 }
@@ -39,7 +46,31 @@ export interface DraftReply {
   draftText: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  /** 'agent' = written by the DevAI Coach Assistant, 'template' = built-in text */
+  source?: AgentSource;
   isLiveBackend?: boolean;
+}
+
+export interface AgentDraftOut {
+  id: number;
+  client_id: number;
+  text: string;
+  source: AgentSource;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  decided_at: string | null;
+  telegram_sent: boolean;
+  telegram_linked?: boolean;
+}
+
+interface AgentSummaryOut {
+  client_id: number;
+  client_name: string;
+  facts: Record<string, number | string | null>;
+  alerts: AgentAlert[];
+  summary_ar: string;
+  summary_en: string;
+  source: AgentSource;
 }
 
 export interface FormCheckPayload {
@@ -111,28 +142,49 @@ export const demoApi = {
   createTelegramLink: async (clientId: number): Promise<{ url: string; expires_in: number }> =>
     (await api.post<{ url: string; expires_in: number }>(`/telegram/clients/${clientId}/link`)).data,
 
+  /** Real client: weight chart + DevAI Progress Analyst summary (GET /clients/{id}/agent-summary). */
   clientSummary: async (clientId: number, clientName: string): Promise<ProgressSummary> => {
-    const [summary, progress] = await Promise.all([
-      clientsApi.summary(clientId),
+    const [agent, progress] = await Promise.all([
+      api.get<AgentSummaryOut>(`/clients/${clientId}/agent-summary`).then((r) => r.data),
       clientsApi.progress(clientId, ['weight']),
     ]);
-    const latestWeight = summary.latest_values.find((value) => value.key === 'weight');
     const measurements = (progress.series.weight?.points ?? []).map((point) => ({
       date: point.date,
       weight_kg: point.value,
     }));
-    const aiSummary = latestWeight
-      ? `آخر وزن مسجل لـ ${clientName} هو ${latestWeight.value_number} كجم${latestWeight.change === null ? '.' : `، والتغير ${latestWeight.change > 0 ? '+' : ''}${latestWeight.change} كجم.`}`
-      : `لا توجد قياسات وزن مسجلة لـ ${clientName} بعد.`;
-
     return {
       clientName,
       measurements,
-      aiSummary,
+      aiSummary: agent.summary_ar,
+      aiSummaryEn: agent.summary_en,
+      alerts: agent.alerts,
+      source: agent.source,
       lastUpdated: new Date().toISOString(),
       isLiveBackend: true,
     };
   },
+
+  /** Real client: DevAI Coach Assistant writes a pending draft. */
+  clientDraft: async (clientId: number, clientName: string): Promise<DraftReply> => {
+    const d = (await api.post<AgentDraftOut>(`/clients/${clientId}/agent-drafts`)).data;
+    return {
+      id: d.id,
+      clientName,
+      draftText: d.text,
+      status: d.status,
+      createdAt: d.created_at,
+      source: d.source,
+      isLiveBackend: true,
+    };
+  },
+
+  /** Approve a pending draft (optionally edited). Sends it on Telegram if the client is linked. */
+  approveClientDraft: async (draftId: number, text: string): Promise<AgentDraftOut> =>
+    (await api.post<AgentDraftOut>(`/agent-drafts/${draftId}/approve`, { text })).data,
+
+  /** Reject a pending draft. Nothing is sent. */
+  rejectClientDraft: async (draftId: number): Promise<AgentDraftOut> =>
+    (await api.post<AgentDraftOut>(`/agent-drafts/${draftId}/reject`)).data,
 
   /** GET /summary/{client} — Progress analyst summary + measurements */
   summary: async (clientName: string): Promise<ProgressSummary> => {

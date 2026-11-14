@@ -75,3 +75,20 @@ The backend sends each agent **one message** and reads its **whole reply**. Give
 DevAI's host listens only on this computer (`127.0.0.1:7588`). The agents work when the
 backend runs on the **same machine** as DevAI Desktop, which is how the demo runs. The
 Render deployment cannot reach it and uses the templates.
+
+## Running the same agents on the Claude API (ADR-0010)
+
+DevAI Desktop's host only works on the machine where it is open, so the backend can also run
+the agents on the Claude API, including on Render.
+
+1. After building or editing an agent in DevAI, export its instructions into the repo and commit:
+   ```bash
+   cd backend && python -m scripts.export_devai_prompts
+   ```
+   This writes `backend/app/agents/prompts/{intake,analyst,coach}.md`.
+2. Set `ANTHROPIC_API_KEY` in `backend/.env` (and in Render's environment). With a key set and
+   `LLM_PROVIDER` empty, the backend uses Claude; set `LLM_PROVIDER=devai` to force DevAI.
+3. Check all three agents: `python -m scripts.check_agents`.
+
+Model `claude-opus-5-5` at `low` effort by default (`CLAUDE_MODEL`, `CLAUDE_EFFORT`). If the key
+is missing or a call fails, the backend uses its template text, as with DevAI.

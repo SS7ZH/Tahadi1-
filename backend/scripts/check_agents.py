@@ -1,6 +1,6 @@
-"""Run each configured DevAI agent through the backend and check its reply format.
+"""Run each agent on the configured provider (Claude or DevAI) and check its reply format.
 
-Usage (from backend/, with DevAI Desktop open):  python -m scripts.check_agents
+Usage (from backend/):  python -m scripts.check_agents   (DevAI: DevAI Desktop must be open)
 """
 
 import json
@@ -58,7 +58,7 @@ def parse_json(raw: str):
 def check(agent: str, message: str, expected) -> bool:
     start = time.time()
     try:
-        raw = llm.run_agent(config.AGENT_IDS[agent], message, name=f"Tahadi check {agent}")
+        raw = llm.ask(agent, message)
     except (llm.LLMError, llm.LLMNotConfigured) as exc:
         print(f"  FAIL  {message[:40]!r}: {exc}")
         return False
@@ -78,15 +78,20 @@ def check(agent: str, message: str, expected) -> bool:
 
 
 def main() -> None:
-    if not config.DEVAI_API_KEY:
-        sys.exit("Set DEVAI_API_KEY in backend/.env first.")
+    p = llm.provider()
+    if p == "claude" and not config.ANTHROPIC_API_KEY:
+        sys.exit("Set ANTHROPIC_API_KEY in backend/.env first.")
+    if p == "devai" and not config.DEVAI_API_KEY:
+        sys.exit("Set ANTHROPIC_API_KEY (Claude) or DEVAI_API_KEY (DevAI) in backend/.env first.")
+    print(f"provider: {p}")
     results = []
     for agent, cases in CASES.items():
         agent_id = config.AGENT_IDS[agent]
-        if not agent_id:
+        if p == "devai" and not agent_id:
             print(f"{agent}: skipped (no agent id in .env)")
             continue
-        print(f"{agent} ({agent_id}, model {config.DEVAI_MODEL}):")
+        where = f"{config.CLAUDE_MODEL}, effort {config.CLAUDE_EFFORT}" if p == "claude" else f"{agent_id}, model {config.DEVAI_MODEL}"
+        print(f"{agent} ({where}):")
         results += [check(agent, msg, exp) for msg, exp in cases]
     print(f"\n{sum(results)}/{len(results)} passed")
     sys.exit(0 if results and all(results) else 1)

@@ -80,3 +80,6 @@ $RECYCLE.BIN/
 *~
 *.tmp
 *.bak
+
+# Files written by the test suite (uploads)
+backend/var/

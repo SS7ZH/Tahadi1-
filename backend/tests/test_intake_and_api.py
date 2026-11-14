@@ -8,8 +8,8 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_health():
-    assert client.get("/health").json() == {"status": "ok"}
+def test_health(client):  # the conftest fixture (test database), not the module-level client
+    assert client.get("/api/v1/health").json() == {"status": "ok", "database": "ok"}
 
 
 def test_unlinked_chat_gets_link_message(monkeypatch):
@@ -53,10 +53,11 @@ def test_telegram_endpoint(monkeypatch):
     assert r.status_code == 200 and r.json() == {"reply": "echo 5"}
 
 
-def test_bad_ids_and_bodies_are_422():
-    assert client.get("/summary/not-a-uuid").status_code == 422
+def test_bad_ids_and_bodies_are_422(client, auth):
+    h = auth("trainer_a")
+    assert client.get("/api/v1/clients/not-a-number/agent-summary", headers=h).status_code == 422
+    assert client.post("/api/v1/agent-drafts/not-a-number/approve", headers=h).status_code == 422
     assert client.post("/telegram/message", json={"chat_id": 5, "text": ""}).status_code == 422
-    assert client.get("/drafts?status=sent").status_code == 422
 
 
 def test_template_draft_without_llm():
