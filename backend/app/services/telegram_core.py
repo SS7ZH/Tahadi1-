@@ -96,12 +96,17 @@ def store_video(db: Session, chat_id: int, from_user_id: int | None, data: bytes
         return "الفيديو أكبر من 20 ميجابايت، أرسل مقطعًا أقصر 🙏"
     if not is_video(data):
         return "أرسل الفيديو بصيغة MP4 من فضلك."
-    path = storage.new_path(profile.user_id, "mp4")
-    storage.save(path, data, "video/mp4")
+    path: str | None = storage.new_path(profile.user_id, "mp4")
+    try:
+        storage.save(path, data, "video/mp4")
+    except Exception:  # noqa: BLE001 - storage not configured / bucket missing: keep the check, watch it in the group
+        log.exception("Could not store the squat video for client %s", profile.user_id)
+        path = None
     db.add(SquatCheck(client_id=profile.user_id, source="telegram", status="awaiting_review", video_path=path))
     db.commit()
     if coach_user is not None and coach_user.telegram_user_id is not None:
-        telegram_send.send_message(coach_user.telegram_user_id, f"🎥 وصل فيديو سكوات جديد من {profile.user.full_name}. حلّله من صفحة اللاعب في تحدي.")
+        where = "شاهده وحلّله من صفحة اللاعب في تحدي." if path else "شاهده في مجموعة اللاعب وسجّل التحليل من صفحته في تحدي."
+        telegram_send.send_message(coach_user.telegram_user_id, f"🎥 وصل فيديو سكوات جديد من {profile.user.full_name}. {where}")
     return "استلمنا فيديو السكوات ✅ سيراجعه مدربك ويرد عليك."
 
 

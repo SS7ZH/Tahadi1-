@@ -340,3 +340,21 @@ def test_non_video_upload_is_refused_politely(client, users, auth, tg):
 def test_other_trainers_squat_checks_are_hidden(client, users, auth, tg):
     p = new_player(client, auth, who="trainer_b")
     assert client.get(f"{API}/clients/{p['client']['id']}/squat-checks", headers=auth("trainer_a")).status_code == 404
+
+
+def test_video_is_still_recorded_when_file_storage_fails(client, users, auth, db_session, tg, monkeypatch):
+    """No Supabase bucket / keys: the player still gets an answer and the coach still sees the check."""
+    db, _ = db_session
+    from app.services import storage
+
+    def broken_save(*a, **k):
+        raise RuntimeError("bucket not found")
+
+    monkeypatch.setattr(storage, "save", broken_save)
+    p, _ = linked_player(client, auth)
+    r = client.post("/telegram/video", headers=BOT, data={"chat_id": str(GROUP), "from_user_id": str(PLAYER_TG)},
+                    files={"file": ("squat.mp4", MP4, "video/mp4")})
+    assert "استلمنا" in r.json()["reply"]
+    check = db.scalar(select(SquatCheck).where(SquatCheck.client_id == p["client"]["id"]))
+    assert check.status == "awaiting_review" and check.video_path is None
+    assert any("مجموعة اللاعب" in m["text"] for m in tg["messages"] if m["chat_id"] == COACH_TG)

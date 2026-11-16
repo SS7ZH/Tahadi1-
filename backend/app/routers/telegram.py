@@ -31,6 +31,7 @@ from sqlalchemy.orm import Session
 
 from app import config as agent_config
 from app.agents.intake import process_message
+from app.core.config import settings
 from app.core.deps import require_role
 from app.core.errors import AppError, not_found
 from app.core.i18n import tr
@@ -100,6 +101,8 @@ def telegram_status(actor: User = Depends(require_role("admin"))):
         "bot_username": me.get("username") if isinstance(me, dict) else None,
         "configured_username": agent_config.TELEGRAM_BOT_USERNAME,
         "bot_secret_set": bool(agent_config.TELEGRAM_BOT_SECRET),
+        "file_storage_configured": settings.remote_storage,
+        "storage_bucket": settings.SUPABASE_STORAGE_BUCKET,
         "webhook_url": hook.get("url"),
         "pending_updates": hook.get("pending_update_count"),
         "last_error": hook.get("last_error_message"),

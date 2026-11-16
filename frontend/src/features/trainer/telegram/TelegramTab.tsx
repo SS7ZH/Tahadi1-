@@ -306,8 +306,10 @@ function SquatCard({ clientId }: { clientId: number }) {
               {c.status === 'awaiting_review' ? <Badge tone="warn">{loc('بانتظار مراجعتك', 'Waiting for your review')}</Badge> : <Badge tone="good">{loc('تم التحليل', 'Analysed')}</Badge>}
               {c.reps != null && <span>{loc(`${c.reps} تكرار`, `${c.reps} reps`)}</span>}
               {c.errors.map((e, i) => <Badge key={i} tone="bad">{loc(...ERROR_LABELS[e.type])}</Badge>)}
-              {c.has_video && (
+              {c.has_video ? (
                 <Button size="sm" variant="ghost" icon={<ExternalLink className="h-4 w-4" />} onClick={() => watch(c.id)}>{loc('مشاهدة', 'Watch')}</Button>
+              ) : (
+                c.source === 'telegram' && <span className="text-xs text-muted">{loc('شاهد الفيديو في مجموعة اللاعب على تيليجرام', "Watch the video in the player's Telegram group")}</span>
               )}
             </div>
             {c.status === 'awaiting_review' && <ReviewForm check={c} clientId={clientId} />}
