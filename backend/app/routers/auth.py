@@ -39,7 +39,9 @@ def token_pair(user: User) -> TokenPair:
 def login(data: LoginIn, request: Request, db: Session = Depends(get_db)):
     login_limiter.hit(client_ip(request))
     user = db.scalar(select(User).where(func.lower(User.email) == data.email.lower(), User.deleted_at.is_(None)))
-    valid = verify_password(data.password, user.password_hash if user else _DUMMY_HASH)
+    # Telegram-only players have no password: they always get the same "invalid" answer.
+    valid = verify_password(data.password, user.password_hash if user and user.password_hash else _DUMMY_HASH)
+    valid = valid and bool(user and user.password_hash)
     if user is None or not valid:
         raise AppError(401, "INVALID_CREDENTIALS", tr("البريد الإلكتروني أو كلمة المرور غير صحيحة", "Incorrect email or password"))
     if not user.is_active:

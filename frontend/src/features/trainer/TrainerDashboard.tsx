@@ -1,4 +1,4 @@
-import { CalendarCheck, CalendarClock, ChevronLeft, MessageCircleQuestion, Plus, Search, Users } from 'lucide-react';
+import { CalendarCheck, CalendarClock, ChevronLeft, MessageCircleQuestion, Plus, Search, Send, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { errorMessage } from '@/api/client';
@@ -6,10 +6,11 @@ import type { ClientListItem } from '@/api/types';
 import { TrendChip } from '@/components/TrendChip';
 import { Badge, Button, Card, CardHeader, CountBadge, EmptyState, ErrorState, Input, PageHeader, Skeleton, StatCard } from '@/components/ui';
 import { useClients } from '@/hooks/queries';
-import { tr } from '@/i18n';
+import { loc, tr } from '@/i18n';
 import { daysAgo, fmtNumber, relativeDays } from '@/lib/format';
 import { ChronicBadge } from '@/components/documents';
 import { ClientFormModal } from './ClientFormModal';
+import { TelegramPlayerModal } from './telegram/TelegramPlayerModal';
 
 export function ClientRow({ c, href }: { c: ClientListItem; href: string }) {
   const stale = (daysAgo(c.last_session_date) ?? 999) > 30;
@@ -27,6 +28,11 @@ export function ClientRow({ c, href }: { c: ClientListItem; href: string }) {
             {c.has_chronic && <ChronicBadge />}
             {c.health_update_pending && <Badge tone="warn">{tr.documents.updatedBadge}</Badge>}
             {c.subscription_status === 'expired' && <Badge tone="bad">{tr.subscriptionStatus.expired}</Badge>}
+            {c.telegram_linked ? (
+              <Badge tone="good"><Send className="h-3 w-3" /> {loc('تيليجرام', 'Telegram')}</Badge>
+            ) : (
+              !c.email && <Badge tone="warn">{loc('بانتظار ربط المجموعة', 'Group not linked')}</Badge>
+            )}
           </div>
           <p className={`mt-0.5 text-xs ${stale ? 'text-warn' : 'text-muted'}`}>
             {tr.client.lastSession}: {c.last_session_date ? relativeDays(c.last_session_date) : tr.client.noSessions}
@@ -56,10 +62,11 @@ export function TrainerDashboard() {
   const { data, isLoading, error, refetch } = useClients();
   const [q, setQ] = useState('');
   const [showNew, setShowNew] = useState(false);
+  const [showTelegram, setShowTelegram] = useState(false);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return (data ?? []).filter((c) => !s || c.full_name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s));
+    return (data ?? []).filter((c) => !s || c.full_name.toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s));
   }, [data, q]);
 
   const expiring = useMemo(
@@ -85,9 +92,14 @@ export function TrainerDashboard() {
         title={tr.trainer.title}
         subtitle={tr.trainer.subtitle}
         actions={
-          <Button icon={<Plus className="h-4 w-4" />} onClick={() => setShowNew(true)}>
-            {tr.client.newClient}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button icon={<Send className="h-4 w-4" />} onClick={() => setShowTelegram(true)}>
+              {loc('لاعب جديد (تيليجرام)', 'New player (Telegram)')}
+            </Button>
+            <Button variant="outline" icon={<Plus className="h-4 w-4" />} onClick={() => setShowNew(true)}>
+              {loc('حساب بدخول للموقع', 'Account with web login')}
+            </Button>
+          </div>
         }
       />
 
@@ -150,8 +162,8 @@ export function TrainerDashboard() {
             title={tr.trainer.empty}
             description={tr.trainer.emptyHint}
             action={
-              <Button icon={<Plus className="h-4 w-4" />} onClick={() => setShowNew(true)}>
-                {tr.client.newClient}
+              <Button icon={<Send className="h-4 w-4" />} onClick={() => setShowTelegram(true)}>
+                {loc('لاعب جديد (تيليجرام)', 'New player (Telegram)')}
               </Button>
             }
           />
@@ -167,6 +179,7 @@ export function TrainerDashboard() {
       )}
 
       <ClientFormModal open={showNew} onClose={() => setShowNew(false)} />
+      <TelegramPlayerModal open={showTelegram} onClose={() => setShowTelegram(false)} />
     </div>
   );
 }

@@ -29,7 +29,7 @@ export function AssignPage() {
     const s = q.trim().toLowerCase();
     return (clients.data ?? []).filter(
       (c) =>
-        (!s || c.full_name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s)) &&
+        (!s || c.full_name.toLowerCase().includes(s) || (c.email ?? "").toLowerCase().includes(s)) &&
         (trainerFilter === '' ||
           (trainerFilter === 'none' ? c.trainer_id === null : String(c.trainer_id) === trainerFilter)),
     );

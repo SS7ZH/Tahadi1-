@@ -10,6 +10,7 @@ from app.models import MeasurementSession, ProgramDay, Question, QuestionReply, 
 from app.schemas.interaction import QuestionIn, QuestionOut, QuestionStatus, QuestionStatusIn, ReplyIn
 from app.services import permissions
 from app.services.serializers import question_out
+from app.services.telegram_send import send_telegram_message
 
 router = APIRouter(tags=["questions"])
 
@@ -75,6 +76,10 @@ def reply(question_id: int, data: ReplyIn, user: User = Depends(get_current_user
     # Staff reply → answered; client follow-up → back to open so it shows in the trainer's inbox.
     question.status = "open" if user.role == "client" else "answered"
     db.commit()
+    if user.role != "client" and question.source == "telegram":
+        profile = question.client.profile
+        if profile is not None and profile.telegram_chat_id is not None:
+            send_telegram_message(profile.telegram_chat_id, data.body)
     db.refresh(question)
     return _out_many(db, [question])[0]
 

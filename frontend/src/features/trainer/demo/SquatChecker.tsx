@@ -13,7 +13,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Camera, AlertTriangle, CheckCircle2, RefreshCw, ArrowDownCircle, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardHeader, Button, Badge } from '@/components/ui';
-import { demoApi, DEMO_CLIENTS } from './demoApi';
+import { useQuery } from '@tanstack/react-query';
+import { telegramApi, type SquatErrorType } from '@/api/telegram';
 
 /* ---- أنواع MediaPipe ---- */
 declare global {
@@ -87,8 +88,15 @@ interface RepState {
 }
 
 interface SquatCheckerProps {
-  selectedClient?: string;
   onSetSaved?: (reps: number) => void;
+}
+
+/** Arabic on-screen error -> the error type the backend and the Coach Assistant use. */
+function errorType(text: string): SquatErrorType | null {
+  if (text.includes('نزول') || text.includes('الورك')) return 'shallow_depth';
+  if (text.includes('الركب')) return 'knees_caving';
+  if (text.includes('الظهر')) return 'back_lean';
+  return null;
 }
 
 const CDN_POSE = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js';
@@ -107,14 +115,17 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
-export function SquatChecker({ selectedClient = DEMO_CLIENTS[0], onSetSaved }: SquatCheckerProps) {
+export function SquatChecker({ onSetSaved }: SquatCheckerProps) {
+  // Sets are saved to a real player (shown to the coach and used by the Coach Assistant).
+  const players = useQuery({ queryKey: ['telegram-clients'], queryFn: telegramApi.clients });
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const poseRef = useRef<PoseInstance | null>(null);
   const cameraRef = useRef<CameraInstance | null>(null);
   const repStateRef = useRef<RepState>({ reps: 0, phase: 'standing', touchedBottom: false, errors: [] });
 
-  const [activeClient, setActiveClient] = useState(selectedClient);
+  const [activeClientId, setActiveClientId] = useState<number | null>(null);
+  const activeClient = players.data?.find((c) => c.id === activeClientId) ?? players.data?.[0] ?? null;
   const [status, setStatus] = useState<'idle' | 'loading' | 'running' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [reps, setReps] = useState(0);
@@ -123,10 +134,6 @@ export function SquatChecker({ selectedClient = DEMO_CLIENTS[0], onSetSaved }: S
   const [currentPhase, setCurrentPhase] = useState<Phase>('standing');
   const [savingSet, setSavingSet] = useState(false);
   const [lastSavedInfo, setLastSavedInfo] = useState<string | null>(null);
-
-  useEffect(() => {
-    setActiveClient(selectedClient);
-  }, [selectedClient]);
 
   const cleanup = useCallback(() => {
     cameraRef.current?.stop();
@@ -213,19 +220,19 @@ export function SquatChecker({ selectedClient = DEMO_CLIENTS[0], onSetSaved }: S
     ctx.restore();
   }, []);
 
-  const saveCurrentSet = useCallback(async (clientToSave = activeClient) => {
+  const saveCurrentSet = useCallback(async () => {
     const state = repStateRef.current;
     if (state.reps === 0 && state.errors.length === 0) return;
+    if (!activeClient) {
+      toast.error('اختر لاعباً لحفظ الجولة في سجله');
+      return;
+    }
 
     setSavingSet(true);
-    const errText = state.errors.join('; ') || null;
+    const errors = Array.from(new Set(state.errors.map(errorType).filter((t): t is SquatErrorType => t !== null))).map((type) => ({ type }));
     try {
-      await demoApi.saveFormCheck({
-        client: clientToSave,
-        reps: state.reps,
-        errors: errText,
-      });
-      const info = `تم حفظ الجولة: ${state.reps} تكرار لـ ${clientToSave}`;
+      await telegramApi.saveSquatCheck(activeClient.id, { reps: state.reps, errors, confidence: 1 });
+      const info = `تم حفظ الجولة: ${state.reps} تكرار لـ ${activeClient.name}`;
       setLastSavedInfo(info);
       toast.success(info);
       onSetSaved?.(state.reps);
@@ -341,16 +348,17 @@ export function SquatChecker({ selectedClient = DEMO_CLIENTS[0], onSetSaved }: S
       <div className="flex items-center justify-between gap-3 border-b border-line bg-surface-2 px-5 py-2.5 text-xs">
         <span className="font-semibold text-muted">المشترك لهذه الجولة:</span>
         <div className="flex gap-1.5">
-          {DEMO_CLIENTS.map((c) => (
+          {players.data?.length === 0 && <span className="text-muted">أضف لاعباً أولاً</span>}
+          {players.data?.map((c) => (
             <button
-              key={c}
+              key={c.id}
               type="button"
-              onClick={() => setActiveClient(c)}
+              onClick={() => setActiveClientId(c.id)}
               className={`rounded-lg px-2.5 py-1 font-semibold transition ${
-                activeClient === c ? 'bg-primary text-on-primary' : 'bg-surface text-ink hover:bg-line/60'
+                activeClient?.id === c.id ? 'bg-primary text-on-primary' : 'bg-surface text-ink hover:bg-line/60'
               }`}
             >
-              {c.split(' ')[0]}
+              {c.name.split(' ')[0]}
             </button>
           ))}
         </div>

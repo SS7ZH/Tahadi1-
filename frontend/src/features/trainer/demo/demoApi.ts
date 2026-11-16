@@ -83,6 +83,8 @@ export interface TelegramLinkClient {
   id: number;
   name: string;
   linked: boolean;
+  invite_url?: string | null;
+  telegram_only?: boolean;
 }
 
 export const DEMO_CLIENTS = ['Ahmed Al-Rashidi', 'Sara Al-Zahrani', 'Mohammed Al-Otaibi'];
@@ -138,9 +140,6 @@ export const demoApi = {
 
   telegramClients: async (): Promise<TelegramLinkClient[]> =>
     (await api.get<TelegramLinkClient[]>('/telegram/clients')).data,
-
-  createTelegramLink: async (clientId: number): Promise<{ url: string; expires_in: number }> =>
-    (await api.post<{ url: string; expires_in: number }>(`/telegram/clients/${clientId}/link`)).data,
 
   /** Real client: weight chart + DevAI Progress Analyst summary (GET /clients/{id}/agent-summary). */
   clientSummary: async (clientId: number, clientName: string): Promise<ProgressSummary> => {

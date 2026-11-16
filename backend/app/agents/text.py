@@ -115,9 +115,13 @@ FORM_TIPS_AR = {
 LOW_CONFIDENCE = 0.6
 
 
-def _template_draft(name: str, facts: dict, alerts: list[str], form_check: dict | None) -> str:
+def _template_draft(name: str, facts: dict, alerts: list[str], form_check: dict | None, question: str | None = None) -> str:
     first = name.split()[0]
     lines = [f"مرحبًا {first} 👋"]
+    if question:
+        # Without the agent we cannot answer the question itself: acknowledge it for the coach to complete.
+        lines.append("شكرًا على سؤالك، سأراجعه وأرد عليك بالتفصيل قريبًا.")
+        return "\n".join(lines)
     if not facts.get("entries"):
         lines.append("أرسل وزنك اليوم لنبدأ متابعة تقدمك.")
     elif "no_checkin" in alerts:
@@ -140,18 +144,18 @@ def _template_draft(name: str, facts: dict, alerts: list[str], form_check: dict 
     return "\n".join(lines)
 
 
-def draft_result(name: str, facts: dict, alerts: list[str], form_check: dict | None) -> tuple[str, str]:
-    """Coach Assistant agent; (text, "agent" | "template")."""
-    payload = json.dumps(
-        {"client": name, "facts": facts, "alerts": alerts, "latest_form_check": form_check},
-        ensure_ascii=False,
-        default=str,
-    )
-    text = ask_agent("coach", payload)
+def draft_result(
+    name: str, facts: dict, alerts: list[str], form_check: dict | None, question: str | None = None
+) -> tuple[str, str]:
+    """Coach Assistant agent; (text, "agent" | "template"). With `question`, the draft answers it."""
+    data = {"client": name, "facts": facts, "alerts": alerts, "latest_form_check": form_check}
+    if question:
+        data["question"] = question
+    text = ask_agent("coach", json.dumps(data, ensure_ascii=False, default=str))
     if text:
         return text, "agent"
-    return _template_draft(name, facts, alerts, form_check), "template"
+    return _template_draft(name, facts, alerts, form_check, question), "template"
 
 
-def draft(name: str, facts: dict, alerts: list[str], form_check: dict | None) -> str:
-    return draft_result(name, facts, alerts, form_check)[0]
+def draft(name: str, facts: dict, alerts: list[str], form_check: dict | None, question: str | None = None) -> str:
+    return draft_result(name, facts, alerts, form_check, question)[0]

@@ -16,12 +16,14 @@ import {
 } from 'recharts';
 import {
   Users, TrendingUp, MessageSquare, CheckCircle2, XCircle,
-  RefreshCw, Bot, Send, Clock, Link2, Copy, ExternalLink,
+  RefreshCw, Bot, Send, Clock, Link2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardHeader, Button, Badge, Spinner } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { demoApi, type ProgressSummary, type DraftReply, type TelegramLinkClient } from './demoApi';
+import { telegramApi, type GroupCode } from '@/api/telegram';
+import { GroupLinkSteps } from '../telegram/GroupLinkSteps';
 
 /* ---- تنسيق التاريخ ---- */
 function fmtDate(d: string) {
@@ -246,35 +248,22 @@ function TelegramLinkPanel({
 }) {
   const { status, user } = useAuth();
   const canManageLinks = status === 'authenticated' && (user?.role === 'trainer' || user?.role === 'admin');
-  const [creatingLink, setCreatingLink] = useState(false);
-  const [linkUrl, setLinkUrl] = useState('');
+  const [code, setCode] = useState<GroupCode | null>(null);
+  const [creatingCode, setCreatingCode] = useState(false);
 
   useEffect(() => {
-    setLinkUrl('');
+    setCode(null);
   }, [client?.id]);
 
-  const createLink = async () => {
+  const createCode = async () => {
     if (!client || client.linked) return;
-    setCreatingLink(true);
-    setLinkUrl('');
+    setCreatingCode(true);
     try {
-      const result = await demoApi.createTelegramLink(client.id);
-      setLinkUrl(result.url);
-      toast.success('الرابط جاهز؛ أرسله للعميل ليضغط Start خلال 10 دقائق.');
+      setCode(await telegramApi.groupCode(client.id));
     } catch {
-      toast.error('تعذر إنشاء رابط الربط. حدّث قائمة اللاعبين وحاول مجدداً.');
+      toast.error('تعذر إنشاء رمز الربط. حدّث قائمة اللاعبين وحاول مجدداً.');
     } finally {
-      setCreatingLink(false);
-    }
-  };
-
-  const copyLink = async () => {
-    if (!linkUrl) return;
-    try {
-      await navigator.clipboard.writeText(linkUrl);
-      toast.success('تم نسخ رابط الربط');
-    } catch {
-      toast.error('تعذر نسخ الرابط؛ افتحه ثم انسخه من شريط العنوان.');
+      setCreatingCode(false);
     }
   };
 
@@ -282,7 +271,7 @@ function TelegramLinkPanel({
     return (
       <div className="flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
         <Link2 className="h-4 w-4" />
-        <span>لربط عميل بتيليجرام، سجّل الدخول بحساب مدرب أو إداري.</span>
+        <span>لربط لاعب بمجموعة تيليجرام، سجّل الدخول بحساب مدرب أو إداري.</span>
       </div>
     );
   }
@@ -291,35 +280,31 @@ function TelegramLinkPanel({
     <div className="flex flex-col gap-3 border-t border-line pt-4">
       <div className="flex items-center gap-2">
         <Link2 className="h-4 w-4 text-accent" />
-        <span className="font-semibold text-sm">ربط عميل بتيليجرام</span>
+        <span className="font-semibold text-sm">مجموعة تيليجرام للاعب</span>
         <Button size="sm" variant="outline" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={onRefresh} loading={refreshing}>
           تحديث
         </Button>
       </div>
       <p className="text-xs text-muted">
-        {client ? `العميل المحدد: ${client.name}. ` : 'اختر لاعباً من القائمة أعلاه. '}
-        أرسل له الرابط ليضغط Start مرة واحدة لإكمال الربط.
+        {client ? `اللاعب المحدد: ${client.name}. ` : 'اختر لاعباً من القائمة أعلاه. '}
+        كل لاعب له مجموعة صغيرة فيها أنت والبوت واللاعب.
       </p>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          icon={<Link2 className="h-4 w-4" />}
-          loading={creatingLink}
-          disabled={!client || client.linked}
-          onClick={createLink}
-        >
-          {client?.linked ? 'مرتبط بتيليجرام' : 'إنشاء رابط الربط'}
-        </Button>
-      </div>
-      {linkUrl && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-2 p-3">
-          <a className="inline-flex items-center gap-1 text-sm font-semibold text-primary underline" href={linkUrl} target="_blank" rel="noreferrer">
-            فتح تيليجرام <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-          <Button size="sm" variant="outline" icon={<Copy className="h-3.5 w-3.5" />} onClick={copyLink}>
-            نسخ الرابط
+      {client?.linked ? (
+        <p className="text-sm">
+          ✅ مرتبط بمجموعة.{' '}
+          {client.invite_url && (
+            <a className="font-semibold text-primary underline" href={client.invite_url} target="_blank" rel="noreferrer" dir="ltr">
+              رابط الدعوة
+            </a>
+          )}
+        </p>
+      ) : code ? (
+        <GroupLinkSteps code={code} />
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" icon={<Link2 className="h-4 w-4" />} loading={creatingCode} disabled={!client} onClick={createCode}>
+            ربط مجموعة تيليجرام
           </Button>
-          <span className="text-xs text-muted">صالح لمدة 10 دقائق ويُستخدم مرة واحدة.</span>
         </div>
       )}
     </div>

@@ -33,6 +33,8 @@ class Question(CreatedAtMixin, Base):
     program_day_id: Mapped[int | None] = mapped_column(ForeignKey("program_days.id", ondelete="SET NULL"), index=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="open", index=True, nullable=False)  # open|answered|closed
+    # "app" (asked in the web app) or "telegram" (a message in the player's Telegram group)
+    source: Mapped[str] = mapped_column(String(20), default="app", nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
 
     client: Mapped[User] = relationship(foreign_keys=[client_id], lazy="joined")

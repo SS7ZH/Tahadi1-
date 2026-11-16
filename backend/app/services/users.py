@@ -47,23 +47,33 @@ def create_user(
     db: Session,
     *,
     full_name: str,
-    email: str,
+    email: str | None,
     phone: str | None,
-    password: str,
+    password: str | None,
     role: str,
     profile: dict | None = None,
+    telegram_only: bool = False,
 ) -> User:
-    ensure_email_free(db, email)
+    """telegram_only: a player with no email/password who never logs in (ADR-0011); only sex is required."""
+    if telegram_only:
+        if role != "client":
+            raise unprocessable(tr("فقط اللاعب يمكن أن يكون عبر تيليجرام فقط", "Only players can be Telegram-only"), "TELEGRAM_ONLY_ROLE")
+        email, password = None, None
+    elif not email or not password:
+        raise unprocessable(tr("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"), "LOGIN_REQUIRED")
+    if email:
+        ensure_email_free(db, email)
     user = User(
         full_name=full_name,
-        email=email.lower(),
+        email=email.lower() if email else None,
         phone=(phone or "").strip() or None,
-        password_hash=hash_password(password),
+        password_hash=hash_password(password) if password else None,
         role=role,
     )
     if role == "client":
         profile = profile or {}
-        missing = [f for f in ("sex", "birth_date", "height_cm") if profile.get(f) is None]
+        required = ("sex",) if telegram_only else ("sex", "birth_date", "height_cm")
+        missing = [f for f in required if profile.get(f) is None]
         if missing:
             labels = {"sex": tr("الجنس", "sex"), "birth_date": tr("تاريخ الميلاد", "birth date"), "height_cm": tr("الطول", "height")}
             raise unprocessable(tr("بيانات العميل ناقصة: ", "Missing client details: ") + tr("، ", ", ").join(labels[m] for m in missing), "PROFILE_REQUIRED")
@@ -73,8 +83,8 @@ def create_user(
         user.profile = ClientProfile(
             trainer_id=profile.get("trainer_id"),
             sex=profile["sex"],
-            birth_date=profile["birth_date"],
-            height_cm=profile["height_cm"],
+            birth_date=profile.get("birth_date"),
+            height_cm=profile.get("height_cm"),
             goal=profile.get("goal") or "fitness",
             activity_key=profile.get("activity_key") or "moderate",
             notes=profile.get("notes"),
@@ -157,6 +167,7 @@ def client_list_items(db: Session, clients: list[User]) -> list[dict]:
                 "id": c.id,
                 "full_name": c.full_name,
                 "email": c.email,
+                "telegram_linked": bool(p and p.telegram_chat_id is not None),
                 "phone": c.phone,
                 "is_active": c.is_active,
                 "sex": p.sex if p else None,

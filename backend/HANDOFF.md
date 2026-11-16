@@ -1,3 +1,26 @@
+# Backend handoff
+
+## Telegram groups, no player login (ADR-0011) — current flow
+
+Players never log in. Each player has a Telegram group: the bot, the player and the coach.
+
+1. **Coach links his own Telegram once:** web app → player page → tab «تيليجرام والمساعد الذكي» → «ربط حسابي بتيليجرام» → Start in the bot.
+2. **Coach adds a player:** dashboard → «لاعب جديد (تيليجرام)» (name + sex) → gets `/link <code>`.
+3. **Coach creates a group** «تحدي – <name>», adds `@tahadi_coach_bot` **as admin**, sends `/link <code>` in the group. The bot privately sends the coach the group invite link for the player.
+4. **Player joins** → bot asks age / height / goal (skippable) → player sends «وزني 92», questions, squat videos.
+5. **Questions** → AI draft sent privately to the coach with Approve / Edit / Reject buttons (also in the web tab). Only approved text is posted in the group. The coach can also just write in the group.
+
+**Bot setup:** in @BotFather `/setprivacy` → Disable (the bot must read group messages).
+**Run the bot** (any PC or an always-on host): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_SECRET`, `BACKEND_URL` → `python -m app.telegram_bot`.
+**Backend env (Render):** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_BOT_SECRET` (same value as the bot).
+
+Bot-only endpoints (header `X-Bot-Secret`): `POST /telegram/link/coach`, `/telegram/link/group`, `/telegram/message`, `/telegram/video`, `/telegram/draft-decision`.
+Coach endpoints (`/api/v1`, logged in): `/me/telegram`, `/me/telegram/link`, `/telegram/clients`, `/clients/telegram`, `/clients/{id}/telegram/group-code`, `DELETE /clients/{id}/telegram`, `/clients/{id}/agent-summary`, `/clients/{id}/agent-drafts`, `/questions/{id}/agent-draft`, `/agent-drafts/{id}/approve|reject`, `/clients/{id}/squat-checks`, `/squat-checks/{id}`, `/squat-checks/{id}/video`.
+
+---
+
+## Earlier notes (before ADR-0011)
+
 # Backend handoff — for Muhanad
 
 **Base URL:** `https://<render-service>.onrender.com` (locally `http://localhost:8000`).

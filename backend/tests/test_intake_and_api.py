@@ -29,35 +29,32 @@ def test_arabic_measurement_saved_and_confirmed_in_arabic(monkeypatch):
     assert "82.5" in reply and "تم" in reply
 
 
-def test_non_measurement_not_saved_and_replied_in_english(monkeypatch):
-    saved = []
+def test_non_measurement_is_saved_as_a_question(monkeypatch):
+    saved, questions = [], []
     monkeypatch.setattr(intake, "find_client_by_chat", lambda chat_id: {"id": "c1", "name": "x"})
     monkeypatch.setattr(intake, "save_measurement", lambda cid, v: saved.append(v))
-    reply = intake.handle_message(111, "when is my next session?")
+    monkeypatch.setattr(intake, "save_question", lambda cid, t: questions.append((cid, t)) or 7)
+    result = intake.process_message(111, "when is my next session?")
     assert saved == []
-    assert reply == text.not_a_measurement(False)
+    assert questions == [("c1", "when is my next session?")]
+    assert result.reply == text.not_a_measurement(False) and result.question_id == 7
 
 
 def test_llm_fallback_values_are_range_checked(monkeypatch):
     saved = []
     monkeypatch.setattr(intake, "find_client_by_chat", lambda chat_id: {"id": "c1", "name": "x"})
     monkeypatch.setattr(intake, "save_measurement", lambda cid, v: saved.append(v))
+    monkeypatch.setattr(intake, "save_question", lambda cid, t: 1)
     monkeypatch.setattr(text, "extract_measurement", lambda t: {"weight_kg": 999, "waist_cm": None})
     intake.handle_message(111, "I'm about eighty two")
     assert saved == []
-
-
-def test_telegram_endpoint(monkeypatch):
-    monkeypatch.setattr("app.main.handle_message", lambda chat_id, t: f"echo {chat_id}")
-    r = client.post("/telegram/message", json={"chat_id": 5, "text": "hi"})
-    assert r.status_code == 200 and r.json() == {"reply": "echo 5"}
 
 
 def test_bad_ids_and_bodies_are_422(client, auth):
     h = auth("trainer_a")
     assert client.get("/api/v1/clients/not-a-number/agent-summary", headers=h).status_code == 422
     assert client.post("/api/v1/agent-drafts/not-a-number/approve", headers=h).status_code == 422
-    assert client.post("/telegram/message", json={"chat_id": 5, "text": ""}).status_code == 422
+    assert client.get("/api/v1/clients/not-a-number/squat-checks", headers=h).status_code == 422
 
 
 def test_template_draft_without_llm():

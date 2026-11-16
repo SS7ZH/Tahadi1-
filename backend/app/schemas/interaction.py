@@ -57,6 +57,7 @@ class QuestionOut(BaseModel):
     program_id: int | None = None
     body: str
     status: QuestionStatus
+    source: str = "app"  # "telegram" for messages from the player's group
     created_at: datetime
     updated_at: datetime
     replies: list[ReplyOut]

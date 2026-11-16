@@ -22,7 +22,7 @@ export interface ClientProfile {
 export interface User {
   id: number;
   full_name: string;
-  email: string;
+  email: string | null; // null for Telegram-only players
   phone: string | null;
   role: Role;
   is_active: boolean;
@@ -188,7 +188,8 @@ export interface Progress {
 export interface ClientListItem {
   id: number;
   full_name: string;
-  email: string;
+  email: string | null; // null for Telegram-only players
+  telegram_linked?: boolean;
   phone: string | null;
   is_active: boolean;
   sex: Sex | null;
@@ -229,6 +230,7 @@ export interface Question {
   program_id: number | null;
   body: string;
   status: QuestionStatus;
+  source?: 'app' | 'telegram';
   created_at: string;
   updated_at: string;
   replies: Reply[];

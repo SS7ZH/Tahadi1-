@@ -60,7 +60,7 @@ class ClientProfileOut(ORMModel):
 class UserOut(ORMModel):
     id: int
     full_name: str
-    email: str
+    email: str | None  # None for Telegram-only players (ADR-0011)
     phone: str | None
     role: Role
     is_active: bool
@@ -113,6 +113,19 @@ class ClientCreate(BaseModel):
     activity_key: str | None = "moderate"
     notes: str | None = Field(default=None, max_length=5000)
     trainer_id: int | None = None  # honoured for admins only; trainers always own the client they create
+
+
+class TelegramPlayerCreate(BaseModel):
+    """A player who only uses Telegram: no email, no password, no web login (ADR-0011)."""
+
+    full_name: Name
+    sex: Sex
+    phone: str | None = Field(default=None, max_length=30)
+    birth_date: BirthDate | None = None
+    height_cm: Height | None = None
+    goal: Goal = "fitness"
+    notes: str | None = Field(default=None, max_length=5000)
+    trainer_id: int | None = None  # honoured for admins only; trainers always own the player they create
 
 
 class ClientUpdate(BaseModel):
@@ -170,7 +183,8 @@ class AssignTrainerIn(BaseModel):
 class ClientListItem(BaseModel):
     id: int
     full_name: str
-    email: str
+    email: str | None
+    telegram_linked: bool = False
     phone: str | None
     is_active: bool
     sex: Sex | None

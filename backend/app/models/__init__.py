@@ -15,8 +15,7 @@ from app.models.program import Exercise, Program, ProgramDay, ProgramItem
 from app.models.site import SiteSetting
 from app.models.reference import ActivityFactor, MeasurementDefinition
 from app.models.user import ClientProfile, User
-from app.models.demo import DemoMeasurement, DemoFormCheck, DemoDraft
-from app.models.agent import AgentDraft
+from app.models.agent import AgentDraft, SquatCheck
 
 __all__ = [
     "Base",
@@ -43,8 +42,6 @@ __all__ = [
     "MedicalFile",
     "SignedDocument",
     "SiteSetting",
-    "DemoMeasurement",
-    "DemoFormCheck",
-    "DemoDraft",
     "AgentDraft",
+    "SquatCheck",
 ]

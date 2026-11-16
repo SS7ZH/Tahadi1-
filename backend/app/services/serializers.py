@@ -101,6 +101,7 @@ def question_out(q: Question, session_date: date | None = None, day: dict | None
         "program_id": day["program_id"] if day else None,
         "body": q.body,
         "status": q.status,
+        "source": q.source,
         "created_at": q.created_at,
         "updated_at": q.updated_at,
         "replies": [

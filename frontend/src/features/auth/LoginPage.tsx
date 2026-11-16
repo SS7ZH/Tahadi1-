@@ -22,7 +22,6 @@ type FormValues = z.infer<ReturnType<typeof makeSchema>>;
 const DEMO = [
   { role: 'admin', email: 'admin@tahadi.app', password: 'Admin@12345' },
   { role: 'trainer', email: 'trainer1@tahadi.app', password: 'Demo@12345' },
-  { role: 'client', email: 'client1@tahadi.app', password: 'Demo@12345' },
 ];
 
 export function LoginPage() {

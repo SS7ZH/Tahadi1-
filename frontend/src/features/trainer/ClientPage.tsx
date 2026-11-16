@@ -1,4 +1,4 @@
-import { ArrowRight, ClipboardList, History, LayoutGrid, LineChart, MessageCircleQuestion, MessageSquare, Pencil, PlusCircle, Salad, FileSignature } from 'lucide-react';
+import { ArrowRight, ClipboardList, History, LayoutGrid, LineChart, MessageCircleQuestion, MessageSquare, Pencil, PlusCircle, Salad, FileSignature, Send } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { errorMessage } from '@/api/client';
@@ -17,11 +17,12 @@ import { Badge, Button, Card, ErrorState, Skeleton, Tabs, type TabItem } from '@
 import { useCurrentUser } from '@/hooks/useAuth';
 import { useActivityFactors, useClient, useHealth, useNutrition, useQuestions } from '@/hooks/queries';
 import { loc, tr } from '@/i18n';
+import { TelegramTab } from './telegram/TelegramTab';
 import { fmtDate, fmtNumber } from '@/lib/format';
 import { ClientFormModal } from './ClientFormModal';
 
-type Tab = 'summary' | 'progress' | 'history' | 'new' | 'nutrition' | 'program' | 'documents' | 'comments' | 'questions';
-const TABS: Tab[] = ['summary', 'progress', 'history', 'new', 'nutrition', 'program', 'documents', 'comments', 'questions'];
+type Tab = 'telegram' | 'summary' | 'progress' | 'history' | 'new' | 'nutrition' | 'program' | 'documents' | 'comments' | 'questions';
+const TABS: Tab[] = ['telegram', 'summary', 'progress', 'history', 'new', 'nutrition', 'program', 'documents', 'comments', 'questions'];
 
 export function ClientPage() {
   const user = useCurrentUser();
@@ -57,6 +58,7 @@ export function ClientPage() {
   const activity = factors.data?.find((f) => f.key === p?.activity_key);
 
   const items: TabItem<Tab>[] = [
+    { value: 'telegram', label: loc('تيليجرام والمساعد الذكي', 'Telegram & AI'), icon: <Send className="h-4 w-4" /> },
     { value: 'summary', label: tr.tabs.summary, icon: <LayoutGrid className="h-4 w-4" /> },
     { value: 'progress', label: tr.tabs.progress, icon: <LineChart className="h-4 w-4" /> },
     { value: 'history', label: tr.tabs.history, icon: <History className="h-4 w-4" /> },
@@ -119,6 +121,7 @@ export function ClientPage() {
       />
 
       <div>
+        {tab === 'telegram' && <TelegramTab clientId={clientId} />}
         {tab === 'summary' && <SummaryView clientId={clientId} audience="staff" />}
         {tab === 'progress' && <ProgressPanel clientId={clientId} />}
         {tab === 'history' && (
