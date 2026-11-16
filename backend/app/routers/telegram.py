@@ -37,7 +37,7 @@ from app.core.i18n import tr
 from app.db.session import get_db
 from app.models import SquatCheck, User
 from app.schemas.user import TelegramPlayerCreate
-from app.services import audit, permissions, storage, telegram_core, telegram_links, telegram_updates, users
+from app.services import audit, permissions, storage, telegram_core, telegram_links, telegram_send, telegram_updates, users
 from app.services.serializers import user_detail
 
 router = APIRouter(tags=["telegram"])
@@ -87,6 +87,23 @@ def my_telegram(actor: User = Depends(coach_only)):
 def my_telegram_link(actor: User = Depends(coach_only)):
     code, expires_at = telegram_links.make_code(telegram_links.KIND_COACH, actor.id)
     return {"url": telegram_links.coach_start_url(code), "expires_at": expires_at}
+
+
+@router.get("/telegram/status")
+def telegram_status(actor: User = Depends(require_role("admin"))):
+    """Admin check: is the bot token valid here, and does Telegram reach the webhook? (never shows secrets)"""
+    me = telegram_send._call("getMe", {})
+    hook = telegram_send.webhook_info() or {}
+    return {
+        "token_set": bool(agent_config.TELEGRAM_BOT_TOKEN),
+        "token_valid": isinstance(me, dict),
+        "bot_username": me.get("username") if isinstance(me, dict) else None,
+        "configured_username": agent_config.TELEGRAM_BOT_USERNAME,
+        "bot_secret_set": bool(agent_config.TELEGRAM_BOT_SECRET),
+        "webhook_url": hook.get("url"),
+        "pending_updates": hook.get("pending_update_count"),
+        "last_error": hook.get("last_error_message"),
+    }
 
 
 @router.get("/telegram/clients")
