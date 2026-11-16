@@ -12,7 +12,7 @@ from sqlalchemy import select
 import app.agents.intake as intake
 import app.routers.agents as agents_router
 import app.routers.questions as questions_router
-import app.routers.telegram as tg_router
+import app.services.telegram_core as tg_core
 from app import config
 from app.models import AgentDraft, MeasurementSession, Question, SquatCheck, User
 from app.rules.profile import next_step, parse_answer
@@ -31,7 +31,7 @@ def tg(monkeypatch, db_session):
     _, Session = db_session
     monkeypatch.setattr(config, "TELEGRAM_BOT_SECRET", SECRET)
     monkeypatch.setattr(intake, "get_sessionmaker", lambda: Session)
-    monkeypatch.setattr(tg_router, "get_sessionmaker", lambda: Session)
+    monkeypatch.setattr(tg_core, "get_sessionmaker", lambda: Session)
     sent = {"messages": [], "edits": [], "group": []}
 
     def fake_send_message(chat_id, text, buttons=None):

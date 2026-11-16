@@ -54,3 +54,47 @@ def draft_buttons(draft_id: int) -> list[list[dict]]:
         {"text": "✏️ تعديل", "callback_data": f"edit:{draft_id}"},
         {"text": "❌ رفض", "callback_data": f"reject:{draft_id}"},
     ]]
+
+
+def send_force_reply(chat_id: int, text: str) -> int | None:
+    """A message the coach answers with Telegram's "reply" (used for editing a draft)."""
+    result = _call("sendMessage", {"chat_id": chat_id, "text": text, "reply_markup": {"force_reply": True}})
+    return result.get("message_id") if isinstance(result, dict) else None
+
+
+def answer_callback(callback_id: str, text: str, alert: bool = False) -> bool:
+    return _call("answerCallbackQuery", {"callback_query_id": callback_id, "text": text[:190], "show_alert": alert}) is not None
+
+
+def create_invite_link(chat_id: int) -> str | None:
+    """Needs the bot to be an admin of the group."""
+    result = _call("createChatInviteLink", {"chat_id": chat_id, "name": "تحدي"})
+    return result.get("invite_link") if isinstance(result, dict) else None
+
+
+def download_file(file_id: str, max_bytes: int) -> bytes | None:
+    """Download a file the player sent (Telegram bots can download up to 20 MB)."""
+    info = _call("getFile", {"file_id": file_id})
+    token = agent_config.TELEGRAM_BOT_TOKEN
+    if not isinstance(info, dict) or not info.get("file_path") or not token:
+        return None
+    if (info.get("file_size") or 0) > max_bytes:
+        return None
+    try:
+        r = httpx.get(f"https://api.telegram.org/file/bot{token}/{info['file_path']}", timeout=httpx.Timeout(60.0, connect=5.0))
+    except httpx.HTTPError as exc:
+        log.warning("Telegram file download failed: %s", type(exc).__name__)
+        return None
+    return r.content if r.status_code == 200 else None
+
+
+def set_webhook(url: str, secret: str) -> dict | None:
+    return _call("setWebhook", {"url": url, "secret_token": secret, "allowed_updates": ["message", "callback_query"]})
+
+
+def delete_webhook() -> dict | None:
+    return _call("deleteWebhook", {})
+
+
+def webhook_info() -> dict | None:
+    return _call("getWebhookInfo", {})

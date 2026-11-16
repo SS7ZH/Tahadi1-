@@ -11,7 +11,14 @@ Players never log in. Each player has a Telegram group: the bot, the player and 
 5. **Questions** → AI draft sent privately to the coach with Approve / Edit / Reject buttons (also in the web tab). Only approved text is posted in the group. The coach can also just write in the group.
 
 **Bot setup:** in @BotFather `/setprivacy` → Disable (the bot must read group messages).
-**Run the bot** (any PC or an always-on host): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_SECRET`, `BACKEND_URL` → `python -m app.telegram_bot`.
+
+**How the bot runs (production): webhook inside the backend on Render — free, nothing else to host.**
+Telegram sends every update to `POST /telegram/webhook` (checked with the `X-Telegram-Bot-Api-Secret-Token` header, derived from `TELEGRAM_BOT_SECRET`).
+Register it once (from `backend/`, with the same `TELEGRAM_BOT_SECRET` as Render and `BACKEND_URL=https://tahadi1.onrender.com` in `.env`):
+`python -m scripts.set_webhook` · check: `--info` · remove: `--delete`.
+Render's free instance sleeps after 15 min idle: the first message after that is answered late (Telegram retries, nothing is lost). A free uptime pinger on `/api/v1/health` every 10 min keeps it awake.
+
+**Local testing only:** `python -m scripts.set_webhook --delete`, then run the polling worker `python -m app.telegram_bot` (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_SECRET`, `BACKEND_URL`). Webhook and polling cannot run at the same time.
 **Backend env (Render):** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_BOT_SECRET` (same value as the bot).
 
 Bot-only endpoints (header `X-Bot-Secret`): `POST /telegram/link/coach`, `/telegram/link/group`, `/telegram/message`, `/telegram/video`, `/telegram/draft-decision`.

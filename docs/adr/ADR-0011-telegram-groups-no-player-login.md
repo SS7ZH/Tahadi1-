@@ -36,9 +36,10 @@ website is friction, and the coach could not see the conversation the bot had wi
 4. **AI drafts go to the coach privately** (Approve / Edit / Reject buttons) and are also listed in
    the web app; only approved text is posted in the group. Nothing AI-written reaches the player
    without the coach (ADR-0007 unchanged).
-5. **Bot ↔ backend is authenticated** with a shared secret header (`X-Bot-Secret`); the old public
+5. **The bot runs inside the backend via Telegram's webhook** (`POST /telegram/webhook`, verified with Telegram's secret-token header), so it needs no separate (paid) worker on Render; the polling worker `app/telegram_bot.py` remains for local testing.
+6. **Bot ↔ backend is authenticated** with a shared secret header (`X-Bot-Secret`); the old public
    demo endpoints were removed.
-6. **Squat videos** are stored privately and reviewed by the coach (reps and errors entered in the
+7. **Squat videos** are stored privately and reviewed by the coach (reps and errors entered in the
    web app). Server-side pose analysis is not done on Render's free instance (memory); the browser
    squat checker saves results to real players.
 

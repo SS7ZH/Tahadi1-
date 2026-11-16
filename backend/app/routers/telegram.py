@@ -12,7 +12,10 @@ Web app (coach/admin, under /api/v1):
   PATCH  /squat-checks/{id}                 add the analysis to a video awaiting review
   GET    /squat-checks/{id}/video           short-lived link to watch the video
 
-Bot worker only (header X-Bot-Secret, at /telegram):
+Telegram webhook (production; header X-Telegram-Bot-Api-Secret-Token):
+  POST /telegram/webhook        every update: messages, commands, videos, button presses
+
+Polling bot worker (local testing; header X-Bot-Secret, at /telegram):
   POST /telegram/link/coach     /start <code> in a private chat
   POST /telegram/link/group     /link <code> in a player's group
   POST /telegram/message        a text message in a group
@@ -21,33 +24,26 @@ Bot worker only (header X-Bot-Secret, at /telegram):
 """
 
 import hmac
-import logging
-
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Header, Request, Response, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import config as agent_config
-from app.agents import coach
 from app.agents.intake import process_message
 from app.core.deps import require_role
 from app.core.errors import AppError, not_found
 from app.core.i18n import tr
-from app.db.session import get_db, get_sessionmaker
-from app.models import AgentDraft, ClientProfile, Question, SquatCheck, User
-from app.rules.profile import next_step, question_for
+from app.db.session import get_db
+from app.models import SquatCheck, User
 from app.schemas.user import TelegramPlayerCreate
-from app.services import audit, permissions, storage, telegram_links, telegram_send, users
+from app.services import audit, permissions, storage, telegram_core, telegram_links, telegram_updates, users
 from app.services.serializers import user_detail
 
-log = logging.getLogger("tahadi.telegram")
 router = APIRouter(tags=["telegram"])
 bot_router = APIRouter(prefix="/telegram", tags=["telegram-bot"])
 coach_only = require_role("trainer", "admin")
 
-MAX_VIDEO_BYTES = 20 * 1024 * 1024  # Telegram bots can download files up to 20 MB
 ERROR_TYPES = {"knees_caving", "shallow_depth", "back_lean"}
 
 
@@ -189,7 +185,26 @@ def squat_video(check_id: int, request: Request, actor: User = Depends(coach_onl
     return {"url": storage.signed_url(check.video_path, str(request.base_url).rstrip("/") + "/api/v1")}
 
 
-# ================================================================ bot worker
+# ================================================================ Telegram webhook (production)
+
+@bot_router.post("/webhook")
+async def telegram_webhook(request: Request, background: BackgroundTasks,
+                           x_telegram_bot_api_secret_token: str | None = Header(default=None)):
+    """Telegram delivers every update here. Answer at once; do the work after the response."""
+    if not agent_config.TELEGRAM_BOT_SECRET:
+        raise AppError(503, "BOT_NOT_CONFIGURED", tr("ربط البوت غير مهيأ", "The bot connection is not configured"))
+    if not x_telegram_bot_api_secret_token or not hmac.compare_digest(x_telegram_bot_api_secret_token, telegram_core.webhook_secret()):
+        raise AppError(401, "BOT_SECRET_INVALID", tr("غير مصرح", "Not authorised"))
+    try:
+        update = await request.json()
+    except ValueError:
+        return {"ok": True}
+    if isinstance(update, dict):
+        background.add_task(telegram_updates.handle_update, update)
+    return {"ok": True}
+
+
+# ================================================================ polling bot worker (local testing)
 
 class CoachLinkIn(BaseModel):
     code: str = Field(min_length=10, max_length=64)
@@ -218,66 +233,20 @@ class DecisionIn(BaseModel):
 
 @bot_router.post("/link/coach", dependencies=[Depends(require_bot)])
 def link_coach(data: CoachLinkIn, db: Session = Depends(get_db)):
-    user = db.get(User, telegram_links.read_code(data.code, telegram_links.KIND_COACH))
-    if user is None or user.role not in ("trainer", "admin") or not user.is_active or user.deleted_at is not None:
-        raise AppError(400, "TELEGRAM_CODE_INVALID", tr("الرمز غير صحيح", "Invalid code"))
-    other = db.scalar(select(User).where(User.telegram_user_id == data.telegram_user_id, User.id != user.id))
-    if other is not None:
-        other.telegram_user_id = None  # one Telegram account belongs to one coach: move it
-    user.telegram_user_id = data.telegram_user_id
-    db.commit()
-    return {"reply": f"تم ربط حسابك يا {user.full_name} ✅\nستصلك هنا مسودات الردود لتعتمدها أو تعدلها أو ترفضها."}
+    return {"reply": telegram_core.link_coach(db, data.code, data.telegram_user_id)}
 
 
 @bot_router.post("/link/group", dependencies=[Depends(require_bot)])
 def link_group(data: GroupLinkIn, db: Session = Depends(get_db)):
-    client = db.get(User, telegram_links.read_code(data.code, telegram_links.KIND_GROUP))
-    if client is None or client.profile is None or client.deleted_at is not None:
-        raise AppError(400, "TELEGRAM_CODE_INVALID", tr("الرمز غير صحيح", "Invalid code"))
-    coach_user = client.profile.trainer
-    if coach_user is None or coach_user.telegram_user_id != data.from_user_id:
-        raise AppError(403, "NOT_PLAYER_COACH", tr("فقط مدرب اللاعب (بعد ربط حسابه) يستطيع ربط المجموعة", "Only the player's coach, with a linked Telegram account, can link the group"))
-    if client.profile.telegram_chat_id not in (None, data.chat_id):
-        raise AppError(409, "PLAYER_ALREADY_LINKED", tr("هذا اللاعب مرتبط بمجموعة أخرى؛ ألغِ الربط من صفحته أولًا", "This player is linked to another group; unlink it from his page first"))
-    client.profile.telegram_chat_id = data.chat_id
-    if data.invite_url:
-        client.profile.telegram_invite_url = data.invite_url
-    client.profile.telegram_step = next_step(client.profile)
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise AppError(409, "GROUP_ALREADY_LINKED", tr("هذه المجموعة مرتبطة بلاعب آخر", "This group is already linked to another player")) from None
-    first = client.full_name.split()[0]
-    welcome = f"أهلًا {first} 👋 هذه مجموعتك مع مدربك في تحدي.\nأرسل وزنك أو خصرك متى ما أردت (مثل: وزني 82، خصري 90)، أو اكتب سؤالك لمدربك، أو أرسل فيديو السكوات."
-    step_q = question_for(client.profile.telegram_step)
-    return {"reply": welcome + (f"\n\nلنبدأ بملفك:\n{step_q}" if step_q else ""), "client_name": client.full_name}
-
-
-def _draft_for_question(question_id: int) -> None:
-    """After replying in the group: write an AI draft for the coach and send it to him privately."""
-    with get_sessionmaker()() as db:
-        question = db.get(Question, question_id)
-        if question is None:
-            return
-        client = db.get(User, question.client_id)
-        try:
-            draft = coach.create_draft(db, client, None, question)
-            coach.notify_coach(db, draft, client, question)
-        except Exception:  # noqa: BLE001 - never break the bot reply because of the draft
-            log.exception("Could not draft a reply for question %s", question_id)
+    return telegram_core.link_group(db, data.code, data.chat_id, data.from_user_id, data.invite_url)
 
 
 @bot_router.post("/message", dependencies=[Depends(require_bot)])
 def bot_message(data: MessageIn, background: BackgroundTasks):
     result = process_message(data.chat_id, data.text, data.from_user_id)
     if result.question_id is not None:
-        background.add_task(_draft_for_question, result.question_id)
+        background.add_task(telegram_core.draft_for_question, result.question_id)
     return {"reply": result.reply}
-
-
-def _is_video(data: bytes) -> bool:
-    return len(data) > 12 and data[4:8] == b"ftyp"  # MP4 / MOV (what Telegram delivers)
 
 
 @bot_router.post("/video", dependencies=[Depends(require_bot)])
@@ -285,44 +254,11 @@ async def bot_video(
     chat_id: int = Form(...), from_user_id: int | None = Form(default=None), file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    profile = db.scalar(select(ClientProfile).where(ClientProfile.telegram_chat_id == chat_id))
-    if profile is None:
-        return {"reply": "هذه المجموعة غير مرتبطة بلاعب بعد."}
-    coach_user = profile.trainer
-    if coach_user is not None and from_user_id is not None and coach_user.telegram_user_id == from_user_id:
-        return {"reply": None}  # the coach's own video: not a player check-in
-    data = await file.read(MAX_VIDEO_BYTES + 1)
-    if len(data) > MAX_VIDEO_BYTES:
-        return {"reply": "الفيديو أكبر من 20 ميجابايت، أرسل مقطعًا أقصر 🙏"}
-    if not _is_video(data):
-        return {"reply": "أرسل الفيديو بصيغة MP4 من فضلك."}
-    path = storage.new_path(profile.user_id, "mp4")
-    storage.save(path, data, "video/mp4")
-    check = SquatCheck(client_id=profile.user_id, source="telegram", status="awaiting_review", video_path=path)
-    db.add(check)
-    db.commit()
-    if coach_user is not None and coach_user.telegram_user_id is not None:
-        name = profile.user.full_name
-        telegram_send.send_message(coach_user.telegram_user_id, f"🎥 وصل فيديو سكوات جديد من {name}. حلّله من صفحة اللاعب في تحدي.")
-    return {"reply": "استلمنا فيديو السكوات ✅ سيراجعه مدربك ويرد عليك."}
+    data = await file.read(telegram_core.MAX_VIDEO_BYTES + 1)
+    return {"reply": telegram_core.store_video(db, chat_id, from_user_id, data)}
 
 
 @bot_router.post("/draft-decision", dependencies=[Depends(require_bot)])
 def draft_decision(data: DecisionIn, db: Session = Depends(get_db)):
-    actor = db.scalar(select(User).where(User.telegram_user_id == data.from_user_id, User.deleted_at.is_(None)))
-    draft = db.get(AgentDraft, data.draft_id)
-    if actor is None or actor.role not in ("trainer", "admin") or draft is None:
-        raise AppError(403, "NOT_ALLOWED", tr("غير مسموح", "Not allowed"))
-    client = db.get(User, draft.client_id)
-    if client is None or not permissions.can_access_client(actor, client):
-        raise AppError(403, "NOT_ALLOWED", tr("غير مسموح", "Not allowed"))
-    try:
-        if data.action == "approve":
-            draft = coach.approve(db, draft, client, actor, data.text, telegram_send.send_telegram_message)
-            note = "✅ تم الاعتماد والإرسال للمجموعة" if draft.telegram_sent else "✅ تم الاعتماد (تعذر الإرسال للمجموعة)"
-        else:
-            draft = coach.reject(db, draft, client, actor)
-            note = "❌ تم الرفض، لن تُرسل"
-    except coach.DraftNotPending:
-        return {"reply": "تم اتخاذ قرار بشأن هذه المسودة مسبقًا", "status": draft.status}
-    return {"reply": note, "status": draft.status}
+    reply, status_ = telegram_core.decide_draft(db, data.draft_id, data.action, data.from_user_id, data.text)
+    return {"reply": reply, "status": status_}
