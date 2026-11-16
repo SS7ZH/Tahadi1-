@@ -159,3 +159,17 @@ def test_video_is_downloaded_and_stored(client, users, auth, db_session, tg):
 def test_broken_update_is_ignored(client, tg):
     assert hook(client, {"update_id": 1, "message": {"chat": {"id": 1}}}).status_code == 200
     assert hook(client, {"update_id": 2, "callback_query": {"id": "x", "data": "approve:notanumber"}}).status_code == 200
+
+
+def test_telegram_calls_never_crash_on_a_malformed_token(monkeypatch):
+    """A token pasted with a newline made httpx raise InvalidURL, which escaped and silenced the bot."""
+    import importlib, os
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456789:AAH" + "x" * 32 + "\n")
+    reloaded = importlib.reload(config)
+    assert not reloaded.TELEGRAM_BOT_TOKEN.endswith("\n")
+    monkeypatch.setattr(config, "TELEGRAM_BOT_TOKEN", "bad\ntoken")
+    import app.services.telegram_send as ts
+    importlib.reload(ts)
+    assert ts.send_message(1, "hi") is None  # reported as failed, not raised
+    importlib.reload(config)
+    importlib.reload(ts)

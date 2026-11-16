@@ -6,10 +6,11 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
-TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "tahadi_coach_bot").removeprefix("@")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME", "tahadi_coach_bot").strip().removeprefix("@")
+# .strip(): a value pasted with a trailing newline/space would break every Telegram call
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip().strip('"')
 # Shared secret between the bot worker and the backend (header X-Bot-Secret). Bot endpoints refuse requests without it.
-TELEGRAM_BOT_SECRET = os.getenv("TELEGRAM_BOT_SECRET", "")
+TELEGRAM_BOT_SECRET = os.getenv("TELEGRAM_BOT_SECRET", "").strip()
 # How long a coach's link / a player's group code stays valid.
 TELEGRAM_LINK_TTL_HOURS = int(os.getenv("TELEGRAM_LINK_TTL_HOURS", "168"))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "")
@@ -26,7 +27,7 @@ AGENT_IDS = {
 
 # Which agent provider to use: "claude" or "devai" (unset: claude if ANTHROPIC_API_KEY is set).
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-5-5")
 CLAUDE_EFFORT = os.getenv("CLAUDE_EFFORT", "low")
 

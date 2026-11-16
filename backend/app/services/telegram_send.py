@@ -21,7 +21,7 @@ def _call(method: str, payload: dict) -> dict | None:
     try:
         r = httpx.post(f"https://api.telegram.org/bot{token}/{method}", json=payload, timeout=_TIMEOUT)
         body = r.json()
-    except (httpx.HTTPError, ValueError) as exc:
+    except Exception as exc:  # noqa: BLE001 - e.g. httpx.InvalidURL from a malformed token; never crash the bot
         log.warning("Telegram %s failed: %s", method, type(exc).__name__)
         return None
     if not body.get("ok"):
