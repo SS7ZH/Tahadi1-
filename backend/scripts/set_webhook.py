@@ -3,7 +3,7 @@
 Usage (from backend/, with TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_SECRET and BACKEND_URL in .env):
     python -m scripts.set_webhook            # Telegram -> {BACKEND_URL}/telegram/webhook (production)
     python -m scripts.set_webhook --info     # show the current webhook
-    python -m scripts.set_webhook --delete   # remove it (needed before running app.telegram_bot locally)
+    python -m scripts.set_webhook --delete   # remove it (Telegram then stops delivering to the backend)
 
 TELEGRAM_BOT_SECRET must be the same value as in Render: the webhook secret is derived from it.
 """

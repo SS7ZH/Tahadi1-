@@ -83,7 +83,6 @@ export interface TelegramLinkClient {
   id: number;
   name: string;
   linked: boolean;
-  invite_url?: string | null;
   telegram_only?: boolean;
 }
 

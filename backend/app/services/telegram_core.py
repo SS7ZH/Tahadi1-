@@ -1,12 +1,16 @@
-"""What the bot does, independent of how Telegram reaches us (ADR-0011).
+"""What the bot does (ADR-0012): every player talks to the bot in a private chat.
 
-Used by both:
-* the webhook (Telegram -> POST /telegram/webhook on Render; the production path, free), and
-* the polling bot worker (app/telegram_bot.py -> /telegram/* endpoints; handy for local testing).
+* The coach links his own Telegram once (/start <coach code>).
+* Each player gets a personal link (/start <player code>) and chats with the bot privately.
+* Everything the player sends is processed (measurements, profile answers, questions, photos,
+  videos) and forwarded to the coach's private chat with a "👤 name · #c<id>" header.
+* The coach answers a player by replying (Telegram "Reply") to that forwarded message.
+* AI drafts for questions reach the coach with Approve / Edit / Reject buttons.
 """
 
 import hashlib
 import logging
+import re
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -17,18 +21,46 @@ from app.agents import coach
 from app.core.errors import AppError
 from app.core.i18n import tr
 from app.db.session import get_sessionmaker
-from app.models import AgentDraft, ClientProfile, Question, SquatCheck, User
+from app.models import AgentDraft, ClientPhoto, ClientProfile, Question, SquatCheck, User
 from app.rules.profile import next_step, question_for
-from app.services import permissions, storage, telegram_links, telegram_send
+from app.services import permissions, telegram_links, telegram_send
 
 log = logging.getLogger("tahadi.telegram")
-MAX_VIDEO_BYTES = 20 * 1024 * 1024  # Telegram bots can download files up to 20 MB
+MAX_FILE_BYTES = 20 * 1024 * 1024  # Telegram bots can download files up to 20 MB
+_CLIENT_TAG = re.compile(r"#c(\d+)")
 
 
 def webhook_secret() -> str:
     """Secret Telegram sends back on every webhook call (derived: Telegram allows only [A-Za-z0-9_-])."""
     return hashlib.sha256(f"webhook:{agent_config.TELEGRAM_BOT_SECRET}".encode()).hexdigest()
 
+
+def client_tag(client: User) -> str:
+    """Header on everything forwarded to the coach; replying to it answers this player."""
+    return f"👤 {client.full_name} · #c{client.id}"
+
+
+def client_id_from(text: str | None) -> int | None:
+    match = _CLIENT_TAG.search(text or "")
+    return int(match.group(1)) if match else None
+
+
+def coach_by_telegram(db: Session, telegram_user_id: int | None) -> User | None:
+    if telegram_user_id is None:
+        return None
+    return db.scalar(
+        select(User).where(User.telegram_user_id == telegram_user_id, User.role.in_(("trainer", "admin")), User.deleted_at.is_(None))
+    )
+
+
+def client_by_chat(db: Session, chat_id: int) -> User | None:
+    profile = db.scalar(select(ClientProfile).where(ClientProfile.telegram_chat_id == chat_id))
+    if profile is None or profile.user.deleted_at is not None or not profile.user.is_active:
+        return None
+    return profile.user
+
+
+# ------------------------------------------------------------------ linking
 
 def link_coach(db: Session, code: str, telegram_user_id: int) -> str:
     user = db.get(User, telegram_links.read_code(code, telegram_links.KIND_COACH))
@@ -39,31 +71,77 @@ def link_coach(db: Session, code: str, telegram_user_id: int) -> str:
         other.telegram_user_id = None  # one Telegram account belongs to one coach: move it
     user.telegram_user_id = telegram_user_id
     db.commit()
-    return f"تم ربط حسابك يا {user.full_name} ✅\nستصلك هنا مسودات الردود لتعتمدها أو تعدلها أو ترفضها."
+    return (
+        f"تم ربط حسابك يا {user.full_name} ✅\n"
+        "ستصلك هنا رسائل لاعبيك وصورهم وفيديوهاتهم.\n"
+        "للرد على لاعب: اضغط «رد» (Reply) على رسالته واكتب ردك.\n"
+        "ومسودات الردود الذكية تصلك بأزرار اعتماد / تعديل / رفض."
+    )
 
 
-def link_group(db: Session, code: str, chat_id: int, from_user_id: int, invite_url: str | None) -> dict:
-    client = db.get(User, telegram_links.read_code(code, telegram_links.KIND_GROUP))
-    if client is None or client.profile is None or client.deleted_at is not None:
-        raise AppError(400, "TELEGRAM_CODE_INVALID", tr("الرمز غير صحيح", "Invalid code"))
-    coach_user = client.profile.trainer
-    if coach_user is None or coach_user.telegram_user_id != from_user_id:
-        raise AppError(403, "NOT_PLAYER_COACH", tr("فقط مدرب اللاعب (بعد ربط حسابه) يستطيع ربط المجموعة", "Only the player's coach, with a linked Telegram account, can link the group"))
+def link_client(db: Session, code: str, chat_id: int) -> tuple[str, User]:
+    """The player opened his personal link. Returns (welcome text, player)."""
+    client = db.get(User, telegram_links.read_code(code, telegram_links.KIND_CLIENT))
+    if client is None or client.profile is None or client.deleted_at is not None or not client.is_active:
+        raise AppError(400, "TELEGRAM_CODE_INVALID", tr("الرابط غير صحيح، اطلب رابطًا جديدًا من مدربك", "Invalid link, ask your coach for a new one"))
     if client.profile.telegram_chat_id not in (None, chat_id):
-        raise AppError(409, "PLAYER_ALREADY_LINKED", tr("هذا اللاعب مرتبط بمجموعة أخرى؛ ألغِ الربط من صفحته أولًا", "This player is linked to another group; unlink it from his page first"))
+        raise AppError(409, "PLAYER_ALREADY_LINKED", tr("هذا اللاعب مربوط بحساب تيليجرام آخر؛ اطلب من مدربك إلغاء الربط أولًا", "This player is linked to another Telegram account; ask your coach to unlink it first"))
+    other = db.scalar(select(ClientProfile).where(ClientProfile.telegram_chat_id == chat_id, ClientProfile.user_id != client.id))
+    if other is not None:
+        raise AppError(409, "CHAT_ALREADY_LINKED", tr("حساب تيليجرام هذا مربوط بلاعب آخر", "This Telegram account is already linked to another player"))
+    first_time = client.profile.telegram_chat_id is None
     client.profile.telegram_chat_id = chat_id
-    if invite_url:
-        client.profile.telegram_invite_url = invite_url
-    client.profile.telegram_step = next_step(client.profile)
+    if first_time:
+        client.profile.telegram_step = next_step(client.profile)
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise AppError(409, "GROUP_ALREADY_LINKED", tr("هذه المجموعة مرتبطة بلاعب آخر", "This group is already linked to another player")) from None
-    first = client.full_name.split()[0]
-    welcome = f"أهلًا {first} 👋 هذه مجموعتك مع مدربك في تحدي.\nأرسل وزنك أو خصرك متى ما أردت (مثل: وزني 82، خصري 90)، أو اكتب سؤالك لمدربك، أو أرسل فيديو السكوات."
+        raise AppError(409, "CHAT_ALREADY_LINKED", tr("حساب تيليجرام هذا مربوط بلاعب آخر", "This Telegram account is already linked to another player")) from None
+    coach_user = client.profile.trainer
+    coach_name = f" {coach_user.full_name}" if coach_user else ""
+    welcome = (
+        f"أهلًا {client.full_name.split()[0]} 👋 أنا مساعد مدربك{coach_name} في تحدي.\n"
+        "أرسل لي هنا وزنك أو خصرك متى ما أردت (مثل: وزني 82، خصري 90)، أو اكتب سؤالك لمدربك، أو أرسل صورة أو فيديو السكوات."
+    )
     step_q = question_for(client.profile.telegram_step)
-    return {"reply": welcome + (f"\n\nلنبدأ بملفك:\n{step_q}" if step_q else ""), "client_name": client.full_name}
+    return welcome + (f"\n\nلنبدأ بملفك:\n{step_q}" if step_q else ""), client
+
+
+# ------------------------------------------------------------------ to the coach
+
+def forward_text(client: User, text: str, bot_reply: str | None) -> None:
+    coach_user = coach.coach_of(client)
+    if coach_user is None or coach_user.telegram_user_id is None:
+        return
+    body = f"{client_tag(client)}\n{text}"
+    if bot_reply:
+        body += f"\n\n🤖 {bot_reply}"
+    telegram_send.send_message(coach_user.telegram_user_id, body)
+
+
+def forward_media(client: User, chat_id: int, message_id: int, note: str, caption: str | None = None) -> None:
+    coach_user = coach.coach_of(client)
+    if coach_user is None or coach_user.telegram_user_id is None:
+        return
+    header = f"{client_tag(client)}\n{note}" + (f"\n{caption}" if caption else "")
+    telegram_send.copy_message(coach_user.telegram_user_id, chat_id, message_id, header)
+
+
+def coach_reply(db: Session, coach_user: User, client_id: int, text: str) -> str:
+    """The coach replied to a forwarded message: send it to that player and record it."""
+    from app.agents.intake import record_coach_reply  # local import avoids an import cycle
+
+    client = db.get(User, client_id)
+    if client is None or client.profile is None or not permissions.can_access_client(coach_user, client):
+        return "لا يمكنك الرد على هذا اللاعب."
+    chat_id = client.profile.telegram_chat_id
+    if chat_id is None:
+        return f"{client.full_name} غير مربوط بتيليجرام."
+    if not telegram_send.send_telegram_message(chat_id, text):
+        return f"تعذر الإرسال إلى {client.full_name}، حاول مرة أخرى."
+    record_coach_reply(client.id, coach_user.id, text)
+    return f"✅ أُرسل إلى {client.full_name}"
 
 
 def draft_for_question(question_id: int) -> None:
@@ -80,41 +158,27 @@ def draft_for_question(question_id: int) -> None:
             log.exception("Could not draft a reply for question %s", question_id)
 
 
-def is_video(data: bytes) -> bool:
-    return len(data) > 12 and data[4:8] == b"ftyp"  # MP4 / MOV (what Telegram delivers)
+# ------------------------------------------------------------------ media
 
-
-def store_video(db: Session, chat_id: int, from_user_id: int | None, data: bytes) -> str | None:
-    """Save a player's squat video for the coach to review. Returns the group reply (None = silent)."""
-    profile = db.scalar(select(ClientProfile).where(ClientProfile.telegram_chat_id == chat_id))
-    if profile is None:
-        return "هذه المجموعة غير مرتبطة بلاعب بعد."
-    coach_user = profile.trainer
-    if coach_user is not None and from_user_id is not None and coach_user.telegram_user_id == from_user_id:
-        return None  # the coach's own video: not a player check-in
-    if len(data) > MAX_VIDEO_BYTES:
-        return "الفيديو أكبر من 20 ميجابايت، أرسل مقطعًا أقصر 🙏"
-    if not is_video(data):
-        return "أرسل الفيديو بصيغة MP4 من فضلك."
-    path: str | None = storage.new_path(profile.user_id, "mp4")
-    try:
-        storage.save(path, data, "video/mp4")
-    except Exception:  # noqa: BLE001 - storage not configured / bucket missing: keep the check, watch it in the group
-        log.exception("Could not store the squat video for client %s", profile.user_id)
-        path = None
-    db.add(SquatCheck(client_id=profile.user_id, source="telegram", status="awaiting_review", video_path=path))
+def record_video(db: Session, client: User, file_id: str) -> str:
+    db.add(SquatCheck(client_id=client.id, source="telegram", status="awaiting_review", telegram_file_id=file_id))
     db.commit()
-    if coach_user is not None and coach_user.telegram_user_id is not None:
-        where = "شاهده وحلّله من صفحة اللاعب في تحدي." if path else "شاهده في مجموعة اللاعب وسجّل التحليل من صفحته في تحدي."
-        telegram_send.send_message(coach_user.telegram_user_id, f"🎥 وصل فيديو سكوات جديد من {profile.user.full_name}. {where}")
     return "استلمنا فيديو السكوات ✅ سيراجعه مدربك ويرد عليك."
 
 
+def record_photo(db: Session, client: User, file_id: str, caption: str | None) -> str:
+    db.add(ClientPhoto(client_id=client.id, telegram_file_id=file_id, caption=(caption or "")[:2000] or None))
+    db.commit()
+    return "استلمنا صورتك ✅ سيطّلع عليها مدربك."
+
+
+# ------------------------------------------------------------------ drafts
+
 def decide_draft(db: Session, draft_id: int, action: str, from_user_id: int, text: str | None = None) -> tuple[str, str]:
     """The coach pressed Approve / Reject (or sent edited text). Returns (reply for the coach, draft status)."""
-    actor = db.scalar(select(User).where(User.telegram_user_id == from_user_id, User.deleted_at.is_(None)))
+    actor = coach_by_telegram(db, from_user_id)
     draft = db.get(AgentDraft, draft_id)
-    if actor is None or actor.role not in ("trainer", "admin") or draft is None:
+    if actor is None or draft is None:
         raise AppError(403, "NOT_ALLOWED", tr("غير مسموح", "Not allowed"))
     client = db.get(User, draft.client_id)
     if client is None or not permissions.can_access_client(actor, client):
@@ -122,7 +186,7 @@ def decide_draft(db: Session, draft_id: int, action: str, from_user_id: int, tex
     try:
         if action == "approve":
             draft = coach.approve(db, draft, client, actor, text, telegram_send.send_telegram_message)
-            note = "✅ تم الاعتماد والإرسال للمجموعة" if draft.telegram_sent else "✅ تم الاعتماد (تعذر الإرسال للمجموعة)"
+            note = f"✅ تم الاعتماد والإرسال إلى {client.full_name}" if draft.telegram_sent else "✅ تم الاعتماد (تعذر الإرسال)"
         else:
             draft = coach.reject(db, draft, client, actor)
             note = "❌ تم الرفض، لن تُرسل"

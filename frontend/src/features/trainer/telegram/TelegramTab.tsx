@@ -1,19 +1,19 @@
 /**
- * The coach's view of a Telegram player (ADR-0011): group link, AI summary, drafts to approve,
- * questions from the group and squat videos. Players never log in; everything happens here and
- * in the Telegram group.
+ * The coach's view of a Telegram player (ADR-0012): personal chat link, AI summary, drafts to approve,
+ * questions, photos and squat videos. Players never log in; they chat with the bot privately and
+ * everything is forwarded to the coach's own chat with the bot.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, CheckCircle2, Clapperboard, ExternalLink, Link2, MessageCircleQuestion, RefreshCw, Send, Unlink, XCircle } from 'lucide-react';
+import { Bot, CheckCircle2, Clapperboard, ExternalLink, Image as ImageIcon, Link2, MessageCircleQuestion, RefreshCw, Send, Unlink, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
-import { telegramApi, type AgentDraft, type GroupCode, type SquatCheck, type SquatErrorType } from '@/api/telegram';
+import { telegramApi, type AgentDraft, type PlayerInvite, type SquatCheck, type SquatErrorType } from '@/api/telegram';
 import { Badge, Button, Card, CardHeader, Input, Spinner, Textarea } from '@/components/ui';
 import { useQuestions } from '@/hooks/queries';
 import { loc } from '@/i18n';
 import { fmtDate } from '@/lib/format';
-import { GroupLinkSteps } from './GroupLinkSteps';
+import { PlayerLinkBox } from './PlayerLinkBox';
 
 const ALERTS: Record<string, [string, string]> = {
   stalled: ['الوزن ثابت منذ 3 أسابيع', 'Weight stalled for 3 weeks'],
@@ -47,8 +47,8 @@ function CoachTelegramBanner() {
     <Card className="flex flex-wrap items-center gap-3 border-warn/40 p-4">
       <p className="min-w-0 flex-1 text-sm">
         {loc(
-          'اربط حسابك في تيليجرام أولًا: لتستلم مسودات الردود وتعتمدها بزر، ولتستطيع ربط مجموعات اللاعبين.',
-          'Link your own Telegram first: you will receive reply drafts to approve with a button, and can link players\' groups.',
+          'اربط حسابك في تيليجرام أولًا: لتصلك رسائل لاعبيك وصورهم وفيديوهاتهم، وترد عليهم وتعتمد المسودات من محادثتك مع البوت.',
+          "Link your own Telegram first: your players' messages, photos and videos reach you there, and you reply and approve drafts from your chat with the bot.",
         )}
       </p>
       <Button size="sm" icon={<ExternalLink className="h-4 w-4" />} loading={link.isPending} onClick={() => link.mutate()}>
@@ -61,19 +61,18 @@ function CoachTelegramBanner() {
   );
 }
 
-// ------------------------------------------------------------------ group
+// ------------------------------------------------------------------ player's chat
 
-function GroupCard({ clientId }: { clientId: number }) {
+function ChatCard({ clientId }: { clientId: number }) {
   const qc = useQueryClient();
   const clients = useQuery({ queryKey: ['telegram-clients'], queryFn: telegramApi.clients });
-  const me = useQuery({ queryKey: ['me-telegram'], queryFn: telegramApi.myTelegram });
-  const [code, setCode] = useState<GroupCode | null>(null);
+  const [invite, setInvite] = useState<PlayerInvite | null>(null);
   const info = clients.data?.find((c) => c.id === clientId);
-  const newCode = useMutation({ mutationFn: () => telegramApi.groupCode(clientId), onSuccess: setCode, onError: (e) => toast.error(errorMessage(e)) });
+  const newInvite = useMutation({ mutationFn: () => telegramApi.invite(clientId), onSuccess: setInvite, onError: (e) => toast.error(errorMessage(e)) });
   const unlink = useMutation({
     mutationFn: () => telegramApi.unlink(clientId),
     onSuccess: async () => {
-      toast.success(loc('تم إلغاء ربط المجموعة', 'Group unlinked'));
+      toast.success(loc('تم إلغاء ربط تيليجرام اللاعب', "Player's Telegram unlinked"));
       await qc.invalidateQueries({ queryKey: ['telegram-clients'] });
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -82,39 +81,60 @@ function GroupCard({ clientId }: { clientId: number }) {
   return (
     <Card>
       <CardHeader
-        title={loc('مجموعة تيليجرام', 'Telegram group')}
+        title={loc('محادثة تيليجرام', 'Telegram chat')}
+        subtitle={loc('رسائل اللاعب تصلك في محادثتك مع البوت؛ اضغط «رد» (Reply) على رسالته لترد عليه', "The player's messages reach your chat with the bot; use Reply on a message to answer him")}
         icon={<Link2 className="h-5 w-5" />}
-        actions={info?.linked ? <Badge tone="good">{loc('مرتبطة ✅', 'Linked ✅')}</Badge> : <Badge tone="warn">{loc('غير مرتبطة', 'Not linked')}</Badge>}
+        actions={
+          info?.linked
+            ? <Badge tone="good">{loc('بدأ المحادثة ✅', 'Chat started ✅')}</Badge>
+            : <Badge tone="warn">{loc('لم يفتح الرابط بعد', 'Has not opened the link yet')}</Badge>
+        }
       />
       <div className="flex flex-col gap-3 p-4">
         {clients.isLoading && <Spinner />}
-        {info?.linked && (
-          <>
-            {info.invite_url ? (
-              <p className="text-sm">
-                {loc('رابط دعوة اللاعب للمجموعة: ', 'Invite link for the player: ')}
-                <a href={info.invite_url} target="_blank" rel="noreferrer" dir="ltr" className="font-semibold text-primary underline">{info.invite_url}</a>
-              </p>
-            ) : (
-              <p className="text-sm text-muted">{loc('اجعل البوت مشرفًا ليُنشئ رابط دعوة، أو أضف اللاعب يدويًا.', 'Make the bot an admin so it can create an invite link, or add the player manually.')}</p>
+        {invite && <PlayerLinkBox invite={invite} />}
+        {info && (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant={info.linked ? 'outline' : 'primary'} icon={<Link2 className="h-4 w-4" />} loading={newInvite.isPending} onClick={() => newInvite.mutate()}>
+              {info.linked ? loc('رابط جديد', 'New link') : loc('رابط اللاعب', "Player's link")}
+            </Button>
+            {info.linked && (
+              <Button size="sm" variant="ghost" icon={<Unlink className="h-4 w-4" />} loading={unlink.isPending} onClick={() => unlink.mutate()}>
+                {loc('إلغاء الربط', 'Unlink')}
+              </Button>
             )}
-            <div>
-              <Button size="sm" variant="outline" icon={<Unlink className="h-4 w-4" />} loading={unlink.isPending} onClick={() => unlink.mutate()}>
-                {loc('إلغاء ربط المجموعة', 'Unlink group')}
-              </Button>
-            </div>
-          </>
+          </div>
         )}
-        {info && !info.linked && (
-          code ? (
-            <GroupLinkSteps code={code} botUsername={me.data?.bot_username} />
-          ) : (
-            <div>
-              <Button size="sm" icon={<Link2 className="h-4 w-4" />} loading={newCode.isPending} onClick={() => newCode.mutate()}>
-                {loc('ربط مجموعة تيليجرام', 'Link a Telegram group')}
-              </Button>
-            </div>
-          )
+      </div>
+    </Card>
+  );
+}
+
+// ------------------------------------------------------------------ photos
+
+function PhotosCard({ clientId }: { clientId: number }) {
+  const photos = useQuery({ queryKey: ['client-photos', clientId], queryFn: () => telegramApi.photos(clientId), staleTime: 5 * 60_000 });
+  return (
+    <Card>
+      <CardHeader
+        title={loc('صور اللاعب', "Player's photos")}
+        subtitle={loc('الصور التي أرسلها للبوت', 'Photos he sent to the bot')}
+        icon={<ImageIcon className="h-5 w-5" />}
+        actions={<Button size="sm" variant="ghost" icon={<RefreshCw className="h-4 w-4" />} onClick={() => photos.refetch()} loading={photos.isFetching}>{loc('تحديث', 'Refresh')}</Button>}
+      />
+      <div className="p-4">
+        {photos.isLoading && <Spinner />}
+        {photos.data?.length === 0 && <p className="text-sm text-muted">{loc('لم يرسل اللاعب صورًا بعد.', 'No photos yet.')}</p>}
+        {!!photos.data?.length && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {photos.data.map((p) => (
+              <a key={p.id} href={p.url} target="_blank" rel="noreferrer" className="group flex flex-col gap-1">
+                <img src={p.url} alt={p.caption ?? ''} loading="lazy" className="aspect-square w-full rounded-xl border border-line bg-surface-2 object-cover transition group-hover:opacity-90" />
+                <span className="text-xs text-muted">{fmtDate(p.created_at)}</span>
+                {p.caption && <span className="line-clamp-2 text-xs">{p.caption}</span>}
+              </a>
+            ))}
+          </div>
         )}
       </div>
     </Card>
@@ -157,8 +177,8 @@ function DraftItem({ draft, question }: { draft: AgentDraft; question?: string }
   const approve = useMutation({
     mutationFn: () => telegramApi.approve(draft.id, text),
     onSuccess: async (r) => {
-      if (r.telegram_sent) toast.success(loc('تم الاعتماد والإرسال للمجموعة', 'Approved and sent to the group'));
-      else if (r.telegram_linked === false) toast.warning(loc('تم الاعتماد، لكن اللاعب غير مرتبط بمجموعة فلم يُرسل', 'Approved, but the player has no linked group so it was not sent'));
+      if (r.telegram_sent) toast.success(loc('تم الاعتماد والإرسال للاعب', 'Approved and sent to the player'));
+      else if (r.telegram_linked === false) toast.warning(loc('تم الاعتماد، لكن اللاعب لم يفتح رابطه بعد فلم يُرسل', 'Approved, but the player has not opened his link yet so it was not sent'));
       else toast.error(loc('تم الاعتماد، لكن تعذر الإرسال لتيليجرام', 'Approved, but sending to Telegram failed'));
       await refresh();
     },
@@ -309,7 +329,7 @@ function SquatCard({ clientId }: { clientId: number }) {
               {c.has_video ? (
                 <Button size="sm" variant="ghost" icon={<ExternalLink className="h-4 w-4" />} onClick={() => watch(c.id)}>{loc('مشاهدة', 'Watch')}</Button>
               ) : (
-                c.source === 'telegram' && <span className="text-xs text-muted">{loc('شاهد الفيديو في مجموعة اللاعب على تيليجرام', "Watch the video in the player's Telegram group")}</span>
+                c.source === 'telegram' && <span className="text-xs text-muted">{loc('شاهد الفيديو في محادثتك مع البوت', 'Watch the video in your chat with the bot')}</span>
               )}
             </div>
             {c.status === 'awaiting_review' && <ReviewForm check={c} clientId={clientId} />}
@@ -324,10 +344,11 @@ export function TelegramTab({ clientId }: { clientId: number }) {
   return (
     <div className="flex flex-col gap-4">
       <CoachTelegramBanner />
-      <GroupCard clientId={clientId} />
+      <ChatCard clientId={clientId} />
       <DraftsCard clientId={clientId} />
       <SummaryCard clientId={clientId} />
       <SquatCard clientId={clientId} />
+      <PhotosCard clientId={clientId} />
     </div>
   );
 }

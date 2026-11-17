@@ -1,16 +1,15 @@
 # Backend handoff
 
-## Telegram groups, no player login (ADR-0011) — current flow
+## Telegram private chat, no player login (ADR-0012) — current flow
 
-Players never log in. Each player has a Telegram group: the bot, the player and the coach.
+Players never log in and there are no groups. Each player chats with the bot privately; everything he sends is forwarded to the coach's own chat with the bot.
 
 1. **Coach links his own Telegram once:** web app → player page → tab «تيليجرام والمساعد الذكي» → «ربط حسابي بتيليجرام» → Start in the bot.
-2. **Coach adds a player:** dashboard → «لاعب جديد (تيليجرام)» (name + sex) → gets `/link <code>`.
-3. **Coach creates a group** «تحدي – <name>», adds `@tahadi_coach_bot` **as admin**, sends `/link <code>` in the group. The bot privately sends the coach the group invite link for the player.
-4. **Player joins** → bot asks age / height / goal (skippable) → player sends «وزني 92», questions, squat videos.
-5. **Questions** → AI draft sent privately to the coach with Approve / Edit / Reject buttons (also in the web tab). Only approved text is posted in the group. The coach can also just write in the group.
-
-**Bot setup:** in @BotFather `/setprivacy` → Disable (the bot must read group messages).
+2. **Coach adds a player:** dashboard → «لاعب جديد (تيليجرام)» (name + sex) → gets the player's personal link (Copy / Open). A new link any time from the player's tab.
+3. **Player opens the link → Start** → bot asks age / height / goal (skippable) → player sends «وزني 92», questions, photos, squat videos. The coach is told when the player starts.
+4. **Everything reaches the coach** in his chat with the bot, tagged `👤 name · #c<id>`. **Reply** on any of those messages answers that player.
+5. **Questions** → AI draft sent to the coach with Approve / Edit / Reject buttons (also in the web tab). Only approved text reaches the player.
+6. **Web app (player tab):** chat status, drafts, AI summary, squat videos (watch + review), photos. Media is streamed from Telegram via short-lived signed links (no file storage needed).
 
 **How the bot runs (production): webhook inside the backend on Render — free, nothing else to host.**
 Telegram sends every update to `POST /telegram/webhook` (checked with the `X-Telegram-Bot-Api-Secret-Token` header, derived from `TELEGRAM_BOT_SECRET`).
@@ -18,11 +17,11 @@ Register it once (from `backend/`, with the same `TELEGRAM_BOT_SECRET` as Render
 `python -m scripts.set_webhook` · check: `--info` · remove: `--delete`.
 Render's free instance sleeps after 15 min idle: the first message after that is answered late (Telegram retries, nothing is lost). A free uptime pinger on `/api/v1/health` every 10 min keeps it awake.
 
-**Local testing only:** `python -m scripts.set_webhook --delete`, then run the polling worker `python -m app.telegram_bot` (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_SECRET`, `BACKEND_URL`). Webhook and polling cannot run at the same time.
-**Backend env (Render):** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_BOT_SECRET` (same value as the bot).
+**Re-run `python -m scripts.set_webhook` after every bot token change** (a new token has no webhook).
+**Backend env (Render):** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_BOT_SECRET`.
 
-Bot-only endpoints (header `X-Bot-Secret`): `POST /telegram/link/coach`, `/telegram/link/group`, `/telegram/message`, `/telegram/video`, `/telegram/draft-decision`.
-Coach endpoints (`/api/v1`, logged in): `/me/telegram`, `/me/telegram/link`, `/telegram/clients`, `/clients/telegram`, `/clients/{id}/telegram/group-code`, `DELETE /clients/{id}/telegram`, `/clients/{id}/agent-summary`, `/clients/{id}/agent-drafts`, `/questions/{id}/agent-draft`, `/agent-drafts/{id}/approve|reject`, `/clients/{id}/squat-checks`, `/squat-checks/{id}`, `/squat-checks/{id}/video`.
+Telegram endpoint: `POST /telegram/webhook` only.
+Coach endpoints (`/api/v1`, logged in): `/me/telegram`, `/me/telegram/link`, `/telegram/clients`, `/clients/telegram`, `/clients/{id}/telegram/invite`, `DELETE /clients/{id}/telegram`, `/clients/{id}/photos`, `/clients/{id}/agent-summary`, `/clients/{id}/agent-drafts`, `/questions/{id}/agent-draft`, `/agent-drafts/{id}/approve|reject`, `/clients/{id}/squat-checks`, `/squat-checks/{id}`, `/squat-checks/{id}/video`, `/telegram-files/{kind}/{id}` (signed, no login).
 
 ---
 

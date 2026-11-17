@@ -20,7 +20,6 @@ from app.rules.profile import PROFILE_STEPS, next_step, parse_answer, question_f
 from app.schemas.measurement import ValueIn
 from app.services import audit, measurements
 
-NOT_LINKED_GROUP = "هذه المجموعة غير مرتبطة بلاعب بعد. على المدرب إرسال: /link <الرمز> من صفحة اللاعب."
 
 
 @dataclass
@@ -115,7 +114,7 @@ def save_profile_answer(client_id: int, step: str, value) -> str | None:
 def process_message(chat_id: int, text: str, from_user_id: int | None = None) -> IntakeResult:
     client = find_client_by_chat(chat_id)
     if client is None:
-        return IntakeResult(NOT_LINKED_GROUP if chat_id < 0 else t.NOT_LINKED)
+        return IntakeResult(t.NOT_LINKED)
 
     if from_user_id is not None and from_user_id == client["coach_telegram_user_id"]:
         record_coach_reply(client["id"], client["trainer_id"], text)

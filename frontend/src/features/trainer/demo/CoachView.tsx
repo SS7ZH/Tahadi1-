@@ -22,8 +22,8 @@ import { toast } from 'sonner';
 import { Card, CardHeader, Button, Badge, Spinner } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { demoApi, type ProgressSummary, type DraftReply, type TelegramLinkClient } from './demoApi';
-import { telegramApi, type GroupCode } from '@/api/telegram';
-import { GroupLinkSteps } from '../telegram/GroupLinkSteps';
+import { telegramApi, type PlayerInvite } from '@/api/telegram';
+import { PlayerLinkBox } from '../telegram/PlayerLinkBox';
 
 /* ---- تنسيق التاريخ ---- */
 function fmtDate(d: string) {
@@ -248,7 +248,7 @@ function TelegramLinkPanel({
 }) {
   const { status, user } = useAuth();
   const canManageLinks = status === 'authenticated' && (user?.role === 'trainer' || user?.role === 'admin');
-  const [code, setCode] = useState<GroupCode | null>(null);
+  const [code, setCode] = useState<PlayerInvite | null>(null);
   const [creatingCode, setCreatingCode] = useState(false);
 
   useEffect(() => {
@@ -256,12 +256,12 @@ function TelegramLinkPanel({
   }, [client?.id]);
 
   const createCode = async () => {
-    if (!client || client.linked) return;
+    if (!client) return;
     setCreatingCode(true);
     try {
-      setCode(await telegramApi.groupCode(client.id));
+      setCode(await telegramApi.invite(client.id));
     } catch {
-      toast.error('تعذر إنشاء رمز الربط. حدّث قائمة اللاعبين وحاول مجدداً.');
+      toast.error('تعذر إنشاء رابط اللاعب. حدّث قائمة اللاعبين وحاول مجدداً.');
     } finally {
       setCreatingCode(false);
     }
@@ -271,7 +271,7 @@ function TelegramLinkPanel({
     return (
       <div className="flex items-center gap-2 border-t border-line pt-4 text-sm text-muted">
         <Link2 className="h-4 w-4" />
-        <span>لربط لاعب بمجموعة تيليجرام، سجّل الدخول بحساب مدرب أو إداري.</span>
+        <span>لإنشاء رابط تيليجرام للاعب، سجّل الدخول بحساب مدرب أو إداري.</span>
       </div>
     );
   }
@@ -280,30 +280,22 @@ function TelegramLinkPanel({
     <div className="flex flex-col gap-3 border-t border-line pt-4">
       <div className="flex items-center gap-2">
         <Link2 className="h-4 w-4 text-accent" />
-        <span className="font-semibold text-sm">مجموعة تيليجرام للاعب</span>
+        <span className="font-semibold text-sm">محادثة اللاعب على تيليجرام</span>
         <Button size="sm" variant="outline" icon={<RefreshCw className="h-3.5 w-3.5" />} onClick={onRefresh} loading={refreshing}>
           تحديث
         </Button>
       </div>
       <p className="text-xs text-muted">
         {client ? `اللاعب المحدد: ${client.name}. ` : 'اختر لاعباً من القائمة أعلاه. '}
-        كل لاعب له مجموعة صغيرة فيها أنت والبوت واللاعب.
+        كل لاعب له رابط خاص؛ يفتحه ويتحدث مع البوت، ورسائله تصلك في محادثتك مع البوت.
       </p>
-      {client?.linked ? (
-        <p className="text-sm">
-          ✅ مرتبط بمجموعة.{' '}
-          {client.invite_url && (
-            <a className="font-semibold text-primary underline" href={client.invite_url} target="_blank" rel="noreferrer" dir="ltr">
-              رابط الدعوة
-            </a>
-          )}
-        </p>
-      ) : code ? (
-        <GroupLinkSteps code={code} />
+      {client?.linked && !code && <p className="text-sm">✅ بدأ المحادثة مع البوت.</p>}
+      {code ? (
+        <PlayerLinkBox invite={code} />
       ) : (
         <div className="flex flex-wrap gap-2">
           <Button size="sm" icon={<Link2 className="h-4 w-4" />} loading={creatingCode} disabled={!client} onClick={createCode}>
-            ربط مجموعة تيليجرام
+            {client?.linked ? 'رابط جديد للاعب' : 'إنشاء رابط اللاعب'}
           </Button>
         </div>
       )}

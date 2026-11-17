@@ -1,7 +1,8 @@
 """Signed, expiring codes for Telegram linking (ADR-0011).
 
 * coach code  - opened as t.me/<bot>?start=<code> in a private chat: links the coach's own Telegram account
-* group code  - sent by the coach as "/link <code>" inside the player's group: links that group to the player
+* player code - the player's personal link t.me/<bot>?start=<code>: links the player's private chat (ADR-0012)
+* group code  - legacy (ADR-0011 groups); no longer offered
 
 Codes are HMAC-signed with JWT_SECRET, carry their kind, subject id and expiry, and use only
 [A-Za-z0-9_-] (Telegram's allowed characters for /start parameters).
@@ -19,7 +20,8 @@ from app.core.errors import AppError
 from app.core.i18n import tr
 
 KIND_COACH = 1
-KIND_GROUP = 2
+KIND_GROUP = 2  # retired (ADR-0012); kept so old codes are never reused for another kind
+KIND_CLIENT = 3
 _LAYOUT = ">BIQ"  # kind, subject id, expires_at
 _PAYLOAD = struct.calcsize(_LAYOUT)  # 13 bytes
 _SIG = 12
@@ -59,5 +61,20 @@ def read_code(code: str, kind: int, now: int | None = None) -> int:
     return subject_id
 
 
+def kind_of(code: str) -> int | None:
+    """The code's kind if its signature is valid (expiry not checked here), else None."""
+    try:
+        raw = base64.urlsafe_b64decode(code + "=" * (-len(code) % 4))
+    except (ValueError, TypeError):
+        return None
+    if len(raw) != _PAYLOAD + _SIG or not hmac.compare_digest(raw[_PAYLOAD:], _sign(raw[:_PAYLOAD])):
+        return None
+    return struct.unpack(_LAYOUT, raw[:_PAYLOAD])[0]
+
+
 def coach_start_url(code: str) -> str:
+    return f"https://t.me/{agent_config.TELEGRAM_BOT_USERNAME}?start={code}"
+
+
+def player_start_url(code: str) -> str:
     return f"https://t.me/{agent_config.TELEGRAM_BOT_USERNAME}?start={code}"

@@ -2,7 +2,7 @@
 
 ### Status
 
-* **Proposed** (becomes Accepted once both team members approve the PR)
+* **Superseded in part** by `ADR-0012-telegram-private-chat-per-player.md` (groups replaced by a private chat per player; "no player login" still holds)
 * **Supersedes:** the player-login parts of the M1 requirements (players sign in and complete web onboarding)
 * **Amends:** `ADR-0008-telegram-instead-of-whatsapp.md` (private chat → one group per player)
 

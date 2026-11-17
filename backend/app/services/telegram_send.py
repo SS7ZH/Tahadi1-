@@ -98,3 +98,12 @@ def delete_webhook() -> dict | None:
 
 def webhook_info() -> dict | None:
     return _call("getWebhookInfo", {})
+
+
+def copy_message(chat_id: int, from_chat_id: int, message_id: int, caption: str | None = None) -> int | None:
+    """Copy a player's message (photo, video, text) into the coach's chat, optionally with a new caption."""
+    payload: dict = {"chat_id": chat_id, "from_chat_id": from_chat_id, "message_id": message_id}
+    if caption is not None:
+        payload["caption"] = caption[:1024]
+    result = _call("copyMessage", payload)
+    return result.get("message_id") if isinstance(result, dict) else None

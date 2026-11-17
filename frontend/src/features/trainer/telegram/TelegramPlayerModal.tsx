@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { errorMessage } from '@/api/client';
-import { telegramApi, type GroupCode } from '@/api/telegram';
+import { telegramApi, type PlayerInvite } from '@/api/telegram';
 import { Button, Input, Modal, Select } from '@/components/ui';
 import { loc, tr } from '@/i18n';
-import { GroupLinkSteps } from './GroupLinkSteps';
+import { PlayerLinkBox } from './PlayerLinkBox';
 
 /** Add a player who only uses Telegram (no email, no password, no web login). */
 export function TelegramPlayerModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -15,7 +15,7 @@ export function TelegramPlayerModal({ open, onClose }: { open: boolean; onClose:
   const [name, setName] = useState('');
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [goal, setGoal] = useState('fitness');
-  const [created, setCreated] = useState<{ id: number; name: string; code: GroupCode } | null>(null);
+  const [created, setCreated] = useState<{ id: number; name: string; invite: PlayerInvite } | null>(null);
 
   const close = () => {
     setName('');
@@ -26,7 +26,7 @@ export function TelegramPlayerModal({ open, onClose }: { open: boolean; onClose:
   const save = useMutation({
     mutationFn: () => telegramApi.createPlayer({ full_name: name.trim(), sex, goal }),
     onSuccess: async (r) => {
-      setCreated({ id: r.client.id, name: r.client.full_name, code: r });
+      setCreated({ id: r.client.id, name: r.client.full_name, invite: r });
       await qc.invalidateQueries({ queryKey: ['clients'] });
     },
     onError: (e) => toast.error(errorMessage(e)),
@@ -57,13 +57,13 @@ export function TelegramPlayerModal({ open, onClose }: { open: boolean; onClose:
       }
     >
       {created ? (
-        <GroupLinkSteps code={created.code} />
+        <PlayerLinkBox invite={created.invite} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           <p className="text-sm text-muted sm:col-span-2">
             {loc(
-              'اللاعب لا يحتاج حسابًا ولا كلمة مرور: يتواصل فقط عبر مجموعة تيليجرام معك ومع البوت. البوت يسأله عن عمره وطوله في البداية.',
-              'The player needs no account or password: he only uses a Telegram group with you and the bot. The bot asks his age and height at the start.',
+              'اللاعب لا يحتاج حسابًا ولا كلمة مرور: تحصل على رابط خاص به، يفتحه ويتحدث مع البوت مباشرة. البوت يسأله عن عمره وطوله في البداية.',
+              'The player needs no account or password: you get a personal link, he opens it and chats with the bot directly. The bot asks his age and height at the start.',
             )}
           </p>
           <Input label={tr.client.fullName} value={name} onChange={(e) => setName(e.target.value)} />

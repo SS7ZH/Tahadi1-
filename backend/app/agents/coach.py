@@ -57,7 +57,7 @@ def notify_coach(db: Session, draft: AgentDraft, client: User, question: Questio
     coach = coach_of(client)
     if coach is None or coach.telegram_user_id is None:
         return False
-    header = f"📝 مسودة رد لـ {client.full_name}"
+    header = f"📝 مسودة رد لـ {client.full_name} · #c{client.id}"
     if question is not None:
         header += f"\n❓ سؤاله: {question.body}"
     message_id = telegram_send.send_message(

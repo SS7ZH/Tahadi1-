@@ -31,7 +31,7 @@ export function ClientRow({ c, href }: { c: ClientListItem; href: string }) {
             {c.telegram_linked ? (
               <Badge tone="good"><Send className="h-3 w-3" /> {loc('تيليجرام', 'Telegram')}</Badge>
             ) : (
-              !c.email && <Badge tone="warn">{loc('بانتظار ربط المجموعة', 'Group not linked')}</Badge>
+              !c.email && <Badge tone="warn">{loc('لم يفتح رابط تيليجرام', 'Telegram link not opened')}</Badge>
             )}
           </div>
           <p className={`mt-0.5 text-xs ${stale ? 'text-warn' : 'text-muted'}`}>

@@ -53,3 +53,16 @@ class SquatCheck(CreatedAtMixin, Base):
     errors: Mapped[list | None] = mapped_column(JSON)
     confidence: Mapped[float | None] = mapped_column(Float)
     video_path: Mapped[str | None] = mapped_column(String(500))
+    # Telegram's id for the player's video: the backend streams it from Telegram (no file storage needed)
+    telegram_file_id: Mapped[str | None] = mapped_column(String(255))
+
+
+class ClientPhoto(CreatedAtMixin, Base):
+    """A photo the player sent the bot (progress, meal, ...). Streamed from Telegram by file id."""
+
+    __tablename__ = "client_photos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    client_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    telegram_file_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    caption: Mapped[str | None] = mapped_column(Text)

@@ -1,6 +1,6 @@
 /**
- * Telegram groups + AI agents for the coach (ADR-0011).
- * Players never log in: the coach adds them, links their Telegram group, and works from here.
+ * Telegram private chat + AI agents for the coach (ADR-0012).
+ * Players never log in: the coach adds them and sends a personal link; the player chats with the bot.
  */
 import { api } from './client';
 import type { User } from './types';
@@ -11,18 +11,23 @@ export type AgentSource = 'agent' | 'template';
 export type DraftStatus = 'pending' | 'approved' | 'rejected';
 export type SquatErrorType = 'knees_caving' | 'shallow_depth' | 'back_lean';
 
-export interface GroupCode {
-  group_code: string;
-  link_command: string;
+export interface PlayerInvite {
+  invite_url: string;
   expires_at: number;
   linked?: boolean;
+}
+
+export interface PlayerPhoto {
+  id: number;
+  caption: string | null;
+  created_at: string;
+  url: string;
 }
 
 export interface TelegramClient {
   id: number;
   name: string;
   linked: boolean;
-  invite_url: string | null;
   telegram_only: boolean;
 }
 
@@ -81,8 +86,9 @@ export const telegramApi = {
   myTelegram: () => data(api.get<{ linked: boolean; bot_username: string }>('/me/telegram')),
   myTelegramLink: () => data(api.post<{ url: string; expires_at: number }>('/me/telegram/link')),
   clients: () => data(api.get<TelegramClient[]>('/telegram/clients')),
-  createPlayer: (body: TelegramPlayerInput) => data(api.post<{ client: User } & GroupCode>('/clients/telegram', body)),
-  groupCode: (clientId: number) => data(api.post<GroupCode>(`/clients/${clientId}/telegram/group-code`)),
+  createPlayer: (body: TelegramPlayerInput) => data(api.post<{ client: User } & PlayerInvite>('/clients/telegram', body)),
+  invite: (clientId: number) => data(api.post<PlayerInvite>(`/clients/${clientId}/telegram/invite`)),
+  photos: (clientId: number) => data(api.get<PlayerPhoto[]>(`/clients/${clientId}/photos`)),
   unlink: (clientId: number) => api.delete(`/clients/${clientId}/telegram`),
 
   summary: (clientId: number) => data(api.get<AgentSummary>(`/clients/${clientId}/agent-summary`)),
